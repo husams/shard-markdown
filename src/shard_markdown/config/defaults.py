@@ -47,7 +47,7 @@ plugins: []
 # Environment variable mappings
 ENV_VAR_MAPPINGS = {
     "CHROMA_HOST": "chromadb.host",
-    "CHROMA_PORT": "chromadb.port", 
+    "CHROMA_PORT": "chromadb.port",
     "CHROMA_SSL": "chromadb.ssl",
     "CHROMA_AUTH_TOKEN": "chromadb.auth_token",
     "SHARD_MD_CHUNK_SIZE": "chunking.default_size",

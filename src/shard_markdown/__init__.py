@@ -3,7 +3,9 @@
 __version__ = "0.1.0"
 __author__ = "Shard Markdown Contributors"
 __email__ = "shard-md@example.com"
-__description__ = "Intelligent markdown document chunking for ChromaDB collections"
+__description__ = (
+    "Intelligent markdown document chunking for ChromaDB collections"
+)
 
 from .core.models import DocumentChunk, MarkdownAST, ProcessingResult
 

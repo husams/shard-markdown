@@ -9,9 +9,14 @@ from unittest.mock import Mock
 import pytest
 from click.testing import CliRunner
 
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.core.models import ChunkingConfig, DocumentChunk, MarkdownAST, MarkdownElement
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
+from shard_markdown.config.settings import AppConfig, ChromaDBConfig
+from shard_markdown.core.models import (
+    ChunkingConfig,
+    DocumentChunk,
+    MarkdownAST,
+    MarkdownElement,
+)
 
 
 @pytest.fixture
@@ -167,7 +172,7 @@ def complex_markdown_file(temp_dir: Path, complex_markdown_content: str) -> Path
 def test_documents(temp_dir: Path) -> Dict[str, Path]:
     """Create multiple test documents for batch testing."""
     documents = {}
-    
+
     # Simple document
     simple_content = """# Simple Document
 This is a simple document with basic content.
@@ -176,8 +181,8 @@ Content for section 1.
 """
     simple_path = temp_dir / "simple.md"
     simple_path.write_text(simple_content)
-    documents['simple'] = simple_path
-    
+    documents["simple"] = simple_path
+
     # Document with code
     code_content = """# Code Document
 This document contains code examples.
@@ -190,18 +195,18 @@ Additional content after code.
 """
     code_path = temp_dir / "code.md"
     code_path.write_text(code_content)
-    documents['code'] = code_path
-    
+    documents["code"] = code_path
+
     # Large document
     large_content = "# Large Document\n\n"
     for i in range(50):
         large_content += f"## Section {i}\n"
         large_content += f"{'Content paragraph. ' * 20}\n\n"
-    
+
     large_path = temp_dir / "large.md"
     large_path.write_text(large_content)
-    documents['large'] = large_path
-    
+    documents["large"] = large_path
+
     return documents
 
 
@@ -214,9 +219,9 @@ def sample_ast() -> MarkdownAST:
         MarkdownElement(type="header", level=2, text="Section 1"),
         MarkdownElement(type="paragraph", text="Content for section 1."),
         MarkdownElement(
-            type="code_block", 
-            language="python", 
-            text="def hello():\n    print('Hello')"
+            type="code_block",
+            language="python",
+            text="def hello():\n    print('Hello')",
         ),
         MarkdownElement(type="header", level=2, text="Section 2"),
         MarkdownElement(type="paragraph", text="Final content."),
@@ -235,22 +240,22 @@ def sample_chunks() -> List[DocumentChunk]:
                 "chunk_index": 0,
                 "total_chunks": 3,
                 "source_file": "test.md",
-                "chunk_method": "structure"
+                "chunk_method": "structure",
             },
             start_position=0,
-            end_position=35
+            end_position=35,
         ),
         DocumentChunk(
-            id="chunk_002", 
+            id="chunk_002",
             content="## Section 1\n\nContent for section 1.",
             metadata={
                 "chunk_index": 1,
                 "total_chunks": 3,
                 "source_file": "test.md",
-                "chunk_method": "structure"
+                "chunk_method": "structure",
             },
             start_position=35,
-            end_position=70
+            end_position=70,
         ),
         DocumentChunk(
             id="chunk_003",
@@ -258,12 +263,12 @@ def sample_chunks() -> List[DocumentChunk]:
             metadata={
                 "chunk_index": 2,
                 "total_chunks": 3,
-                "source_file": "test.md", 
-                "chunk_method": "structure"
+                "source_file": "test.md",
+                "chunk_method": "structure",
             },
             start_position=70,
-            end_position=100
-        )
+            end_position=100,
+        ),
     ]
 
 
@@ -277,23 +282,14 @@ def default_config() -> AppConfig:
 def test_config() -> AppConfig:
     """Test-specific application configuration."""
     return AppConfig(
-        chromadb=ChromaDBConfig(
-            host="localhost",
-            port=8000,
-            ssl=False,
-            timeout=30
-        )
+        chromadb=ChromaDBConfig(host="localhost", port=8000, ssl=False, timeout=30)
     )
 
 
 @pytest.fixture
 def chunking_config() -> ChunkingConfig:
     """Default chunking configuration for testing."""
-    return ChunkingConfig(
-        chunk_size=500,
-        overlap=100,
-        method="structure"
-    )
+    return ChunkingConfig(chunk_size=500, overlap=100, method="structure")
 
 
 @pytest.fixture
@@ -306,27 +302,21 @@ def mock_chromadb_client():
 def config_file(temp_dir: Path) -> Path:
     """Create a test configuration file."""
     config_data = {
-        "chromadb": {
-            "host": "localhost",
-            "port": 8000,
-            "ssl": False
-        },
+        "chromadb": {"host": "localhost", "port": 8000, "ssl": False},
         "chunking": {
             "default_size": 1000,
             "default_overlap": 200,
-            "method": "structure"
+            "method": "structure",
         },
-        "processing": {
-            "batch_size": 10,
-            "max_workers": 4
-        }
+        "processing": {"batch_size": 10, "max_workers": 4},
     }
-    
+
     config_path = temp_dir / "test_config.yaml"
     import yaml
-    with open(config_path, 'w') as f:
+
+    with open(config_path, "w") as f:
         yaml.dump(config_data, f)
-    
+
     return config_path
 
 
@@ -365,14 +355,14 @@ def cleanup_test_collections():
 def large_document_content() -> str:
     """Generate large document content for performance testing."""
     content = ["# Performance Test Document\n\n"]
-    
+
     for section in range(100):
         content.append(f"## Section {section + 1}\n\n")
         for para in range(10):
             content.append(f"This is paragraph {para + 1} of section {section + 1}. ")
             content.append("It contains meaningful content for testing performance. ")
             content.append("The content is long enough to create realistic chunks.\n\n")
-    
+
     return "".join(content)
 
 
@@ -380,10 +370,10 @@ def large_document_content() -> str:
 def performance_documents(temp_dir: Path, large_document_content: str) -> List[Path]:
     """Create multiple large documents for performance testing."""
     documents = []
-    
+
     for i in range(20):
         doc_path = temp_dir / f"perf_doc_{i:02d}.md"
         doc_path.write_text(large_document_content)
         documents.append(doc_path)
-    
+
     return documents

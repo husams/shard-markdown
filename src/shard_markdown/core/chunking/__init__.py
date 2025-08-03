@@ -1,13 +1,13 @@
 """Document chunking engines."""
 
 from .base import BaseChunker
-from .structure import StructureAwareChunker
-from .fixed import FixedSizeChunker
 from .engine import ChunkingEngine
+from .fixed import FixedSizeChunker
+from .structure import StructureAwareChunker
 
 __all__ = [
     "BaseChunker",
-    "StructureAwareChunker", 
+    "StructureAwareChunker",
     "FixedSizeChunker",
     "ChunkingEngine",
 ]
