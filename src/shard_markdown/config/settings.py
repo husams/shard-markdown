@@ -19,17 +19,10 @@ class ChromaDBConfig(BaseModel):
     """ChromaDB connection configuration."""
 
     host: str = Field(default="localhost", description="ChromaDB server host")
-    port: int = Field(default=8000,
-        ge=1,
-        le=65535,
-        description="ChromaDB server port"
-    )
+    port: int = Field(default=8000, ge=1, le=65535, description="ChromaDB server port")
     ssl: bool = Field(default=False, description="Use SSL connection")
     auth_token: Optional[str] = Field(default=None, description="Authentication token")
-    timeout: int = Field(default=30,
-        ge=1,
-        description="Connection timeout in seconds"
-    )
+    timeout: int = Field(default=30, ge=1, description="Connection timeout in seconds")
 
     @validator("host")
     def validate_host(cls, v: str) -> str:

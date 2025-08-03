@@ -31,11 +31,7 @@ console = Console()
 
 
 @click.command()
-@click.argument("input_paths",
-    nargs=-1,
-    required=True,
-    type=click.Path(exists=True)
-)
+@click.argument("input_paths", nargs=-1, required=True, type=click.Path(exists=True))
 @click.option(
     "--collection", "-c", required=True, help="Target ChromaDB collection name"
 )
@@ -59,11 +55,7 @@ console = Console()
     default="structure",
     help="Chunking method [default: structure]",
 )
-@click.option("--recursive",
-    "-r",
-    is_flag=True,
-    help="Process directories recursively"
-)
+@click.option("--recursive", "-r", is_flag=True, help="Process directories recursively")
 @click.option(
     "--create-collection", is_flag=True, help="Create collection if it doesn't exist"
 )
@@ -235,8 +227,10 @@ def process(
     {insert_result.error}[/red]"
                         )
                 else:
-                    console.print(f"[red]Processing failed: \
-    {result.error}[/red]")
+                    console.print(
+                        f"[red]Processing failed: \
+    {result.error}[/red]"
+                    )
 
             else:
                 # Batch processing
@@ -285,11 +279,7 @@ def process(
                     )
                     progress.update(insert_task, advance=1)
 
-                    _display_batch_results(
-                        batch_result,
-                        insert_result,
-                        verbose
-                    )
+                    _display_batch_results(batch_result, insert_result, verbose)
                 else:
                     console.print("[red]No chunks to insert[/red]")
 

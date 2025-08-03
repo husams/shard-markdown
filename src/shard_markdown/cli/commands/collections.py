@@ -110,10 +110,7 @@ def list(ctx, format, show_metadata, filter):
 @click.argument("name")
 @click.option("--description", help="Collection description")
 @click.option("--metadata", help="Additional metadata as JSON string")
-@click.option("--force",
-    is_flag=True,
-    help="Force creation even if collection exists"
-)
+@click.option("--force", is_flag=True, help="Force creation even if collection exists")
 @click.pass_context
 def create(ctx, name, description, metadata, force):
     """Create a new ChromaDB collection."""
@@ -145,9 +142,11 @@ def create(ctx, name, description, metadata, force):
             )
 
         if force and collection_manager.collection_exists(name):
-            if click.confirm(f"Delete existing collection '{name}' and \
+            if click.confirm(
+                f"Delete existing collection '{name}' and \
                 \
-    recreate?"):
+    recreate?"
+            ):
                 collection_manager.delete_collection(name)
             else:
                 raise click.Abort()
@@ -161,8 +160,10 @@ def create(ctx, name, description, metadata, force):
         if description:
             console.print(f"Description: {description}")
         if collection_metadata:
-            console.print(f"Metadata: \
-    {json.dumps(collection_metadata, indent=2)}")
+            console.print(
+                f"Metadata: \
+    {json.dumps(collection_metadata, indent=2)}"
+            )
 
     except ShardMarkdownError as e:
         console.print(f"[red]Error:[/red] {e.message}")
@@ -179,11 +180,7 @@ def create(ctx, name, description, metadata, force):
 
 @collections.command()
 @click.argument("name")
-@click.option("--force",
-    "-f",
-    is_flag=True,
-    help="Force deletion without confirmation"
-)
+@click.option("--force", "-f", is_flag=True, help="Force deletion without confirmation")
 @click.option("--backup", is_flag=True, help="Create backup before deletion")
 @click.pass_context
 def delete(ctx, name, force, backup):
@@ -210,9 +207,11 @@ def delete(ctx, name, force, backup):
 
         # Confirm deletion
         if not force:
-            if not click.confirm(f"Delete collection '{name}' and \
+            if not click.confirm(
+                f"Delete collection '{name}' and \
                 \
-    all its documents?"):
+    all its documents?"
+            ):
                 raise click.Abort()
 
         # Delete collection
@@ -242,8 +241,10 @@ def delete(ctx, name, force, backup):
     help="Output format [default: table]",
 )
 @click.option(
-    "--show-documents", is_flag=True, help="Include document count and \
-        sample documents"
+    "--show-documents",
+    is_flag=True,
+    help="Include document count and \
+        sample documents",
 )
 @click.pass_context
 def info(ctx, name, format, show_documents):

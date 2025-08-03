@@ -28,10 +28,7 @@ console = Console()
     help="Increase verbosity (can be repeated: -v, -vv, -vvv)",
 )
 @click.option("--quiet", "-q", is_flag=True, help="Suppress non-error output")
-@click.option("--log-file",
-    type=click.Path(),
-    help="Write logs to specified file"
-)
+@click.option("--log-file", type=click.Path(), help="Write logs to specified file")
 @click.version_option(version="0.1.0", prog_name="shard-md")
 @click.pass_context
 def cli(ctx, config, verbose, quiet, log_file):

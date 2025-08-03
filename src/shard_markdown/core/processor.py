@@ -127,10 +127,7 @@ class DocumentProcessor:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
             future_to_path = {
-executor.submit(self.process_document,
-                    path,
-                    collection_name
-                ): path
+                executor.submit(self.process_document, path, collection_name): path
                 for path in file_paths
             }
 

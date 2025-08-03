@@ -163,7 +163,8 @@ class MockChromaDBClient:
             processing_time = time.time() - start_time
             logger.info(
                 f"Mock bulk insert: \
-    {len(chunks)} chunks in " f"{processing_time:.2f}s"
+    {len(chunks)} chunks in "
+                f"{processing_time:.2f}s"
             )
 
             return InsertResult(

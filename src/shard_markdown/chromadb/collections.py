@@ -54,11 +54,9 @@ class CollectionManager:
             collection_metadata["description"] = description
 
         try:
-            collection = self.client.create_collection(
-                name, collection_metadata)
+            collection = self.client.create_collection(name, collection_metadata)
             logger.info(
-                f"Created collection '{name}' with metadata: "
-                f"{collection_metadata}"
+                f"Created collection '{name}' with metadata: " f"{collection_metadata}"
             )
             return collection
 
@@ -268,13 +266,11 @@ class CollectionManager:
 
         # Check for invalid characters (basic validation)
         invalid_chars = set(name) - set(
-            "abcdefghijklmnopqrstuvwxyz"
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
+            "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
         )
         if invalid_chars:
             raise ChromaDBError(
-                f"Collection name contains invalid characters: "
-                f"{invalid_chars}",
+                f"Collection name contains invalid characters: " f"{invalid_chars}",
                 error_code=1413,
                 context={"name": name, "invalid_chars": list(invalid_chars)},
             )

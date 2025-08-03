@@ -66,9 +66,7 @@ def show(ctx, format, section):
 
         # Display based on format
         if format == "yaml":
-            console.print(yaml.dump(config_dict,
-                default_flow_style=False,
-                indent=2))
+            console.print(yaml.dump(config_dict, default_flow_style=False, indent=2))
         elif format == "json":
             console.print(json.dumps(config_dict, indent=2))
         elif format == "table":

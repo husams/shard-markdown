@@ -211,10 +211,7 @@ def get(ctx, document_id, collection, format, include_metadata):
         raise click.Abort()
 
 
-def _display_search_results_table(results,
-    include_metadata,
-    similarity_threshold
-):
+def _display_search_results_table(results, include_metadata, similarity_threshold):
     """Display search results in table format."""
 
     table = Table(title="Search Results")
