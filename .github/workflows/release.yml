@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to release (e.g., 1.0.0)'
+        description: "Version to release (e.g., 1.0.0)"
         required: true
         type: string
       environment:
-        description: 'Environment to deploy to'
+        description: "Environment to deploy to"
         required: true
         type: choice
         options:
@@ -121,7 +121,7 @@ jobs:
     needs: [validate-release, test-before-release]
     environment: ${{ needs.validate-release.outputs.environment }}
     permissions:
-      id-token: write  # For trusted publishing
+      id-token: write # For trusted publishing
       contents: read
 
     steps:

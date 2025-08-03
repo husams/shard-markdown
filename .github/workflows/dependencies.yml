@@ -3,12 +3,12 @@ name: Dependencies
 on:
   schedule:
     # Run every Monday at 8 AM UTC
-    - cron: '0 8 * * 1'
+    - cron: "0 8 * * 1"
   workflow_dispatch:
   push:
     paths:
-      - 'pyproject.toml'
-      - 'uv.lock'
+      - "pyproject.toml"
+      - "uv.lock"
 
 env:
   PYTHON_VERSION: "3.11"

@@ -5,42 +5,49 @@
 ### 1.1 Error Categories
 
 #### 1.1.1 Input Validation Errors (Category: INPUT)
+
 - **Code Range**: 1000-1099
 - **Description**: Errors related to invalid user input, arguments, or file formats
 - **Recovery Strategy**: User correction required
 - **Examples**: Invalid file paths, unsupported file formats, malformed configuration
 
 #### 1.1.2 Configuration Errors (Category: CONFIG)
+
 - **Code Range**: 1100-1199
 - **Description**: Errors in configuration loading, validation, or environment setup
 - **Recovery Strategy**: Configuration correction or environment setup
 - **Examples**: Missing config files, invalid configuration values, environment variable issues
 
 #### 1.1.3 File System Errors (Category: FILESYSTEM)
+
 - **Code Range**: 1200-1299
 - **Description**: File system access, permission, and I/O errors
 - **Recovery Strategy**: File system correction or permission adjustment
 - **Examples**: File not found, permission denied, disk space issues, encoding problems
 
 #### 1.1.4 Processing Errors (Category: PROCESSING)
+
 - **Code Range**: 1300-1399
 - **Description**: Errors during document parsing, chunking, or content processing
 - **Recovery Strategy**: Skip file or adjust processing parameters
 - **Examples**: Markdown parsing errors, chunking failures, metadata extraction issues
 
 #### 1.1.5 ChromaDB Errors (Category: DATABASE)
+
 - **Code Range**: 1400-1499
 - **Description**: ChromaDB connection, operation, and data integrity errors
 - **Recovery Strategy**: Retry operation, check connection, or adjust database configuration
 - **Examples**: Connection failures, authentication errors, collection issues, insertion failures
 
 #### 1.1.6 System Errors (Category: SYSTEM)
+
 - **Code Range**: 1500-1599
 - **Description**: System-level errors including memory, threading, and resource constraints
 - **Recovery Strategy**: Resource adjustment or system configuration changes
 - **Examples**: Out of memory, thread pool exhaustion, resource limits exceeded
 
 #### 1.1.7 Network Errors (Category: NETWORK)
+
 - **Code Range**: 1600-1699
 - **Description**: Network connectivity and communication errors
 - **Recovery Strategy**: Retry with backoff or check network configuration
@@ -171,6 +178,7 @@ class ErrorContext:
 ### 3.1 Input Validation Errors
 
 #### 3.1.1 Invalid File Path (Code: 1001)
+
 ```python
 def validate_input_paths(paths: List[str], recursive: bool) -> List[Path]:
     """Validate input file paths."""
@@ -225,6 +233,7 @@ def validate_input_paths(paths: List[str], recursive: bool) -> List[Path]:
 ```
 
 #### 3.1.2 Invalid Configuration Values (Code: 1101-1110)
+
 ```python
 def validate_chunk_size(chunk_size: int, chunk_overlap: int) -> None:
     """Validate chunking parameters."""
@@ -268,6 +277,7 @@ def validate_chunk_size(chunk_size: int, chunk_overlap: int) -> None:
 ### 3.2 File System Errors
 
 #### 3.2.1 File Reading Errors (Code: 1201-1210)
+
 ```python
 def read_file_with_error_handling(file_path: Path) -> str:
     """Read file with comprehensive error handling."""
@@ -339,6 +349,7 @@ def read_file_with_error_handling(file_path: Path) -> str:
 ### 3.3 Processing Errors
 
 #### 3.3.1 Markdown Parsing Errors (Code: 1301-1310)
+
 ```python
 def parse_markdown_with_error_handling(content: str, file_path: Path) -> MarkdownAST:
     """Parse markdown with error handling."""
@@ -391,6 +402,7 @@ def parse_markdown_with_error_handling(content: str, file_path: Path) -> Markdow
 ```
 
 #### 3.3.2 Chunking Errors (Code: 1311-1320)
+
 ```python
 def chunk_document_with_error_handling(ast: MarkdownAST, config: ChunkingConfig,
                                      file_path: Path) -> List[DocumentChunk]:
@@ -442,6 +454,7 @@ def chunk_document_with_error_handling(ast: MarkdownAST, config: ChunkingConfig,
 ### 3.4 ChromaDB Errors
 
 #### 3.4.1 Connection Errors (Code: 1401-1410)
+
 ```python
 def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Client:
     """Connect to ChromaDB with comprehensive error handling."""
@@ -516,6 +529,7 @@ def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Cli
 ```
 
 #### 3.4.2 Collection Operation Errors (Code: 1411-1420)
+
 ```python
 def get_or_create_collection_with_error_handling(client: chromadb.Client,
                                                name: str,

@@ -5,6 +5,7 @@
 ### 1.1 Single File Processing
 
 #### 1.1.1 Process Single Markdown File
+
 ```bash
 # Basic processing of a single file
 shard-md process --collection my-docs document.md
@@ -17,6 +18,7 @@ shard-md process --collection new-docs --create-collection document.md
 ```
 
 **Expected Output:**
+
 ```
 Processing documents... ████████████████████████████████████████ 100% (1/1)
 
@@ -27,6 +29,7 @@ Processing time: 0.45s
 ```
 
 #### 1.1.2 Preview Before Processing
+
 ```bash
 # Preview what chunks would be created
 shard-md preview --chunk-size 1000 --chunk-overlap 200 document.md
@@ -36,6 +39,7 @@ shard-md preview --chunk-method fixed --chunk-size 800 document.md
 ```
 
 **Expected Output:**
+
 ```
 Preview for: document.md
 Chunking method: structure
@@ -57,6 +61,7 @@ Average chunk size: 945 characters
 ### 1.2 Directory Processing
 
 #### 1.2.1 Process Directory Recursively
+
 ```bash
 # Process all markdown files in a directory
 shard-md process --collection docs --recursive --create-collection docs/
@@ -70,6 +75,7 @@ shard-md process --collection clean-docs --recursive \
 ```
 
 #### 1.2.2 Batch Processing with Custom Settings
+
 ```bash
 # Process large directory with optimized settings
 shard-md process \
@@ -84,6 +90,7 @@ shard-md process \
 ```
 
 **Expected Output:**
+
 ```
 Processing documents... ████████████████████████████████████████ 100% (247/247)
 
@@ -103,6 +110,7 @@ Average chunks per document: 7.5
 ### 2.1 Configuration File Usage
 
 #### 2.1.1 Create Configuration File
+
 ```bash
 # Initialize default configuration
 shard-md config init
@@ -115,6 +123,7 @@ shard-md config show
 ```
 
 **Generated Configuration (~/.shard-md/config.yaml):**
+
 ```yaml
 chromadb:
   host: localhost
@@ -149,6 +158,7 @@ collections:
 ```
 
 #### 2.1.2 Use Custom Configuration
+
 ```bash
 # Use specific configuration file
 shard-md --config ./project-config.yaml process --collection project-docs docs/
@@ -161,6 +171,7 @@ SHARD_MD_CHUNK_SIZE=1500 CHROMA_HOST=remote-server.com \
 ### 2.2 Metadata Management
 
 #### 2.2.1 Custom Metadata Addition
+
 ```bash
 # Add custom metadata to all chunks
 shard-md process \
@@ -178,6 +189,7 @@ shard-md process \
 ```
 
 #### 2.2.2 Frontmatter Processing
+
 ```bash
 # Include YAML frontmatter as metadata
 shard-md process --collection blog-posts --include-frontmatter blog/
@@ -188,6 +200,7 @@ shard-md process --collection plain-docs --no-frontmatter docs/
 
 **Example with Frontmatter:**
 Input file (`blog/post-1.md`):
+
 ```markdown
 ---
 title: "Getting Started with CLI Tools"
@@ -202,6 +215,7 @@ This post covers the basics of building effective CLI tools...
 ```
 
 Results in chunk metadata:
+
 ```json
 {
   "title": "Getting Started with CLI Tools",
@@ -219,6 +233,7 @@ Results in chunk metadata:
 ### 3.1 Collection Operations
 
 #### 3.1.1 List and Inspect Collections
+
 ```bash
 # List all collections
 shard-md collections list
@@ -234,6 +249,7 @@ shard-md collections info technical-docs --show-documents
 ```
 
 **Expected Output:**
+
 ```
 Collections:
 ┌─────────────────┬────────┬─────────────────┬──────────────────────┐
@@ -246,6 +262,7 @@ Collections:
 ```
 
 #### 3.1.2 Create and Delete Collections
+
 ```bash
 # Create empty collection
 shard-md collections create project-docs \
@@ -265,6 +282,7 @@ shard-md collections delete --backup legacy-docs
 ### 3.2 Collection Backup and Migration
 
 #### 3.2.1 Export Collection Data
+
 ```bash
 # Export collection to JSON
 shard-md collections export technical-docs --format json --output backup.json
@@ -276,6 +294,7 @@ shard-md collections export api-docs \
 ```
 
 #### 3.2.2 Import Data to Collection
+
 ```bash
 # Import from backup
 shard-md collections import new-technical-docs --input backup.json
@@ -291,6 +310,7 @@ shard-md collections import migrated-docs \
 ### 4.1 Document Search
 
 #### 4.1.1 Basic Search Operations
+
 ```bash
 # Search for documents
 shard-md query search "machine learning algorithms" --collection technical-docs
@@ -305,6 +325,7 @@ shard-md query search "deployment guide" \
 ```
 
 **Expected Output:**
+
 ```
 Search Results for: "machine learning algorithms"
 Collection: technical-docs
@@ -325,6 +346,7 @@ Found 3 results in 0.15s
 ```
 
 #### 4.1.2 Get Specific Documents
+
 ```bash
 # Get document by ID
 shard-md query get a1b2c3d4_0001 --collection technical-docs
@@ -342,6 +364,7 @@ shard-md query search "docker deployment" \
 ### 4.2 Advanced Search Patterns
 
 #### 4.2.1 Metadata-Based Filtering
+
 ```bash
 # Search with metadata filters (future feature)
 shard-md query search "configuration" \
@@ -356,6 +379,7 @@ shard-md query search "installation" \
 ```
 
 #### 4.2.2 Batch Query Operations
+
 ```bash
 # Query multiple terms
 shard-md query batch \
@@ -375,6 +399,7 @@ shard-md query multi-collection \
 ### 5.1 Verbose Output and Debugging
 
 #### 5.1.1 Debug Processing Issues
+
 ```bash
 # Verbose output
 shard-md --verbose process --collection debug-docs document.md
@@ -387,6 +412,7 @@ shard-md --log-file processing.log process --collection docs docs/
 ```
 
 **Verbose Output Example:**
+
 ```
 2024-01-15 10:30:15 - shard_markdown.cli - INFO - Starting processing with config: ChunkingConfig(default_size=1000, ...)
 2024-01-15 10:30:15 - shard_markdown.core.processor - DEBUG - Processing file: /path/to/document.md
@@ -397,6 +423,7 @@ shard-md --log-file processing.log process --collection docs docs/
 ```
 
 #### 5.1.2 Dry Run and Validation
+
 ```bash
 # Dry run to see what would be processed
 shard-md process --dry-run --collection test-docs docs/
@@ -411,6 +438,7 @@ shard-md preview --chunk-method semantic --chunk-size 1200 large-document.md
 ### 5.2 Performance Monitoring
 
 #### 5.2.1 Benchmark Operations
+
 ```bash
 # Process with timing information
 time shard-md process --collection benchmark-test large-docs/
@@ -423,6 +451,7 @@ shard-md process --collection perf-test --show-stats docs/
 ```
 
 #### 5.2.2 Health Checks
+
 ```bash
 # Check ChromaDB connectivity
 shard-md collections list  # Should succeed if connection is healthy
@@ -439,6 +468,7 @@ shard-md validate --test-chunking sample-document.md
 ### 6.1 CI/CD Pipeline Integration
 
 #### 6.1.1 GitHub Actions Workflow
+
 ```yaml
 # .github/workflows/docs-processing.yml
 name: Process Documentation
@@ -480,6 +510,7 @@ jobs:
 ```
 
 #### 6.1.2 Shell Script Automation
+
 ```bash
 #!/bin/bash
 # scripts/update-docs.sh
@@ -519,6 +550,7 @@ echo "New collection: $COLLECTION_NAME"
 ### 6.2 Watch Mode and Automated Processing
 
 #### 6.2.1 File System Monitoring
+
 ```bash
 # Watch directory for changes (requires watchdog)
 shard-md watch \
@@ -537,6 +569,7 @@ shard-md watch \
 ```
 
 #### 6.2.2 Scheduled Processing
+
 ```bash
 # Cron job for daily processing
 # 0 2 * * * /usr/local/bin/shard-md process --collection daily-docs --recursive /data/docs
@@ -555,6 +588,7 @@ shard-md process \
 ### 7.1 Common Issues and Solutions
 
 #### 7.1.1 Connection Problems
+
 ```bash
 # Test ChromaDB connection
 shard-md collections list
@@ -571,6 +605,7 @@ shard-md --chroma-host 192.168.1.100 collections list
 ```
 
 #### 7.1.2 Processing Failures
+
 ```bash
 # Process single file to isolate issues
 shard-md process --collection test --create-collection problematic-file.md
@@ -586,6 +621,7 @@ file problematic-file.md
 ```
 
 #### 7.1.3 Performance Issues
+
 ```bash
 # Reduce batch size for memory-constrained environments
 shard-md process \
@@ -608,6 +644,7 @@ shard-md process \
 ### 7.2 Error Recovery
 
 #### 7.2.1 Partial Processing Recovery
+
 ```bash
 # Resume processing from failure point
 shard-md process \
@@ -622,6 +659,7 @@ grep "FAILED" previous-run.log | awk '{print $4}' | \
 ```
 
 #### 7.2.2 Data Validation and Repair
+
 ```bash
 # Validate collection integrity
 shard-md collections validate technical-docs

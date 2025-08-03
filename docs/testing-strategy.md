@@ -674,6 +674,7 @@ def hello_world():
 |----------|----------|
 | Value 1  | Value 2  |
 """)
+
         documents['complex'] = complex_doc
 
         return documents
@@ -776,6 +777,7 @@ def hello_world():
         assert result.success is False
         assert result.error is not None
         assert "not found" in result.error.lower() or "no such file" in result.error.lower()
+
 ```
 
 ### 3.2 ChromaDB Integration Tests
@@ -1302,6 +1304,7 @@ def document_{i}_function():
 ```
 
 ## Conclusion
+
 Conclusion for document {i}.
 """
             doc_path.write_text(content)
@@ -1476,6 +1479,7 @@ Conclusion for document {i}.
             assert max_memory_increase < 500, f"Memory usage too high: {max_memory_increase:.1f}MB"
 
         assert result.success is True
+
 ```
 
 This comprehensive testing strategy ensures the shard-markdown CLI tool is thoroughly tested across all layers and scenarios, providing confidence in its reliability and performance.

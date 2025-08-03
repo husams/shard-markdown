@@ -3,7 +3,7 @@
 from typing import List
 
 from ...utils.logging import get_logger
-from ..models import DocumentChunk, MarkdownAST
+from ..models import DocumentChunk, MarkdownAST, MarkdownElement
 from .base import BaseChunker
 
 logger = get_logger(__name__)
@@ -63,7 +63,7 @@ class FixedSizeChunker(BaseChunker):
             start = end - self.config.overlap
 
             # Ensure we make progress
-            if start <= chunks[-1].start_position if chunks else False:
+            if chunks and start <= chunks[-1].start_position:
                 start = chunks[-1].end_position
 
         logger.info(f"Created {len(chunks)} chunks using fixed-size method")
@@ -82,7 +82,8 @@ class FixedSizeChunker(BaseChunker):
 
         for element in ast.elements:
             if element.type == "header":
-                text_parts.append(f"{'#' * element.level} {element.text}")
+                level_prefix = "#" * (element.level or 1)
+                text_parts.append(f"{level_prefix} {element.text}")
             elif element.type == "paragraph":
                 text_parts.append(element.text)
             elif element.type == "code_block":

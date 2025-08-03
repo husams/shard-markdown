@@ -2,18 +2,18 @@ name: Documentation
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'docs/**'
-      - 'src/**'
-      - 'README.md'
-      - 'pyproject.toml'
+      - "docs/**"
+      - "src/**"
+      - "README.md"
+      - "pyproject.toml"
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
-      - 'docs/**'
-      - 'src/**'
-      - 'README.md'
+      - "docs/**"
+      - "src/**"
+      - "README.md"
   workflow_dispatch:
 
 env:
@@ -27,7 +27,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Needed for git info in docs
+          fetch-depth: 0 # Needed for git info in docs
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v3

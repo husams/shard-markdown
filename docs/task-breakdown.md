@@ -7,6 +7,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 1: Project Setup and Foundation
 
 ### 1.1 Development Environment Setup
+
 **Task ID**: SETUP-001
 **Estimated Effort**: 4 hours
 **Priority**: Critical
@@ -15,6 +16,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Establish the development environment, project structure, and core tooling.
 
 **Acceptance Criteria**:
+
 - [ ] Poetry project initialized with proper metadata
 - [ ] Git repository configured with appropriate .gitignore
 - [ ] Pre-commit hooks configured (black, isort, flake8, mypy)
@@ -23,12 +25,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Development dependencies installed and working
 
 **Deliverables**:
+
 - `pyproject.toml` with complete configuration
 - `.github/workflows/` with CI configuration
 - `scripts/` directory with build/test scripts
 - Development environment documentation
 
 ### 1.2 Core Package Structure
+
 **Task ID**: SETUP-002
 **Estimated Effort**: 3 hours
 **Priority**: Critical
@@ -37,6 +41,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Create the core package structure and module organization.
 
 **Acceptance Criteria**:
+
 - [ ] `src/shard_markdown/` package structure created
 - [ ] All module directories with `__init__.py` files
 - [ ] Package imports work correctly
@@ -44,11 +49,13 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Basic version management implemented
 
 **Deliverables**:
+
 - Complete package structure
 - Working CLI entry point (`shard-md --version`)
 - Module initialization files
 
 ### 1.3 Configuration Management Foundation
+
 **Task ID**: SETUP-003
 **Estimated Effort**: 6 hours
 **Priority**: High
@@ -57,6 +64,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement configuration management system with Pydantic models.
 
 **Acceptance Criteria**:
+
 - [ ] Pydantic configuration models defined
 - [ ] Environment variable integration working
 - [ ] YAML configuration file support
@@ -65,6 +73,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Configuration loading/saving functionality
 
 **Deliverables**:
+
 - `config/settings.py` with all configuration models
 - `config/loader.py` with loading logic
 - `config/defaults.py` with default values
@@ -73,6 +82,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 2: Core Components Implementation
 
 ### 2.1 Markdown Parser Implementation
+
 **Task ID**: CORE-001
 **Estimated Effort**: 12 hours
 **Priority**: Critical
@@ -81,6 +91,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement markdown parsing with AST generation and frontmatter support.
 
 **Acceptance Criteria**:
+
 - [ ] Markdown to AST conversion working
 - [ ] YAML frontmatter extraction implemented
 - [ ] Support for headers, paragraphs, code blocks, lists
@@ -89,12 +100,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Unicode and encoding support
 
 **Deliverables**:
+
 - `core/parser.py` with MarkdownParser class
 - `core/models.py` with AST data models
 - Parser unit tests with 90%+ coverage
 - Sample markdown files for testing
 
 ### 2.2 Structure-Aware Chunking Engine
+
 **Task ID**: CORE-002
 **Estimated Effort**: 16 hours
 **Priority**: Critical
@@ -103,6 +116,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement intelligent chunking that respects markdown structure.
 
 **Acceptance Criteria**:
+
 - [ ] Structure-aware chunking algorithm implemented
 - [ ] Header boundary respect functionality
 - [ ] Code block preservation (no splitting)
@@ -111,12 +125,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Metadata extraction for structural context
 
 **Deliverables**:
+
 - `core/chunking/structure.py` with StructureAwareChunker
 - `core/chunking/base.py` with base chunker interface
 - Chunking algorithm unit tests
 - Performance benchmarks for chunking
 
 ### 2.3 Fixed-Size and Semantic Chunking
+
 **Task ID**: CORE-003
 **Estimated Effort**: 10 hours
 **Priority**: Medium
@@ -125,6 +141,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement alternative chunking strategies for flexibility.
 
 **Acceptance Criteria**:
+
 - [ ] Fixed-size chunker with character/token limits
 - [ ] Semantic chunker with sentence boundary detection
 - [ ] Pluggable chunking strategy architecture
@@ -132,12 +149,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Performance comparison between strategies
 
 **Deliverables**:
+
 - `core/chunking/fixed.py` with FixedSizeChunker
 - `core/chunking/semantic.py` with SemanticChunker
 - Strategy pattern implementation
 - Comparative performance tests
 
 ### 2.4 Metadata Extraction System
+
 **Task ID**: CORE-004
 **Estimated Effort**: 8 hours
 **Priority**: High
@@ -146,6 +165,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement comprehensive metadata extraction and enhancement.
 
 **Acceptance Criteria**:
+
 - [ ] File-level metadata extraction (path, size, timestamps)
 - [ ] Document-level metadata (frontmatter, title, author)
 - [ ] Chunk-level metadata (position, context, structural info)
@@ -153,12 +173,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Metadata validation and sanitization
 
 **Deliverables**:
+
 - `core/metadata.py` with MetadataExtractor class
 - Metadata model definitions
 - Metadata extraction tests
 - Custom metadata configuration support
 
 ### 2.5 Document Processor Orchestration
+
 **Task ID**: CORE-005
 **Estimated Effort**: 12 hours
 **Priority**: Critical
@@ -167,6 +189,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement main document processing coordinator with error handling.
 
 **Acceptance Criteria**:
+
 - [ ] Single document processing pipeline
 - [ ] Batch processing with concurrency control
 - [ ] Error handling and recovery mechanisms
@@ -175,6 +198,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Processing result aggregation
 
 **Deliverables**:
+
 - `core/processor.py` with DocumentProcessor class
 - Batch processing implementation
 - Error handling framework
@@ -183,6 +207,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 3: ChromaDB Integration
 
 ### 3.1 ChromaDB Client Implementation
+
 **Task ID**: CHROMA-001
 **Estimated Effort**: 10 hours
 **Priority**: Critical
@@ -191,6 +216,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement ChromaDB client wrapper with connection management.
 
 **Acceptance Criteria**:
+
 - [ ] HTTP client configuration and connection
 - [ ] Authentication support (token-based)
 - [ ] SSL/TLS support
@@ -199,12 +225,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Error handling for connection issues
 
 **Deliverables**:
+
 - `chromadb/client.py` with ChromaDBClient class
 - Connection management and pooling
 - Authentication implementation
 - Connection error handling
 
 ### 3.2 Collection Management Operations
+
 **Task ID**: CHROMA-002
 **Estimated Effort**: 12 hours
 **Priority**: Critical
@@ -213,6 +241,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement collection management with CRUD operations.
 
 **Acceptance Criteria**:
+
 - [ ] Collection creation with metadata
 - [ ] Collection retrieval and listing
 - [ ] Collection deletion with safety checks
@@ -221,12 +250,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Bulk collection operations
 
 **Deliverables**:
+
 - `chromadb/collections.py` with CollectionManager class
 - Collection CRUD operations
 - Metadata management system
 - Collection validation logic
 
 ### 3.3 Document Storage Operations
+
 **Task ID**: CHROMA-003
 **Estimated Effort**: 8 hours
 **Priority**: Critical
@@ -235,6 +266,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement bulk document insertion and retrieval operations.
 
 **Acceptance Criteria**:
+
 - [ ] Bulk chunk insertion with batching
 - [ ] Document retrieval by ID
 - [ ] Query operations with similarity search
@@ -243,6 +275,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Data integrity validation
 
 **Deliverables**:
+
 - `chromadb/operations.py` with storage operations
 - Bulk insertion implementation
 - Query and retrieval functionality
@@ -251,6 +284,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 4: CLI Interface Implementation
 
 ### 4.1 CLI Framework and Main Entry Point
+
 **Task ID**: CLI-001
 **Estimated Effort**: 8 hours
 **Priority**: Critical
@@ -259,6 +293,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement Click-based CLI framework with command structure.
 
 **Acceptance Criteria**:
+
 - [ ] Main CLI group with global options
 - [ ] Command registration system
 - [ ] Help system and documentation
@@ -267,12 +302,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Rich output formatting setup
 
 **Deliverables**:
+
 - `cli/main.py` with main CLI application
 - Command registration framework
 - Global options implementation
 - Help and version commands
 
 ### 4.2 Process Command Implementation
+
 **Task ID**: CLI-002
 **Estimated Effort**: 12 hours
 **Priority**: Critical
@@ -281,6 +318,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement the primary document processing command.
 
 **Acceptance Criteria**:
+
 - [ ] File and directory input validation
 - [ ] Chunking parameter configuration
 - [ ] Collection management options
@@ -289,12 +327,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Results summary and reporting
 
 **Deliverables**:
+
 - `cli/commands/process.py` with process command
 - Input validation and sanitization
 - Progress tracking UI
 - Results reporting system
 
 ### 4.3 Collection Management Commands
+
 **Task ID**: CLI-003
 **Estimated Effort**: 10 hours
 **Priority**: High
@@ -303,6 +343,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement collection management CLI commands.
 
 **Acceptance Criteria**:
+
 - [ ] Collection listing with formatting options
 - [ ] Collection creation with metadata
 - [ ] Collection deletion with confirmations
@@ -311,12 +352,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Collection validation commands
 
 **Deliverables**:
+
 - `cli/commands/collections.py` with collection commands
 - Table and JSON output formatting
 - Safety confirmations for destructive operations
 - Export/import functionality
 
 ### 4.4 Query and Search Commands
+
 **Task ID**: CLI-004
 **Estimated Effort**: 8 hours
 **Priority**: High
@@ -325,6 +368,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement document query and search functionality.
 
 **Acceptance Criteria**:
+
 - [ ] Similarity search with configurable parameters
 - [ ] Document retrieval by ID
 - [ ] Result formatting and display
@@ -333,12 +377,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Query performance metrics
 
 **Deliverables**:
+
 - `cli/commands/query.py` with query commands
 - Search result formatting
 - Performance metrics display
 - Export functionality
 
 ### 4.5 Configuration Commands
+
 **Task ID**: CLI-005
 **Estimated Effort**: 6 hours
 **Priority**: Medium
@@ -347,6 +393,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement configuration management commands.
 
 **Acceptance Criteria**:
+
 - [ ] Configuration initialization
 - [ ] Configuration display with formatting
 - [ ] Configuration value setting
@@ -354,12 +401,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Template-based configuration creation
 
 **Deliverables**:
+
 - `cli/commands/config.py` with config commands
 - Configuration templates
 - Validation and error reporting
 - YAML/JSON output formatting
 
 ### 4.6 Utility Commands (Preview, Validate)
+
 **Task ID**: CLI-006
 **Estimated Effort**: 8 hours
 **Priority**: Medium
@@ -368,6 +417,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement utility commands for preview and validation.
 
 **Acceptance Criteria**:
+
 - [ ] Chunking preview with output options
 - [ ] Document validation with detailed reporting
 - [ ] Link validation (internal links)
@@ -376,6 +426,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Validation summary reports
 
 **Deliverables**:
+
 - `cli/commands/validate.py` and preview functionality
 - Validation reporting system
 - Preview output formatting
@@ -384,6 +435,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 5: Error Handling and Logging
 
 ### 5.1 Error Handling Framework
+
 **Task ID**: ERROR-001
 **Estimated Effort**: 10 hours
 **Priority**: High
@@ -392,6 +444,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement comprehensive error handling system.
 
 **Acceptance Criteria**:
+
 - [ ] Custom exception hierarchy
 - [ ] Error categorization and codes
 - [ ] Context collection for errors
@@ -400,12 +453,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Error reporting and logging
 
 **Deliverables**:
+
 - `utils/errors.py` with exception classes
 - Error context collection system
 - Recovery strategy implementation
 - User-friendly error formatting
 
 ### 5.2 Logging and Monitoring System
+
 **Task ID**: ERROR-002
 **Estimated Effort**: 6 hours
 **Priority**: Medium
@@ -414,6 +469,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement structured logging and monitoring.
 
 **Acceptance Criteria**:
+
 - [ ] Configurable logging levels
 - [ ] Structured log formatting
 - [ ] File and console logging
@@ -422,12 +478,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Error aggregation and reporting
 
 **Deliverables**:
+
 - `utils/logging.py` with logging configuration
 - Log formatting and rotation
 - Metrics collection system
 - Monitoring dashboard data
 
 ### 5.3 Progress Tracking and User Feedback
+
 **Task ID**: ERROR-003
 **Estimated Effort**: 6 hours
 **Priority**: Medium
@@ -436,6 +494,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement comprehensive progress tracking and user feedback.
 
 **Acceptance Criteria**:
+
 - [ ] Rich progress bars for long operations
 - [ ] Real-time status updates
 - [ ] ETA calculations
@@ -444,6 +503,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Final operation summaries
 
 **Deliverables**:
+
 - `utils/progress.py` with progress tracking
 - Rich UI components
 - Interruption handling
@@ -452,6 +512,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 6: Testing Implementation
 
 ### 6.1 Unit Test Suite
+
 **Task ID**: TEST-001
 **Estimated Effort**: 20 hours
 **Priority**: High
@@ -460,6 +521,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement comprehensive unit test suite with high coverage.
 
 **Acceptance Criteria**:
+
 - [ ] Unit tests for all core components (>90% coverage)
 - [ ] Mock objects for external dependencies
 - [ ] Property-based testing for chunking algorithms
@@ -468,12 +530,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Performance regression tests
 
 **Deliverables**:
+
 - Complete `tests/unit/` test suite
 - Test fixtures and factories
 - Coverage reporting configuration
 - Mock implementations
 
 ### 6.2 Integration Test Suite
+
 **Task ID**: TEST-002
 **Estimated Effort**: 16 hours
 **Priority**: High
@@ -482,6 +546,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement integration tests for component interactions.
 
 **Acceptance Criteria**:
+
 - [ ] End-to-end processing pipeline tests
 - [ ] ChromaDB integration tests
 - [ ] CLI command integration tests
@@ -490,12 +555,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Error scenario testing
 
 **Deliverables**:
+
 - Complete `tests/integration/` test suite
 - ChromaDB test environment setup
 - CLI testing utilities
 - Error scenario test cases
 
 ### 6.3 End-to-End Test Suite
+
 **Task ID**: TEST-003
 **Estimated Effort**: 12 hours
 **Priority**: Medium
@@ -504,6 +571,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement end-to-end tests for complete user workflows.
 
 **Acceptance Criteria**:
+
 - [ ] Complete workflow testing (process → query)
 - [ ] CLI interface testing with Click TestRunner
 - [ ] Real-world scenario simulations
@@ -512,12 +580,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] User acceptance scenario tests
 
 **Deliverables**:
+
 - Complete `tests/e2e/` test suite
 - Workflow scenario definitions
 - Performance benchmark suite
 - Cross-platform test configurations
 
 ### 6.4 Performance and Load Testing
+
 **Task ID**: TEST-004
 **Estimated Effort**: 8 hours
 **Priority**: Medium
@@ -526,6 +596,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement performance testing and benchmarking.
 
 **Acceptance Criteria**:
+
 - [ ] Processing performance benchmarks
 - [ ] Memory usage profiling
 - [ ] Concurrent processing tests
@@ -534,6 +605,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Performance regression detection
 
 **Deliverables**:
+
 - `tests/performance/` benchmark suite
 - Memory profiling tools
 - Performance regression tests
@@ -542,6 +614,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 7: Documentation and Packaging
 
 ### 7.1 API Documentation
+
 **Task ID**: DOC-001
 **Estimated Effort**: 8 hours
 **Priority**: Medium
@@ -550,6 +623,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Generate comprehensive API documentation.
 
 **Acceptance Criteria**:
+
 - [ ] Sphinx documentation setup
 - [ ] API reference documentation
 - [ ] Code examples and tutorials
@@ -558,12 +632,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Contribution guidelines
 
 **Deliverables**:
+
 - Sphinx documentation configuration
 - API reference pages
 - Tutorial and example documentation
 - Architecture documentation
 
 ### 7.2 User Documentation
+
 **Task ID**: DOC-002
 **Estimated Effort**: 12 hours
 **Priority**: High
@@ -572,6 +648,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Create comprehensive user documentation and guides.
 
 **Acceptance Criteria**:
+
 - [ ] Installation instructions
 - [ ] Quick start guide
 - [ ] CLI command reference
@@ -580,12 +657,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Usage examples and tutorials
 
 **Deliverables**:
+
 - README.md with quick start
 - User guide documentation
 - CLI reference manual
 - Troubleshooting guide
 
 ### 7.3 Package Distribution Setup
+
 **Task ID**: PKG-001
 **Estimated Effort**: 6 hours
 **Priority**: High
@@ -594,6 +673,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Setup package distribution and release automation.
 
 **Acceptance Criteria**:
+
 - [ ] PyPI package configuration
 - [ ] GitHub releases automation
 - [ ] Docker image creation
@@ -602,12 +682,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Release workflow automation
 
 **Deliverables**:
+
 - PyPI package configuration
 - GitHub Actions release workflow
 - Dockerfile and image build
 - Installation verification scripts
 
 ### 7.4 Security and Compliance
+
 **Task ID**: PKG-002
 **Estimated Effort**: 4 hours
 **Priority**: Medium
@@ -616,6 +698,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Implement security scanning and compliance checks.
 
 **Acceptance Criteria**:
+
 - [ ] Dependency vulnerability scanning
 - [ ] Code security analysis
 - [ ] License compliance verification
@@ -623,6 +706,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] SBOM (Software Bill of Materials) generation
 
 **Deliverables**:
+
 - Security scanning configuration
 - License compliance documentation
 - Security policy
@@ -631,6 +715,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 8: Deployment and Release
 
 ### 8.1 CI/CD Pipeline Completion
+
 **Task ID**: DEPLOY-001
 **Estimated Effort**: 8 hours
 **Priority**: High
@@ -639,6 +724,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Complete CI/CD pipeline with comprehensive testing and deployment.
 
 **Acceptance Criteria**:
+
 - [ ] Automated testing on multiple Python versions
 - [ ] Cross-platform testing (Linux, macOS, Windows)
 - [ ] Automated security scanning
@@ -647,12 +733,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Release candidate automation
 
 **Deliverables**:
+
 - Complete GitHub Actions workflows
 - Multi-platform testing configuration
 - Security and performance gates
 - Documentation deployment automation
 
 ### 8.2 Release Preparation
+
 **Task ID**: DEPLOY-002
 **Estimated Effort**: 6 hours
 **Priority**: High
@@ -661,6 +749,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Prepare for initial release with all required artifacts.
 
 **Acceptance Criteria**:
+
 - [ ] Version numbering and tagging strategy
 - [ ] Release notes and changelog
 - [ ] Migration guides (if applicable)
@@ -669,12 +758,14 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Marketing materials
 
 **Deliverables**:
+
 - Release notes and changelog
 - Version management system
 - Community documentation
 - Support and contribution guides
 
 ### 8.3 Beta Testing and Feedback
+
 **Task ID**: DEPLOY-003
 **Estimated Effort**: 12 hours
 **Priority**: Medium
@@ -683,6 +774,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 **Description**: Conduct beta testing with early users and incorporate feedback.
 
 **Acceptance Criteria**:
+
 - [ ] Beta release distribution
 - [ ] User feedback collection system
 - [ ] Bug tracking and resolution
@@ -691,6 +783,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 - [ ] Feature refinements
 
 **Deliverables**:
+
 - Beta release package
 - Feedback collection system
 - Bug fixes and improvements

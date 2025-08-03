@@ -84,6 +84,7 @@ shard-markdown/
 ### 2.1 Core Dependencies
 
 #### 2.1.1 CLI Framework
+
 ```toml
 # Primary choice: Click (mature, well-documented)
 click = "^8.1.0"
@@ -91,6 +92,7 @@ rich = "^13.5.0"  # Enhanced terminal output
 ```
 
 #### 2.1.2 Data Processing
+
 ```toml
 # Document processing
 markdown = "^3.5.0"           # Markdown parsing
@@ -103,12 +105,14 @@ nltk = "^3.8.0"               # Natural language processing (optional)
 ```
 
 #### 2.1.3 Database Integration
+
 ```toml
 # ChromaDB integration
 chromadb = "^0.4.15"          # Vector database client
 ```
 
 #### 2.1.4 Configuration and Utilities
+
 ```toml
 # Configuration management
 pyyaml = "^6.0.0"             # YAML configuration files

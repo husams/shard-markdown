@@ -3,7 +3,7 @@
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
 
 from ..utils.logging import get_logger
 from .models import MarkdownAST
@@ -68,7 +68,7 @@ class MetadataExtractor:
         Returns:
             Dictionary of document metadata
         """
-        metadata = {}
+        metadata: Dict[str, Any] = {}
 
         # Extract frontmatter metadata
         if ast.frontmatter:
@@ -98,12 +98,16 @@ class MetadataExtractor:
         # Extract header hierarchy
         headers = [e for e in ast.elements if e.type == "header"]
         if headers:
-            metadata["header_levels"] = list(set(h.level for h in headers))
-            metadata["max_header_level"] = max(h.level for h in headers)
-            metadata["min_header_level"] = min(h.level for h in headers)
-            metadata["table_of_contents"] = [
-                {"level": h.level, "text": h.text} for h in headers
-            ]
+            header_levels = [h.level for h in headers if h.level is not None]
+            if header_levels:
+                metadata["header_levels"] = list(set(header_levels))
+                metadata["max_header_level"] = max(header_levels)
+                metadata["min_header_level"] = min(header_levels)
+                metadata["table_of_contents"] = [
+                    {"level": h.level, "text": h.text}
+                    for h in headers
+                    if h.level is not None
+                ]
 
         # Extract code languages
         code_blocks = [e for e in ast.elements if e.type == "code_block" and e.language]
@@ -124,7 +128,7 @@ class MetadataExtractor:
         chunk_metadata: Dict[str, Any],
         chunk_index: int,
         total_chunks: int,
-        structural_context: str = None,
+        structural_context: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Enhance chunk metadata with additional information.
 
@@ -182,7 +186,7 @@ class MetadataExtractor:
             logger.warning(f"Failed to calculate hash for {file_path}: {e}")
             return f"error_{hash(str(file_path))}"
 
-    def _extract_title(self, ast: MarkdownAST) -> str:
+    def _extract_title(self, ast: MarkdownAST) -> Optional[str]:
         """Extract document title from first level-1 header.
 
         Args:

@@ -3,7 +3,7 @@
 import json
 import time
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.logging import get_logger
@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 class MockCollection:
     """Mock ChromaDB collection for testing."""
 
-    def __init__(self, name: str, metadata: Optional[Dict] = None):
+    def __init__(self, name: str, metadata: Optional[Dict[str, Any]] = None) -> None:
         """Initialize mock collection.
 
         Args:
@@ -23,10 +23,12 @@ class MockCollection:
         """
         self.name = name
         self.metadata = metadata or {}
-        self.documents = {}
+        self.documents: Dict[str, Dict[str, Any]] = {}
         self._count = 0
 
-    def add(self, ids: List[str], documents: List[str], metadatas: List[Dict]):
+    def add(
+        self, ids: List[str], documents: List[str], metadatas: List[Dict[str, Any]]
+    ) -> None:
         """Add documents to mock collection."""
         for id_, doc, meta in zip(ids, documents, metadatas):
             self.documents[id_] = {
@@ -44,7 +46,7 @@ class MockCollection:
         self,
         ids: Optional[List[str]] = None,
         include: Optional[List[str]] = None,
-    ):
+    ) -> Dict[str, Any]:
         """Get documents from collection."""
         if ids:
             return {
@@ -67,7 +69,7 @@ class MockCollection:
                 "metadatas": [doc["metadata"] for doc in self.documents.values()],
             }
 
-    def query(self, query_texts: List[str], n_results: int = 10):
+    def query(self, query_texts: List[str], n_results: int = 10) -> Dict[str, Any]:
         """Mock query implementation."""
         # Simple mock: return first n_results documents
         docs = list(self.documents.values())[:n_results]
@@ -82,14 +84,14 @@ class MockCollection:
 class MockChromaDBClient:
     """Mock ChromaDB client for testing and development."""
 
-    def __init__(self, config=None):
+    def __init__(self, config: Any = None) -> None:
         """Initialize mock client.
 
         Args:
             config: Configuration object (optional for mock)
         """
         self.config = config
-        self.collections = {}
+        self.collections: Dict[str, MockCollection] = {}
         self._connection_validated = False
         self.storage_path = Path("./mock_chromadb_storage.json")
         self._load_storage()
@@ -100,7 +102,7 @@ class MockChromaDBClient:
         logger.info("Mock ChromaDB client connected successfully")
         return True
 
-    def heartbeat(self):
+    def heartbeat(self) -> bool:
         """Mock heartbeat."""
         return True
 
@@ -111,7 +113,7 @@ class MockChromaDBClient:
         return self.collections[name]
 
     def create_collection(
-        self, name: str, metadata: Optional[Dict] = None
+        self, name: str, metadata: Optional[Dict[str, Any]] = None
     ) -> MockCollection:
         """Create new collection."""
         if name in self.collections:
@@ -127,7 +129,7 @@ class MockChromaDBClient:
         self,
         name: str,
         create_if_missing: bool = False,
-        metadata: Optional[Dict] = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> MockCollection:
         """Get existing or create new collection."""
         try:
@@ -137,7 +139,7 @@ class MockChromaDBClient:
                 return self.create_collection(name, metadata)
             raise
 
-    def list_collections(self) -> List[Dict]:
+    def list_collections(self) -> List[Dict[str, Any]]:
         """List all collections."""
         collections_info = []
         for name, collection in self.collections.items():
@@ -149,7 +151,7 @@ class MockChromaDBClient:
             collections_info.append(info)
         return collections_info
 
-    def delete_collection(self, name: str):
+    def delete_collection(self, name: str) -> None:
         """Delete collection."""
         if name in self.collections:
             del self.collections[name]
@@ -193,7 +195,7 @@ class MockChromaDBClient:
                 collection_name=collection.name,
             )
 
-    def _load_storage(self):
+    def _load_storage(self) -> None:
         """Load collections from storage file."""
         if self.storage_path.exists():
             try:
@@ -215,7 +217,7 @@ class MockChromaDBClient:
             except Exception as e:
                 logger.warning(f"Failed to load mock storage: {e}")
 
-    def _save_storage(self):
+    def _save_storage(self) -> None:
         """Save collections to storage file."""
         try:
             data = {}
@@ -235,6 +237,6 @@ class MockChromaDBClient:
 
 
 # Function to create mock client instead of real one for testing
-def create_mock_client(config=None):
+def create_mock_client(config: Any = None) -> MockChromaDBClient:
     """Create a mock ChromaDB client for testing."""
     return MockChromaDBClient(config)

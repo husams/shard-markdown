@@ -2,7 +2,7 @@
 
 import socket
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import chromadb
 
@@ -17,14 +17,14 @@ logger = get_logger(__name__)
 class ChromaDBClient:
     """ChromaDB client wrapper with connection management."""
 
-    def __init__(self, config: ChromaDBConfig):
+    def __init__(self, config: ChromaDBConfig) -> None:
         """Initialize client with configuration.
 
         Args:
             config: ChromaDB configuration
         """
         self.config = config
-        self.client = None
+        self.client: Optional[chromadb.HttpClient] = None
         self._connection_validated = False
 
     def connect(self) -> bool:
@@ -73,12 +73,44 @@ class ChromaDBClient:
                 cause=e,
             )
 
+    def get_collection(self, name: str) -> Union[chromadb.Collection, Any]:
+        """Get existing collection.
+
+        Args:
+            name: Collection name
+
+        Returns:
+            ChromaDB Collection instance
+
+        Raises:
+            ChromaDBError: If collection doesn't exist or connection not established
+        """
+        if not self._connection_validated or self.client is None:
+            raise ChromaDBError(
+                "ChromaDB connection not established",
+                error_code=1400,
+                context={"operation": "get_collection"},
+            )
+
+        try:
+            collection = self.client.get_collection(name)
+            logger.info(f"Retrieved existing collection: {name}")
+            return collection
+
+        except Exception as e:
+            raise ChromaDBError(
+                f"Collection '{name}' does not exist",
+                error_code=1413,
+                context={"collection_name": name},
+                cause=e,
+            )
+
     def get_or_create_collection(
         self,
         name: str,
         create_if_missing: bool = False,
-        metadata: Optional[Dict] = None,
-    ) -> chromadb.Collection:
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Union[chromadb.Collection, Any]:
         """Get existing or create new collection.
 
         Args:
@@ -92,7 +124,7 @@ class ChromaDBClient:
         Raises:
             ChromaDBError: If collection operations fail
         """
-        if not self._connection_validated:
+        if not self._connection_validated or self.client is None:
             raise ChromaDBError(
                 "ChromaDB connection not established",
                 error_code=1400,
@@ -101,19 +133,11 @@ class ChromaDBClient:
 
         try:
             # Try to get existing collection
-            collection = self.client.get_collection(name)
-            logger.info(f"Retrieved existing collection: {name}")
-            return collection
+            return self.get_collection(name)
 
-        except Exception as get_error:
+        except ChromaDBError as get_error:
             if not create_if_missing:
-                raise ChromaDBError(
-                    f"Collection '{name}' does not exist and "
-                    "create_if_missing=False",
-                    error_code=1413,
-                    context={"collection_name": name},
-                    cause=get_error,
-                )
+                raise get_error
 
             # Create new collection
             try:
@@ -146,7 +170,7 @@ class ChromaDBClient:
                 )
 
     def bulk_insert(
-        self, collection: chromadb.Collection, chunks: List[DocumentChunk]
+        self, collection: Union[chromadb.Collection, Any], chunks: List[DocumentChunk]
     ) -> InsertResult:
         """Bulk insert chunks into collection.
 
@@ -165,11 +189,11 @@ class ChromaDBClient:
                     success=True,
                     chunks_inserted=0,
                     processing_time=0.0,
-                    collection_name=collection.name,
+                    collection_name=getattr(collection, "name", "unknown"),
                 )
 
             # Prepare data for insertion
-            ids = [chunk.id for chunk in chunks]
+            ids = [chunk.id or f"chunk_{i}" for i, chunk in enumerate(chunks)]
             documents = [chunk.content for chunk in chunks]
             metadatas = [chunk.metadata for chunk in chunks]
 
@@ -182,7 +206,7 @@ class ChromaDBClient:
             processing_time = time.time() - start_time
 
             logger.info(
-                f"Inserted {len(chunks)} chunks into '{collection.name}' "
+                f"Inserted {len(chunks)} chunks into '{getattr(collection, 'name', 'unknown')}' "
                 f"in {processing_time:.2f}s"
             )
 
@@ -190,7 +214,7 @@ class ChromaDBClient:
                 success=True,
                 chunks_inserted=len(chunks),
                 processing_time=processing_time,
-                collection_name=collection.name,
+                collection_name=getattr(collection, "name", "unknown"),
             )
 
         except Exception as e:
@@ -205,10 +229,10 @@ class ChromaDBClient:
                 success=False,
                 error=error_msg,
                 processing_time=processing_time,
-                collection_name=collection.name if collection else "unknown",
+                collection_name=getattr(collection, "name", "unknown"),
             )
 
-    def list_collections(self) -> List[Dict]:
+    def list_collections(self) -> List[Dict[str, Any]]:
         """List all available collections.
 
         Returns:
@@ -217,7 +241,7 @@ class ChromaDBClient:
         Raises:
             ChromaDBError: If listing fails
         """
-        if not self._connection_validated:
+        if not self._connection_validated or self.client is None:
             raise ChromaDBError(
                 "ChromaDB connection not established",
                 error_code=1400,
@@ -272,7 +296,7 @@ class ChromaDBClient:
         Raises:
             ChromaDBError: If deletion fails
         """
-        if not self._connection_validated:
+        if not self._connection_validated or self.client is None:
             raise ChromaDBError(
                 "ChromaDB connection not established",
                 error_code=1400,
@@ -348,7 +372,7 @@ class ChromaDBClient:
         return headers
 
     def _validate_insertion_data(
-        self, ids: List[str], documents: List[str], metadatas: List[Dict]
+        self, ids: List[str], documents: List[str], metadatas: List[Dict[str, Any]]
     ) -> None:
         """Validate data before insertion.
 

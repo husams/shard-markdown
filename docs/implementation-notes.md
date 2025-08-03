@@ -9,12 +9,14 @@ This document provides implementation notes for the complete shard-markdown CLI 
 ### ✅ Completed Components
 
 #### 1. Core Architecture
+
 - **Package Structure**: Complete src/ layout with proper Python packaging
 - **Configuration Management**: Pydantic-based settings with YAML support and environment variable overrides
 - **Error Handling**: Comprehensive exception hierarchy with user-friendly messages
 - **Logging**: Structured logging with configurable levels and Rich integration
 
 #### 2. Markdown Processing
+
 - **Parser**: Full markdown parsing with AST generation and frontmatter support
 - **Chunking Engine**: Multiple strategies implemented:
   - Structure-aware chunking (respects markdown headers and structure)
@@ -23,6 +25,7 @@ This document provides implementation notes for the complete shard-markdown CLI 
 - **Metadata Extraction**: File-level and document-level metadata with enhancement
 
 #### 3. ChromaDB Integration
+
 - **Real Client**: Full ChromaDB HTTP client with connection management
 - **Mock Client**: Development/testing client with JSON file persistence
 - **Factory Pattern**: Automatic fallback to mock when ChromaDB unavailable
@@ -30,6 +33,7 @@ This document provides implementation notes for the complete shard-markdown CLI 
 - **Bulk Operations**: Efficient document insertion and retrieval
 
 #### 4. CLI Interface
+
 - **Click Framework**: Professional CLI with rich help and command structure
 - **Rich UI**: Beautiful progress bars, tables, and formatted output
 - **Command Groups**:
@@ -40,6 +44,7 @@ This document provides implementation notes for the complete shard-markdown CLI 
 - **Global Options**: Verbose logging, quiet mode, custom config files
 
 #### 5. Features Implemented
+
 - **Multiple Input Formats**: Single files, multiple files, recursive directories
 - **Dry Run Mode**: Preview operations without execution
 - **Progress Tracking**: Real-time progress with ETA calculations
@@ -50,22 +55,26 @@ This document provides implementation notes for the complete shard-markdown CLI 
 ## Key Implementation Decisions
 
 ### Mock ChromaDB Client
+
 - **Rationale**: Enables development and testing without requiring ChromaDB server
 - **Implementation**: JSON file-based persistence with full API compatibility
 - **Auto-Detection**: Automatically falls back to mock when ChromaDB unavailable
 - **Benefits**: Immediate usability, easier testing, offline development
 
 ### Modular Architecture
+
 - **Separation of Concerns**: Clear boundaries between parsing, chunking, storage, and CLI
 - **Factory Patterns**: Flexible client creation with environment-based selection
 - **Plugin Architecture**: Extensible chunking strategies and metadata extractors
 
 ### Configuration System
+
 - **Hierarchical Loading**: Environment variables → config files → defaults
 - **Validation**: Pydantic models ensure type safety and validation
 - **Flexibility**: Multiple config file locations and formats supported
 
 ### Error Handling Strategy
+
 - **User-Friendly Messages**: Technical errors translated to actionable messages
 - **Context Preservation**: Error context maintained for debugging
 - **Graceful Degradation**: Operations continue when possible despite errors
@@ -73,11 +82,13 @@ This document provides implementation notes for the complete shard-markdown CLI 
 ## Testing Strategy
 
 ### Mock Client Testing
+
 - **Integration Testing**: Full CLI testing with mock ChromaDB
 - **Persistence Testing**: Mock storage persists between runs
 - **API Compatibility**: Mock client implements same interface as real client
 
 ### Unit Test Coverage
+
 - **Core Components**: Parser, chunking engine, metadata extraction
 - **CLI Commands**: All command functionality tested
 - **Error Scenarios**: Comprehensive error condition testing
@@ -85,11 +96,13 @@ This document provides implementation notes for the complete shard-markdown CLI 
 ## Performance Considerations
 
 ### Chunking Optimization
+
 - **Memory Efficient**: Streaming processing for large documents
 - **Configurable Parameters**: Tunable chunk sizes and overlap
 - **Structure Preservation**: Smart boundary detection prevents context loss
 
 ### Batch Processing
+
 - **Concurrent Processing**: Multi-threaded document processing
 - **Progress Tracking**: Real-time feedback for long operations
 - **Error Isolation**: Individual file failures don't stop batch processing
@@ -97,12 +110,14 @@ This document provides implementation notes for the complete shard-markdown CLI 
 ## Deployment and Distribution
 
 ### Package Structure
+
 - **pyproject.toml**: Modern Python packaging with setuptools backend
 - **Entry Points**: CLI script automatically available after installation
 - **Dependencies**: Core dependencies separate from optional ChromaDB dependencies
 - **Cross-Platform**: Compatible with Python 3.8+ on all platforms
 
 ### Installation Options
+
 ```bash
 # Core functionality (with mock ChromaDB)
 uv add shard-markdown
@@ -115,6 +130,7 @@ uv pip install -e .[dev]
 ```
 
 ### CLI Usage
+
 ```bash
 # Process documents
 shard-md process --collection my-docs *.md
@@ -178,6 +194,7 @@ src/shard_markdown/
 ## Future Enhancements
 
 ### Planned Features
+
 - **Vector Embeddings**: Integration with embedding models
 - **Custom Metadata**: User-defined metadata extraction rules
 - **Export/Import**: Collection backup and restore functionality
@@ -185,6 +202,7 @@ src/shard_markdown/
 - **Web Interface**: Optional web UI for collection management
 
 ### Performance Improvements
+
 - **Async Processing**: Asynchronous I/O for better performance
 - **Caching**: Intelligent caching of parsed documents
 - **Compression**: Optional document compression for storage
@@ -192,6 +210,7 @@ src/shard_markdown/
 ## Production Readiness
 
 ### ✅ Production Features
+
 - **Error Handling**: Comprehensive error management
 - **Logging**: Structured logging with rotation
 - **Configuration**: Flexible configuration system
@@ -201,6 +220,7 @@ src/shard_markdown/
 - **Packaging**: Professional Python package structure
 
 ### Security Considerations
+
 - **Input Validation**: All inputs validated and sanitized
 - **Path Traversal**: File path validation prevents directory traversal
 - **Error Information**: Error messages don't leak sensitive information

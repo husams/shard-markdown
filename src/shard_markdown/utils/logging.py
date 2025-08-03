@@ -3,7 +3,7 @@
 import logging
 import logging.handlers
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -83,7 +83,7 @@ def get_logger(name: str) -> logging.Logger:
 class LogContext:
     """Context manager for adding context to log messages."""
 
-    def __init__(self, logger: logging.Logger, **context):
+    def __init__(self, logger: logging.Logger, **context: Any) -> None:
         """Initialize the LogContext.
 
         Args:
@@ -92,14 +92,18 @@ class LogContext:
         """
         self.logger = logger
         self.context = context
-        self.old_factory = None
+        self.old_factory: Optional[Callable[..., logging.LogRecord]] = None
 
-    def __enter__(self):
+    def __enter__(self) -> "LogContext":
         """Enter the context manager and set up log record factory."""
         self.old_factory = logging.getLogRecordFactory()
 
-        def record_factory(*args, **kwargs):
-            record = self.old_factory(*args, **kwargs)
+        def record_factory(*args: Any, **kwargs: Any) -> logging.LogRecord:
+            if self.old_factory is not None:
+                record = self.old_factory(*args, **kwargs)
+            else:
+                # Fallback to the default factory
+                record = logging.LogRecord(*args, **kwargs)
             for key, value in self.context.items():
                 setattr(record, key, value)
             return record
@@ -107,6 +111,7 @@ class LogContext:
         logging.setLogRecordFactory(record_factory)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         """Exit the context manager and restore original log record factory."""
-        logging.setLogRecordFactory(self.old_factory)
+        if self.old_factory is not None:
+            logging.setLogRecordFactory(self.old_factory)

@@ -7,6 +7,7 @@ from shard_markdown.config.settings import (
     AppConfig,
     ChromaDBConfig,
     ChunkingConfig,
+    ChunkingMethod,
     ProcessingConfig,
 )
 
@@ -81,13 +82,13 @@ class TestChunkingConfig:
         config = ChunkingConfig(
             default_size=1000,
             default_overlap=200,
-            method="structure",
+            method=ChunkingMethod.STRUCTURE,
             respect_boundaries=True,
         )
 
         assert config.default_size == 1000
         assert config.default_overlap == 200
-        assert config.method == "structure"
+        assert config.method == ChunkingMethod.STRUCTURE
         assert config.respect_boundaries is True
 
     def test_default_values(self):
@@ -96,7 +97,7 @@ class TestChunkingConfig:
 
         assert config.default_size == 1000
         assert config.default_overlap == 200
-        assert config.method == "structure"
+        assert config.method == ChunkingMethod.STRUCTURE
         assert config.respect_boundaries is True
 
     def test_chunk_size_validation(self):
@@ -129,11 +130,19 @@ class TestChunkingConfig:
 
     def test_method_validation(self):
         """Test chunking method validation."""
-        # Valid methods
-        valid_methods = ["structure", "fixed", "semantic"]
+        # Valid methods using enum
+        valid_methods = [
+            ChunkingMethod.STRUCTURE,
+            ChunkingMethod._FIXED,
+            ChunkingMethod._SEMANTIC,
+        ]
         for method in valid_methods:
             config = ChunkingConfig(method=method)
             assert config.method == method
+
+        # Test string method as well (should be converted to enum)
+        config = ChunkingConfig(method="structure")
+        assert config.method == ChunkingMethod.STRUCTURE
 
         # Invalid method should fail
         with pytest.raises(ValidationError):
@@ -145,11 +154,10 @@ class TestProcessingConfig:
 
     def test_valid_config(self):
         """Test valid processing configuration."""
-        config = ProcessingConfig(batch_size=10, max_workers=4, timeout=60)
+        config = ProcessingConfig(batch_size=10, max_workers=4)
 
         assert config.batch_size == 10
         assert config.max_workers == 4
-        assert config.timeout == 60
 
     def test_default_values(self):
         """Test default configuration values."""
@@ -157,7 +165,6 @@ class TestProcessingConfig:
 
         assert config.batch_size == 10
         assert config.max_workers == 4
-        assert config.timeout == 30
 
     def test_batch_size_validation(self):
         """Test batch size validation."""
@@ -210,14 +217,14 @@ class TestAppConfig:
         """Test custom configuration."""
         config = AppConfig(
             chromadb=ChromaDBConfig(host="remote-host", port=9000),
-            chunking=ChunkingConfig(default_size=1500, method="fixed"),
+            chunking=ChunkingConfig(default_size=1500, method=ChunkingMethod._FIXED),
             processing=ProcessingConfig(max_workers=8),
         )
 
         assert config.chromadb.host == "remote-host"
         assert config.chromadb.port == 9000
         assert config.chunking.default_size == 1500
-        assert config.chunking.method == "fixed"
+        assert config.chunking.method == ChunkingMethod._FIXED
         assert config.processing.max_workers == 8
 
     def test_nested_validation(self):
@@ -242,14 +249,14 @@ class TestAppConfig:
         config = AppConfig()
 
         # Should be able to serialize to dict
-        config_dict = config.dict()
+        config_dict = config.model_dump()
         assert isinstance(config_dict, dict)
         assert "chromadb" in config_dict
         assert "chunking" in config_dict
         assert "processing" in config_dict
 
         # Should be able to serialize to JSON
-        config_json = config.json()
+        config_json = config.model_dump_json()
         assert isinstance(config_json, str)
 
         # Should be able to deserialize back
