@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class ChunkingMethod(str, Enum):
@@ -24,7 +24,8 @@ class ChromaDBConfig(BaseModel):
     auth_token: Optional[str] = Field(default=None, description="Authentication token")
     timeout: int = Field(default=30, ge=1, description="Connection timeout in seconds")
 
-    @validator("host")
+    @field_validator("host")
+    @classmethod
     def validate_host(cls, v: str) -> str:
         """Validate host is not empty."""
         if not v or not v.strip():
@@ -57,10 +58,11 @@ class ChunkingConfig(BaseModel):
         default=None, ge=1, description="Maximum tokens per chunk"
     )
 
-    @validator("default_overlap")
-    def validate_overlap(cls, v: int, values: Dict[str, Any]) -> int:
+    @field_validator("default_overlap")
+    @classmethod
+    def validate_overlap(cls, v: int, info: Any) -> int:
         """Validate overlap is less than chunk size."""
-        if "default_size" in values and v >= values["default_size"]:
+        if info.data and "default_size" in info.data and v >= info.data["default_size"]:
             raise ValueError("Overlap must be less than chunk size")
         return v
 
