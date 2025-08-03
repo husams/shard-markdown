@@ -2,7 +2,8 @@
 CLI Reference
 =============
 
-This section provides detailed documentation for all command-line interface options.
+This section provides detailed documentation for all command-line interface
+options.
 
 .. note::
    The CLI documentation is auto-generated from the actual command help text.

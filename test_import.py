@@ -20,8 +20,10 @@ try:
 
     # Test configuration creation
     config = AppConfig()
-    print(f"✓ Default configuration created: \
-    ChromaDB host = {config.chromadb.host}")
+    print(
+        f"✓ Default configuration created: \
+    ChromaDB host = {config.chromadb.host}"
+    )
 
     # Test chunk config
     chunk_config = ChunkingConfig(default_size=1000, default_overlap=200)

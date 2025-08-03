@@ -4,7 +4,9 @@
 shard-markdown Documentation
 =================================
 
-**shard-markdown** is an intelligent markdown document chunking tool designed for ChromaDB collections. It provides sophisticated chunking strategies, metadata extraction, and seamless integration with vector databases.
+**shard-markdown** is an intelligent markdown document chunking tool designed for
+ChromaDB collections. It provides sophisticated chunking strategies, metadata
+extraction, and seamless integration with vector databases.
 
 .. toctree::
    :maxdepth: 2
@@ -23,11 +25,15 @@ shard-markdown Documentation
 Features
 ========
 
-* **Intelligent Chunking**: Multiple chunking strategies including fixed-size, structure-aware, and custom implementations
-* **Metadata Extraction**: Automatic extraction of structural context and document metadata
-* **ChromaDB Integration**: Native support for ChromaDB with optimized bulk operations
+* **Intelligent Chunking**: Multiple chunking strategies including fixed-size,
+  structure-aware, and custom implementations
+* **Metadata Extraction**: Automatic extraction of structural context and document
+  metadata
+* **ChromaDB Integration**: Native support for ChromaDB with optimized bulk
+  operations
 * **CLI Interface**: Comprehensive command-line interface for document processing
-* **Flexible Configuration**: YAML-based configuration with environment variable support
+* **Flexible Configuration**: YAML-based configuration with environment variable
+  support
 * **Type Safety**: Full type hints and validation using Pydantic
 
 Quick Start
@@ -59,7 +65,7 @@ Create a configuration file:
    chromadb:
      host: localhost
      port: 8000
-   
+
    chunking:
      strategy: structure
      max_chunk_size: 1000

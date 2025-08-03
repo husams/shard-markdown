@@ -2,7 +2,10 @@
 Overview
 ========
 
-**shard-markdown** is a powerful tool for processing markdown documents into manageable chunks suitable for vector databases, particularly ChromaDB. It provides intelligent chunking strategies that preserve document structure and context.
+**shard-markdown** is a powerful tool for processing markdown documents into
+manageable chunks suitable for vector databases, particularly ChromaDB. It
+provides intelligent chunking strategies that preserve document structure and
+context.
 
 Core Concepts
 =============
@@ -58,7 +61,8 @@ Use Cases
 =========
 
 **Documentation Processing**
-   Break down large documentation into searchable chunks while preserving structure.
+   Break down large documentation into searchable chunks while preserving
+   structure.
 
 **Knowledge Base Creation**
    Build searchable knowledge bases from markdown content.

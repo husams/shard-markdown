@@ -7,7 +7,8 @@ This section covers configuration options and settings for shard-markdown.
 Configuration File
 ==================
 
-The configuration file is typically located at ``~/.shard-markdown/config.yaml``.
+The configuration file is typically located at
+``~/.shard-markdown/config.yaml``.
 
 Basic Structure
 ---------------
@@ -19,16 +20,16 @@ Basic Structure
      port: 8000
      ssl: false
      timeout: 30
-   
+
    chunking:
      strategy: structure
      max_chunk_size: 1000
      overlap: 100
-   
+
    processing:
      preserve_structure: true
      extract_metadata: true
-   
+
    logging:
      level: INFO
      format: detailed

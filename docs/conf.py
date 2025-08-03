@@ -13,25 +13,25 @@ import sys
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../src'))
+sys.path.insert(0, os.path.abspath("../src"))
 
 # Mock modules that may not be available in the docs build environment
 autodoc_mock_imports = [
-    'chromadb',
-    'colorama',
-    'rich',
+    "chromadb",
+    "colorama",
+    "rich",
 ]
 
 # -- Project information -----------------------------------------------------
 
-project = 'shard-markdown'
-copyright = '2024, Shard Markdown Contributors'
-author = 'Shard Markdown Contributors'
+project = "shard-markdown"
+copyright = "2024, Shard Markdown Contributors"
+author = "Shard Markdown Contributors"
 
 # The short X.Y version
-version = '0.1.0'
+version = "0.1.0"
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = "0.1.0"
 
 # -- General configuration ---------------------------------------------------
 
@@ -39,60 +39,60 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.coverage',
-    'sphinx.ext.ifconfig',
-    'sphinx.ext.githubpages',
-    'myst_parser',
-    'sphinx_autodoc_typehints',
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.coverage",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.githubpages",
+    "myst_parser",
+    "sphinx_autodoc_typehints",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = [
-    '_build', 
-    'Thumbs.db', 
-    '.DS_Store',
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
     # Exclude problematic markdown files that cause build issues
-    '*-testing-*.md',
-    '*-flake8-*.md',
-    '*-verification-*.md',
-    'manual-testing-checklist.md',
-    'flake8-*.md',
-    'final-*.md',
-    'formatting-*.md',
-    'test-*.md',
-    'ci-cd-setup.md',
-    'development-phases.md',
-    'implementation-guide.md',
-    'milestones.md',
-    'performance-metrics.md',
-    'progress-tracking.md',
-    'quality-recommendations.md',
-    'resource-allocation.md',
-    'risk-assessment.md',
-    'task-breakdown.md',
-    'time-estimates.md',
-    'testing-*.md',
-    'dependency-map.md',
+    "*-testing-*.md",
+    "*-flake8-*.md",
+    "*-verification-*.md",
+    "manual-testing-checklist.md",
+    "flake8-*.md",
+    "final-*.md",
+    "formatting-*.md",
+    "test-*.md",
+    "ci-cd-setup.md",
+    "development-phases.md",
+    "implementation-guide.md",
+    "milestones.md",
+    "performance-metrics.md",
+    "progress-tracking.md",
+    "quality-recommendations.md",
+    "resource-allocation.md",
+    "risk-assessment.md",
+    "task-breakdown.md",
+    "time-estimates.md",
+    "testing-*.md",
+    "dependency-map.md",
 ]
 
 # The suffix(es) of source filenames.
 source_suffix = {
-    '.rst': None,
-    '.md': 'markdown',
+    ".rst": None,
+    ".md": "markdown",
 }
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # -- Extension configuration -------------------------------------------------
 
@@ -114,11 +114,11 @@ napoleon_attr_annotations = True
 
 # Autodoc settings
 autodoc_default_options = {
-    'members': True,
-    'member-order': 'bysource',
-    'special-members': '__init__',
-    'undoc-members': True,
-    'exclude-members': '__weakref__'
+    "members": True,
+    "member-order": "bysource",
+    "special-members": "__init__",
+    "undoc-members": True,
+    "exclude-members": "__weakref__",
 }
 
 # Autosummary settings
@@ -126,8 +126,8 @@ autosummary_generate = True
 
 # Intersphinx mapping
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'click': ('https://click.palletsprojects.com/en/stable/', None),
+    "python": ("https://docs.python.org/3", None),
+    "click": ("https://click.palletsprojects.com/en/stable/", None),
 }
 
 # MyST settings
@@ -148,30 +148,30 @@ myst_enable_extensions = [
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further. Removed unsupported 'display_version' option
 html_theme_options = {
-    'canonical_url': '',
-    'analytics_id': '',
-    'logo_only': False,
-    'prev_next_buttons_location': 'bottom',
-    'style_external_links': False,
-    'vcs_pageview_mode': '',
-    'style_nav_header_background': 'white',
+    "canonical_url": "",
+    "analytics_id": "",
+    "logo_only": False,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": False,
+    "vcs_pageview_mode": "",
+    "style_nav_header_background": "white",
     # Toc options
-    'collapse_navigation': True,
-    'sticky_navigation': True,
-    'navigation_depth': 4,
-    'includehidden': True,
-    'titles_only': False
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
+    "includehidden": True,
+    "titles_only": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -180,7 +180,7 @@ html_sidebars = {}
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'shardmarkdowndoc'
+htmlhelp_basename = "shardmarkdowndoc"
 
 # -- Options for LaTeX output ------------------------------------------------
 
@@ -190,8 +190,13 @@ latex_elements = {}
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'shard-markdown.tex', 'shard-markdown Documentation',
-     'Shard Markdown Contributors', 'manual'),
+    (
+        master_doc,
+        "shard-markdown.tex",
+        "shard-markdown Documentation",
+        "Shard Markdown Contributors",
+        "manual",
+    ),
 ]
 
 # -- Options for manual page output ------------------------------------------
@@ -199,8 +204,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'shard-markdown', 'shard-markdown Documentation',
-     [author], 1)
+    (master_doc, "shard-markdown", "shard-markdown Documentation", [author], 1)
 ]
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -209,8 +213,13 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'shard-markdown', 'shard-markdown Documentation',
-     author, 'shard-markdown',
-     'Intelligent markdown document chunking for ChromaDB collections',
-     'Miscellaneous'),
+    (
+        master_doc,
+        "shard-markdown",
+        "shard-markdown Documentation",
+        author,
+        "shard-markdown",
+        "Intelligent markdown document chunking for ChromaDB collections",
+        "Miscellaneous",
+    ),
 ]

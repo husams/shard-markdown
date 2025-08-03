@@ -32,10 +32,10 @@ Building a Knowledge Base
 
    # Create collection
    shard-md collections create knowledge-base
-   
+
    # Process documents
    shard-md process wiki/ --collection knowledge-base --store --recursive
-   
+
    # Query the knowledge base
    shard-md query "installation" --collection knowledge-base
 

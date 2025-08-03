@@ -9,11 +9,7 @@ from click.testing import CliRunner
 
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
 from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.core.models import (
-    ChunkingConfig,
-    DocumentChunk,
-    ProcessingResult,
-)
+from shard_markdown.core.models import ChunkingConfig, DocumentChunk, ProcessingResult
 
 
 @pytest.fixture

@@ -1,6 +1,6 @@
-==========
+===========
 Quick Start
-==========
+===========
 
 This guide will help you get started with shard-markdown in just a few minutes.
 
@@ -72,7 +72,7 @@ Create ``config.yaml``:
    chromadb:
      host: localhost
      port: 8000
-   
+
    chunking:
      strategy: structure
      max_chunk_size: 1000
@@ -153,7 +153,7 @@ Documentation Processing
 
    # Process all docs in a directory
    shard-md process docs/ --collection documentation --store --recursive
-   
+
    # Query the documentation
    shard-md query "API reference" --collection documentation --limit 5
 
@@ -164,19 +164,22 @@ Knowledge Base Creation
 
    # Create a knowledge base collection
    shard-md collections create kb --description "Company knowledge base"
-   
+
    # Process various document sources
    shard-md process wiki/*.md --collection kb --store
    shard-md process manuals/*.md --collection kb --store
-   
+
    # Search the knowledge base
    shard-md query "deployment process" --collection kb
 
 Tips and Best Practices
 ========================
 
-1. **Choose the Right Strategy**: Use ``structure`` for well-formatted documents, ``fixed`` for consistent chunk sizes
-2. **Tune Chunk Size**: Start with 1000 characters and adjust based on your use case
-3. **Use Metadata**: Include custom metadata in document frontmatter for better searchability
+1. **Choose the Right Strategy**: Use ``structure`` for well-formatted
+   documents, ``fixed`` for consistent chunk sizes
+2. **Tune Chunk Size**: Start with 1000 characters and adjust based on your use
+   case
+3. **Use Metadata**: Include custom metadata in document frontmatter for better
+   searchability
 4. **Monitor Performance**: Use ``--verbose`` flag to see processing details
 5. **Backup Collections**: Regularly backup your ChromaDB data

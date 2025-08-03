@@ -2,7 +2,7 @@
 Contributing
 ============
 
-We welcome contributions to shard-markdown!
+We welcome contributions to shard-markdown\!
 
 Development Setup
 =================

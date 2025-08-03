@@ -39,13 +39,14 @@ For development, clone the repository and install in editable mode:
 Using uv (Recommended for Development)
 ---------------------------------------
 
-`uv <https://github.com/astral-sh/uv>`_ is the recommended package manager for development:
+`uv <https://github.com/astral-sh/uv>`_ is the recommended package manager
+for development:
 
 .. code-block:: bash
 
    # Install uv first
    curl -LsSf https://astral.sh/uv/install.sh | sh
-   
+
    # Clone and install
    git clone https://github.com/shard-markdown/shard-markdown.git
    cd shard-markdown
@@ -99,7 +100,8 @@ Common Issues
 -------------
 
 **Import Errors**
-   Ensure all dependencies are installed. For ChromaDB features, install the optional dependencies.
+   Ensure all dependencies are installed. For ChromaDB features, install the
+   optional dependencies.
 
 **Permission Errors**
    Use ``--user`` flag with pip or consider using a virtual environment.

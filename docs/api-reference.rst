@@ -2,7 +2,8 @@
 API Reference
 =============
 
-This section provides the complete API reference for the shard-markdown library.
+This section provides the complete API reference for the shard-markdown
+library.
 
 Core Modules
 ============
