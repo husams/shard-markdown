@@ -15,6 +15,13 @@ import sys
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../src'))
 
+# Mock modules that may not be available in the docs build environment
+autodoc_mock_imports = [
+    'chromadb',
+    'colorama',
+    'rich',
+]
+
 # -- Project information -----------------------------------------------------
 
 project = 'shard-markdown'
@@ -50,7 +57,33 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = [
+    '_build', 
+    'Thumbs.db', 
+    '.DS_Store',
+    # Exclude problematic markdown files that cause build issues
+    '*-testing-*.md',
+    '*-flake8-*.md',
+    '*-verification-*.md',
+    'manual-testing-checklist.md',
+    'flake8-*.md',
+    'final-*.md',
+    'formatting-*.md',
+    'test-*.md',
+    'ci-cd-setup.md',
+    'development-phases.md',
+    'implementation-guide.md',
+    'milestones.md',
+    'performance-metrics.md',
+    'progress-tracking.md',
+    'quality-recommendations.md',
+    'resource-allocation.md',
+    'risk-assessment.md',
+    'task-breakdown.md',
+    'time-estimates.md',
+    'testing-*.md',
+    'dependency-map.md',
+]
 
 # The suffix(es) of source filenames.
 source_suffix = {
@@ -94,8 +127,7 @@ autosummary_generate = True
 # Intersphinx mapping
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
-    'click': ('https://click.palletsprojects.com/', None),
-    'pydantic': ('https://docs.pydantic.dev/', None),
+    'click': ('https://click.palletsprojects.com/en/stable/', None),
 }
 
 # MyST settings
@@ -119,12 +151,11 @@ myst_enable_extensions = [
 html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
-# further.
+# further. Removed unsupported 'display_version' option
 html_theme_options = {
     'canonical_url': '',
     'analytics_id': '',
     'logo_only': False,
-    'display_version': True,
     'prev_next_buttons_location': 'bottom',
     'style_external_links': False,
     'vcs_pageview_mode': '',

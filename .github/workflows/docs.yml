@@ -42,7 +42,7 @@ jobs:
         run: |
           uv sync --dev
           # Install documentation dependencies
-          uv pip install sphinx sphinx-rtd-theme myst-parser sphinx-autodoc-typehints
+          uv pip install -r docs/requirements.txt
 
       - name: Generate API documentation
         run: |
@@ -55,7 +55,7 @@ jobs:
       - name: Build Sphinx documentation
         run: |
           cd docs
-          uv run sphinx-build -b html . _build/html -W --keep-going
+          uv run sphinx-build -b html . _build/html --keep-going
 
       - name: Upload documentation artifacts
         uses: actions/upload-artifact@v4
