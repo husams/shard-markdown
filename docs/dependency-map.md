@@ -69,6 +69,7 @@ graph TD
 ## Critical Path Analysis
 
 ### Primary Critical Path
+
 The critical path that determines the minimum project duration:
 
 1. **SETUP-001** → **SETUP-002** → **SETUP-003** (Project Foundation)
@@ -83,11 +84,13 @@ The critical path that determines the minimum project duration:
 ### Secondary Critical Paths
 
 #### Error Handling Path
+
 - **CORE-001** → **ERROR-001** → **ERROR-002**
 - Can be developed in parallel with ChromaDB integration
 - Duration: ~20 hours
 
 #### Documentation Path
+
 - **CORE-005** → **DOC-001** (API docs)
 - **CLI-006** → **DOC-002** (User docs)
 - Can be developed in parallel with testing
@@ -96,6 +99,7 @@ The critical path that determines the minimum project duration:
 ## Parallel Development Opportunities
 
 ### Phase 1-2 Parallelization
+
 ```
 Timeline Week 1:
 ├── Developer 1: SETUP-001 → SETUP-002 → SETUP-003
@@ -103,6 +107,7 @@ Timeline Week 1:
 ```
 
 ### Phase 2-3 Parallelization
+
 ```
 Timeline Week 2:
 ├── Developer 1: CORE-001 → CORE-004 (Parsing & Metadata)
@@ -110,6 +115,7 @@ Timeline Week 2:
 ```
 
 ### Phase 4 Parallelization
+
 ```
 Timeline Week 3:
 ├── Developer 1: CLI-002 (Process Command) - Critical Path
@@ -118,6 +124,7 @@ Timeline Week 3:
 ```
 
 ### Phase 6 Parallelization
+
 ```
 Timeline Week 4:
 ├── Developer 1: TEST-001 (Unit tests)
@@ -201,7 +208,9 @@ Timeline Week 4:
 ## Resource Allocation Recommendations
 
 ### Single Developer Sequence
+
 For a single developer, follow the critical path strictly:
+
 1. Complete Phase 1 entirely before Phase 2
 2. Complete CORE-001, CORE-002, CORE-004, CORE-005 before Phase 3
 3. Complete CHROMA tasks before CLI-002
@@ -209,20 +218,25 @@ For a single developer, follow the critical path strictly:
 5. Implement testing after core functionality is stable
 
 ### Two Developer Team
+
 **Developer 1 (Critical Path):**
+
 - Week 1: SETUP-001 → SETUP-002 → SETUP-003
 - Week 2: CORE-001 → CORE-002 → CORE-005
 - Week 3: CHROMA-001 → CHROMA-002 → CHROMA-003
 - Week 4: CLI-001 → CLI-002
 
 **Developer 2 (Supporting Tasks):**
+
 - Week 1: Documentation planning, test strategy
 - Week 2: CORE-004 (Metadata) in parallel
 - Week 3: ERROR-001 → ERROR-002 in parallel
 - Week 4: CLI-003, CLI-004, CLI-005, CLI-006
 
 ### Three+ Developer Team
+
 Add additional developers for:
+
 - **Developer 3**: Focus on testing (TEST-001 → TEST-004)
 - **Developer 4**: Focus on documentation (DOC-001, DOC-002)
 - **Developer 5**: Focus on deployment and DevOps (PKG-001, DEPLOY tasks)
@@ -230,22 +244,28 @@ Add additional developers for:
 ## Risk Mitigation Through Dependencies
 
 ### ChromaDB Integration Risk
+
 **Risk**: ChromaDB API changes or connection issues
 **Mitigation**:
+
 - Start CHROMA-001 early to identify issues
 - Implement mock ChromaDB client for testing
 - Design abstraction layer for database operations
 
 ### Performance Risk
+
 **Risk**: Chunking algorithms may be too slow for large documents
 **Mitigation**:
+
 - Implement TEST-004 (performance tests) immediately after CORE-002
 - Profile memory usage during CORE-005 development
 - Parallel implementation of CORE-003 for algorithm alternatives
 
 ### CLI Usability Risk
+
 **Risk**: CLI interface may not meet user expectations
 **Mitigation**:
+
 - Implement CLI-006 (preview/validate) early for user feedback
 - Prioritize ERROR-003 (progress tracking) for better UX
 - Start DEPLOY-003 (beta testing) as soon as CLI is functional
@@ -278,31 +298,37 @@ Add additional developers for:
 ### Phase Completion Gates
 
 **Phase 1 Gate**:
+
 - ✅ Package can be installed and imported
 - ✅ Basic CLI entry point works (`shard-md --version`)
 - ✅ Configuration loads from file and environment
 
 **Phase 2 Gate**:
+
 - ✅ Markdown parsing works for sample documents
 - ✅ Chunking produces reasonable output
 - ✅ Metadata extraction captures all required fields
 
 **Phase 3 Gate**:
+
 - ✅ ChromaDB connection established
 - ✅ Collections can be created and managed
 - ✅ Documents can be stored and retrieved
 
 **Phase 4 Gate**:
+
 - ✅ Process command works end-to-end
 - ✅ All CLI commands have basic functionality
 - ✅ Help system is complete
 
 **Phase 6 Gate**:
+
 - ✅ >90% test coverage achieved
 - ✅ Integration tests pass with real ChromaDB
 - ✅ Performance benchmarks meet requirements
 
 **Phase 8 Gate**:
+
 - ✅ Package builds and installs correctly
 - ✅ Documentation is complete and accurate
 - ✅ Beta testing feedback incorporated

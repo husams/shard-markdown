@@ -8,8 +8,15 @@ import pytest
 from click.testing import CliRunner
 
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig, ChunkingConfig as SettingsChunkingConfig
-from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig, DocumentChunk, MarkdownAST, MarkdownElement, ProcessingResult
+from shard_markdown.config.settings import AppConfig, ChromaDBConfig
+from shard_markdown.config.settings import ChunkingConfig as SettingsChunkingConfig
+from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
+from shard_markdown.core.models import (
+    DocumentChunk,
+    MarkdownAST,
+    MarkdownElement,
+    ProcessingResult,
+)
 
 
 @pytest.fixture
@@ -323,14 +330,14 @@ def sample_ast():
         MarkdownElement(
             type="code_block",
             text="def hello():\n    return 'Hello, World!'",
-            language="python"
+            language="python",
         ),
     ]
-    
+
     return MarkdownAST(
         elements=elements,
         frontmatter={"title": "Sample Document", "author": "Test Author"},
-        metadata={"word_count": 50, "reading_time": 1}
+        metadata={"word_count": 50, "reading_time": 1},
     )
 
 

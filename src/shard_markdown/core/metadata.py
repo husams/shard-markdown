@@ -104,7 +104,9 @@ class MetadataExtractor:
                 metadata["max_header_level"] = max(header_levels)
                 metadata["min_header_level"] = min(header_levels)
                 metadata["table_of_contents"] = [
-                    {"level": h.level, "text": h.text} for h in headers if h.level is not None
+                    {"level": h.level, "text": h.text}
+                    for h in headers
+                    if h.level is not None
                 ]
 
         # Extract code languages

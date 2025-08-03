@@ -12,12 +12,14 @@
 ## Test Configuration
 
 ### Flake8 Version and Plugins
+
 ```
 flake8 7.3.0 (flake8-bugbear: 24.12.12, flake8-docstrings: 1.7.0, mccabe: 0.7.0,
 pycodestyle: 2.14.0, pyflakes: 3.4.0) CPython 3.12.10 on Darwin
 ```
 
 ### Configuration Used
+
 - **Max Line Length**: 79 characters (default)
 - **Indent Size**: 4 spaces (default)
 - **Configuration File**: No explicit flake8 configuration found (using defaults)
@@ -28,9 +30,11 @@ pycodestyle: 2.14.0, pyflakes: 3.4.0) CPython 3.12.10 on Darwin
 ### Critical Violations (Must Fix)
 
 #### 1. Line Length Violations (E501) - 110 occurrences
+
 **CRITICAL** - Most common violation affecting code readability
 
 **Examples:**
+
 ```
 src/shard_markdown/cli/main.py:22:80: E501 line too long (82 > 79 characters)
 src/shard_markdown/core/models.py:13:80: E501 line too long (87 > 79 characters)
@@ -40,9 +44,11 @@ tests/unit/cli/test_process_command.py:95:80: E501 line too long (84 > 79 charac
 **Impact**: High - Affects code readability and consistency
 
 #### 2. Indentation Issues (E128) - 23 occurrences
+
 **CRITICAL** - Code structure and readability problems
 
 **Examples:**
+
 ```
 tests/unit/config/test_settings.py:20:13: E128 continuation line under-indented for visual indent
 tests/unit/cli/test_process_command.py:276:13: E128 continuation line under-indented for visual indent
@@ -51,9 +57,11 @@ tests/unit/cli/test_process_command.py:276:13: E128 continuation line under-inde
 **Impact**: High - Makes code difficult to read and maintain
 
 #### 3. Missing Newlines (W292) - 21 occurrences
+
 **MODERATE** - File formatting consistency issues
 
 **Examples:**
+
 ```
 src/shard_markdown/cli/commands/collections.py:339:49: W292 no newline at end of file
 src/shard_markdown/config/defaults.py:63:37: W292 no newline at end of file
@@ -64,18 +72,22 @@ src/shard_markdown/config/defaults.py:63:37: W292 no newline at end of file
 ### Code Quality Issues
 
 #### 4. Unused Variables (F841) - 9 occurrences
+
 **MODERATE** - Dead code and potential logic errors
 
 **Examples:**
+
 ```
 tests/unit/cli/test_process_command.py:128:13: F841 local variable '_config' is assigned to but never used
 tests/unit/config/test_settings.py:302:13: F841 local variable 'config' is assigned to but never used
 ```
 
 #### 5. Undefined Names (F821) - 9 occurrences
+
 **CRITICAL** - Runtime errors and import issues
 
 **Examples:**
+
 ```
 tests/unit/cli/test_process_command.py:258:14: F821 undefined name 'patch'
 tests/unit/cli/test_process_command.py:261:22: F821 undefined name 'Mock'
@@ -84,9 +96,11 @@ tests/unit/cli/test_process_command.py:261:22: F821 undefined name 'Mock'
 **Impact**: Critical - Will cause runtime errors
 
 #### 6. F-string Issues (F541) - 9 occurrences
+
 **MODERATE** - Inefficient string formatting
 
 **Examples:**
+
 ```
 Multiple f-strings missing placeholders detected across test files
 ```
@@ -94,17 +108,21 @@ Multiple f-strings missing placeholders detected across test files
 ### Documentation Issues
 
 #### 7. Missing Docstrings (D107) - 9 occurrences
+
 **MODERATE** - Documentation completeness
 
 **Examples:**
+
 ```
 src/shard_markdown/utils/errors.py:10:1: D107 Missing docstring in __init__
 ```
 
 #### 8. Docstring Format Issues (D412) - 7 occurrences
+
 **LOW** - Documentation formatting
 
 **Examples:**
+
 ```
 src/shard_markdown/cli/commands/collections.py:20:1: D412 No blank lines allowed between a section header and its content
 ```
@@ -112,12 +130,15 @@ src/shard_markdown/cli/commands/collections.py:20:1: D412 No blank lines allowed
 ### Bracket and Formatting Issues
 
 #### 9. Bracket Indentation (E124) - 7 occurrences
+
 **MODERATE** - Code structure consistency
 
 #### 10. Import Issues (F401) - 5 occurrences
+
 **LOW** - Unused imports affecting performance
 
 **Examples:**
+
 ```
 tests/conftest.py:3:1: F401 'json' imported but unused
 tests/e2e/test_cli_workflows.py:4:1: F401 'pathlib.Path' imported but unused
@@ -126,9 +147,11 @@ tests/e2e/test_cli_workflows.py:4:1: F401 'pathlib.Path' imported but unused
 ### Testing-Specific Issues
 
 #### 11. Assertion Issues (B011, B017) - 3 occurrences
+
 **MODERATE** - Test reliability and effectiveness
 
 **Examples:**
+
 ```
 tests/unit/config/test_settings.py:384:13: B011 Do not call assert False since python -O removes these calls
 tests/unit/test_chunking.py:81:9: B017 assertRaises(Exception) should be considered evil
@@ -136,7 +159,8 @@ tests/unit/test_chunking.py:81:9: B017 assertRaises(Exception) should be conside
 
 ## Files with Most Violations
 
-### Top 10 Most Problematic Files:
+### Top 10 Most Problematic Files
+
 1. `tests/unit/cli/test_process_command.py` - 47 violations
 2. `tests/e2e/test_cli_workflows.py` - 25 violations
 3. `src/shard_markdown/core/models.py` - 18 violations
@@ -150,14 +174,16 @@ tests/unit/test_chunking.py:81:9: B017 assertRaises(Exception) should be conside
 
 ## Previously Identified Issues Status
 
-### Issues That Were Supposed to Be Fixed:
+### Issues That Were Supposed to Be Fixed
 
 #### ✅ RESOLVED
+
 - **Documentation issues (D-series)**: Partially resolved - reduced from ~50 to 13 occurrences
 - **Import issues (F401)**: Significantly reduced - only 5 remaining
 - **Whitespace issues (W291, W293)**: Mostly resolved - only 7 remaining
 
 #### ❌ NOT RESOLVED
+
 - **Line length violations (E501)**: CRITICAL - 110 occurrences remain
 - **F-string issues (F541)**: 9 occurrences remain
 - **Code quality issues (B001, B011, B017)**: 3 occurrences remain
@@ -165,6 +191,7 @@ tests/unit/test_chunking.py:81:9: B017 assertRaises(Exception) should be conside
 - **Missing newlines (W292)**: 21 occurrences remain
 
 #### ⚠️ NEW ISSUES IDENTIFIED
+
 - **Undefined names (F821)**: 9 critical runtime errors
 - **Unused variables (F841)**: 9 code quality issues
 

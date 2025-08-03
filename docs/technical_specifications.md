@@ -1,4 +1,5 @@
 # Technical Specifications
+
 ## Shard-Markdown CLI Utility
 
 **Document Version:** 1.0
@@ -28,16 +29,19 @@
 ### 1.2 Core Components
 
 #### CLI Interface Module
+
 - **Responsibility:** Handle command-line arguments, validation, and user interaction
 - **Key Classes:** `CLIHandler`, `ArgumentValidator`, `OutputFormatter`
 - **Dependencies:** Click/argparse, Rich (optional)
 
 #### Core Processor Module
+
 - **Responsibility:** Orchestrate the complete processing workflow
 - **Key Classes:** `DocumentProcessor`, `ChunkingEngine`, `MetadataExtractor`
 - **Dependencies:** Markdown parser, Pydantic
 
 #### ChromaDB Client Module
+
 - **Responsibility:** Manage database connections and document storage
 - **Key Classes:** `ChromaDBClient`, `CollectionManager`, `DocumentStore`
 - **Dependencies:** ChromaDB client library
@@ -49,6 +53,7 @@
 ### 2.1 CLI Interface Implementation
 
 #### Command Structure
+
 ```bash
 shard-markdown [OPTIONS] INPUT_FILE
 
@@ -66,6 +71,7 @@ Options:
 ```
 
 #### Configuration File Format (YAML)
+
 ```yaml
 # shard-markdown configuration
 chunk_size: 1000
@@ -90,6 +96,7 @@ database:
 ### 2.2 Chunking Algorithm Specification
 
 #### Intelligent Boundary Detection
+
 ```python
 BOUNDARY_PRIORITIES = {
     'document_end': 100,
@@ -112,6 +119,7 @@ def find_optimal_split_point(text: str, target_position: int, max_distance: int 
 ```
 
 #### Chunk Overlap Strategy
+
 ```python
 def calculate_overlap(chunk_size: int, overlap_size: int, boundary_type: str) -> tuple[int, int]:
     """
@@ -127,6 +135,7 @@ def calculate_overlap(chunk_size: int, overlap_size: int, boundary_type: str) ->
 ### 2.3 Metadata Schema Implementation
 
 #### Chunk Metadata Structure
+
 ```python
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -164,6 +173,7 @@ class DocumentMetadata(BaseModel):
 ### 2.4 ChromaDB Integration Details
 
 #### Collection Management
+
 ```python
 class CollectionManager:
     def __init__(self, db_path: str, collection_name: str):
@@ -199,6 +209,7 @@ class CollectionManager:
 ```
 
 #### Batch Storage Implementation
+
 ```python
 class DocumentStore:
     def __init__(self, collection: Collection, batch_size: int = 1000):
@@ -229,6 +240,7 @@ class DocumentStore:
 ## 3. Error Handling Specifications
 
 ### 3.1 Exception Hierarchy
+
 ```python
 class ShardMarkdownError(Exception):
     """Base exception for shard-markdown operations."""
@@ -252,6 +264,7 @@ class ConfigurationError(ShardMarkdownError):
 ```
 
 ### 3.2 Error Recovery Strategies
+
 ```python
 class ErrorRecovery:
     @staticmethod
@@ -277,6 +290,7 @@ class ErrorRecovery:
 ## 4. Performance Optimization Specifications
 
 ### 4.1 Memory Management
+
 ```python
 class MemoryEfficientProcessor:
     def __init__(self, max_memory_mb: int = 512):
@@ -293,6 +307,7 @@ class MemoryEfficientProcessor:
 ```
 
 ### 4.2 Performance Monitoring
+
 ```python
 class PerformanceMonitor:
     def __init__(self):
@@ -321,6 +336,7 @@ class PerformanceMonitor:
 ## 5. Testing Specifications
 
 ### 5.1 Unit Test Coverage Requirements
+
 - CLI argument parsing and validation: 100%
 - Chunking algorithm accuracy: 95%
 - Metadata extraction: 100%
@@ -328,6 +344,7 @@ class PerformanceMonitor:
 - Error handling: 85%
 
 ### 5.2 Integration Test Scenarios
+
 ```python
 class IntegrationTests:
     def test_end_to_end_processing(self):
@@ -344,6 +361,7 @@ class IntegrationTests:
 ```
 
 ### 5.3 Performance Test Benchmarks
+
 - Process 1MB file in under 5 seconds
 - Process 10MB file in under 30 seconds
 - Process 100MB file in under 300 seconds (5 minutes)
@@ -355,6 +373,7 @@ class IntegrationTests:
 ## 6. Security Specifications
 
 ### 6.1 Input Validation
+
 ```python
 class SecurityValidator:
     @staticmethod
@@ -372,6 +391,7 @@ class SecurityValidator:
 ```
 
 ### 6.2 Data Protection
+
 - No sensitive data logging in production mode
 - Secure temporary file handling with proper cleanup
 - Memory zeroing after processing sensitive content
@@ -382,6 +402,7 @@ class SecurityValidator:
 ## 7. Deployment and Distribution
 
 ### 7.1 Package Structure
+
 ```
 shard-markdown/
 ├── shard_markdown/
@@ -401,6 +422,7 @@ shard-markdown/
 ```
 
 ### 7.2 Installation Methods
+
 1. **PyPI Installation:** `uv add shard-markdown`
 2. **Development Installation:** `uv pip install -e .`
 3. **Docker Container:** `docker run shard-markdown:latest`
@@ -411,6 +433,7 @@ shard-markdown/
 ## 8. Monitoring and Observability
 
 ### 8.1 Logging Configuration
+
 ```python
 LOGGING_CONFIG = {
     "version": 1,
@@ -444,6 +467,7 @@ LOGGING_CONFIG = {
 ```
 
 ### 8.2 Metrics Collection
+
 - Processing time per file size category
 - Chunk creation success rate
 - Database storage success rate
@@ -455,11 +479,13 @@ LOGGING_CONFIG = {
 ## 9. API Compatibility and Versioning
 
 ### 9.1 Semantic Versioning
+
 - **MAJOR:** Incompatible API changes
 - **MINOR:** Backward-compatible functionality additions
 - **PATCH:** Backward-compatible bug fixes
 
 ### 9.2 Configuration Backward Compatibility
+
 - Support previous configuration file formats
 - Graceful handling of deprecated options
 - Clear migration paths for breaking changes
@@ -469,6 +495,7 @@ LOGGING_CONFIG = {
 ## 10. Documentation Requirements
 
 ### 10.1 User Documentation
+
 - Installation guide with troubleshooting
 - Complete CLI reference with examples
 - Configuration file documentation
@@ -476,6 +503,7 @@ LOGGING_CONFIG = {
 - Common use cases and workflows
 
 ### 10.2 Developer Documentation
+
 - API reference documentation
 - Extension and plugin development guide
 - Contributing guidelines

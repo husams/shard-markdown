@@ -217,6 +217,7 @@ shard-md config path
 ### Structure-Aware Chunking (Default)
 
 Respects markdown document structure:
+
 - Never splits code blocks
 - Prefers splits at header boundaries
 - Respects list item boundaries
@@ -225,6 +226,7 @@ Respects markdown document structure:
 ### Fixed-Size Chunking
 
 Creates chunks based on character limits:
+
 - Simple character-based splitting
 - Optional word boundary respect
 - Configurable overlap
@@ -232,6 +234,7 @@ Creates chunks based on character limits:
 ### Semantic Chunking
 
 Splits based on content meaning:
+
 - Sentence boundary detection
 - Paragraph preservation
 - Context-aware splitting
@@ -241,16 +244,19 @@ Splits based on content meaning:
 Shard Markdown automatically extracts and preserves rich metadata:
 
 ### File-Level Metadata
+
 - File path, name, size
 - Creation and modification timestamps
 - File hash for integrity
 
 ### Document-Level Metadata
+
 - YAML frontmatter
 - Title, author, tags
 - Document statistics
 
 ### Chunk-Level Metadata
+
 - Position in document
 - Structural context
 - Parent sections

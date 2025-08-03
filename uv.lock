@@ -2358,6 +2358,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "safety" },
+    { name = "types-pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -2394,6 +2395,7 @@ requires-dist = [
     { name = "rich", specifier = ">=13.5.0" },
     { name = "safety", marker = "extra == 'dev'", specifier = ">=2.3.0" },
     { name = "tiktoken", marker = "extra == 'chromadb'", specifier = ">=0.5.0" },
+    { name = "types-pyyaml", marker = "extra == 'dev'", specifier = ">=6.0.0" },
     { name = "typing-extensions", specifier = ">=4.8.0" },
 ]
 provides-extras = ["chromadb", "dev"]

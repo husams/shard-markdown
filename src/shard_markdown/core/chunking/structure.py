@@ -121,7 +121,9 @@ class StructureAwareChunker(BaseChunker):
         else:
             return f"{element.text}\n\n"
 
-    def _update_context(self, context: List[str], header_element: MarkdownElement) -> None:
+    def _update_context(
+        self, context: List[str], header_element: MarkdownElement
+    ) -> None:
         """Update hierarchical context based on header level.
 
         Args:

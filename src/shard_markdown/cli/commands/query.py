@@ -151,7 +151,13 @@ def search(  # noqa: C901
     help="Include metadata in results [default: true]",
 )
 @click.pass_context
-def get(ctx: click.Context, document_id: str, collection: str, format: str, include_metadata: bool) -> None:  # noqa: C901
+def get(
+    ctx: click.Context,
+    document_id: str,
+    collection: str,
+    format: str,
+    include_metadata: bool,
+) -> None:  # noqa: C901
     """Get a specific document by ID."""
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
@@ -216,7 +222,9 @@ def get(ctx: click.Context, document_id: str, collection: str, format: str, incl
         raise click.Abort()
 
 
-def _display_search_results_table(results: Dict[str, Any], include_metadata: bool, similarity_threshold: float) -> None:
+def _display_search_results_table(
+    results: Dict[str, Any], include_metadata: bool, similarity_threshold: float
+) -> None:
     """Display search results in table format."""
     table = Table(title="Search Results")
     table.add_column("Rank", style="cyan", width=6)
@@ -295,7 +303,9 @@ def _display_document_table(results: Dict[str, Any], include_metadata: bool) -> 
     console.print(f"[white]{document}[/white]")
 
 
-def _format_search_results(results: Dict[str, Any], include_metadata: bool) -> List[Dict[str, Any]]:
+def _format_search_results(
+    results: Dict[str, Any], include_metadata: bool
+) -> List[Dict[str, Any]]:
     """Format search results for JSON/YAML output."""
     ids = results["ids"][0]
     documents = results["documents"][0]
@@ -319,7 +329,9 @@ def _format_search_results(results: Dict[str, Any], include_metadata: bool) -> L
     return formatted
 
 
-def _format_document_result(results: Dict[str, Any], include_metadata: bool) -> Dict[str, Any]:
+def _format_document_result(
+    results: Dict[str, Any], include_metadata: bool
+) -> Dict[str, Any]:
     """Format document result for JSON/YAML output."""
     result = {"id": results["ids"][0], "content": results["documents"][0]}
 

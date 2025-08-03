@@ -5,7 +5,7 @@ from typing import Optional, Type
 # Try to import real ChromaDB client, fallback to mock if not available
 try:
     from .client import ChromaDBClient
-    
+
     CHROMADB_AVAILABLE = True
     CHROMADB_CLIENT_CLASS: Optional[Type] = ChromaDBClient
 except ImportError:

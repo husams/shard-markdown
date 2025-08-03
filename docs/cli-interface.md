@@ -11,6 +11,7 @@ shard-md [GLOBAL-OPTIONS] COMMAND [COMMAND-OPTIONS] [ARGUMENTS]
 ## 2. Global Options
 
 ### 2.1 Common Global Options
+
 ```bash
 --config, -c PATH          Configuration file path [default: ~/.shard-md/config.yaml]
 --verbose, -v              Increase verbosity (can be repeated: -v, -vv, -vvv)
@@ -21,6 +22,7 @@ shard-md [GLOBAL-OPTIONS] COMMAND [COMMAND-OPTIONS] [ARGUMENTS]
 ```
 
 ### 2.2 ChromaDB Connection Options
+
 ```bash
 --chroma-host HOST        ChromaDB host [default: localhost]
 --chroma-port PORT        ChromaDB port [default: 8000]
@@ -32,6 +34,7 @@ shard-md [GLOBAL-OPTIONS] COMMAND [COMMAND-OPTIONS] [ARGUMENTS]
 ## 3. Primary Commands
 
 ### 3.1 Process Command
+
 Primary command for processing markdown files into ChromaDB collections.
 
 ```bash
@@ -39,9 +42,11 @@ shard-md process [OPTIONS] INPUT [INPUT...]
 ```
 
 #### Arguments
+
 - `INPUT`: Path to markdown file(s) or directory(ies) to process
 
 #### Options
+
 ```bash
 # Collection Management
 --collection, -c NAME     Target ChromaDB collection name [required]
@@ -76,6 +81,7 @@ shard-md process [OPTIONS] INPUT [INPUT...]
 ```
 
 #### Examples
+
 ```bash
 # Basic processing
 shard-md process --collection my-docs document.md
@@ -101,11 +107,13 @@ shard-md process \
 ### 3.2 Collection Management Commands
 
 #### 3.2.1 List Collections
+
 ```bash
 shard-md collections list [OPTIONS]
 ```
 
 Options:
+
 ```bash
 --format FORMAT          Output format: table|json|yaml [default: table]
 --show-metadata          Include collection metadata in output
@@ -113,11 +121,13 @@ Options:
 ```
 
 #### 3.2.2 Create Collection
+
 ```bash
 shard-md collections create [OPTIONS] NAME
 ```
 
 Options:
+
 ```bash
 --metadata JSON          Collection metadata as JSON
 --embedding-function     Embedding function to use [default: default]
@@ -125,22 +135,26 @@ Options:
 ```
 
 #### 3.2.3 Delete Collection
+
 ```bash
 shard-md collections delete [OPTIONS] NAME
 ```
 
 Options:
+
 ```bash
 --force, -f              Force deletion without confirmation
 --backup                 Create backup before deletion
 ```
 
 #### 3.2.4 Collection Info
+
 ```bash
 shard-md collections info [OPTIONS] NAME
 ```
 
 Options:
+
 ```bash
 --format FORMAT          Output format: table|json|yaml [default: table]
 --show-documents         Include document count and sample documents
@@ -150,11 +164,13 @@ Options:
 ### 3.3 Query Commands
 
 #### 3.3.1 Search Documents
+
 ```bash
 shard-md query search [OPTIONS] QUERY
 ```
 
 Options:
+
 ```bash
 --collection, -c NAME     Collection to search [required]
 --limit, -n COUNT         Maximum results to return [default: 10]
@@ -164,11 +180,13 @@ Options:
 ```
 
 #### 3.3.2 Get Document
+
 ```bash
 shard-md query get [OPTIONS] DOCUMENT_ID
 ```
 
 Options:
+
 ```bash
 --collection, -c NAME     Collection name [required]
 --format FORMAT           Output format: table|json|yaml [default: table]
@@ -178,33 +196,39 @@ Options:
 ### 3.4 Configuration Commands
 
 #### 3.4.1 Show Configuration
+
 ```bash
 shard-md config show [OPTIONS]
 ```
 
 Options:
+
 ```bash
 --format FORMAT          Output format: yaml|json [default: yaml]
 --section SECTION        Show specific configuration section
 ```
 
 #### 3.4.2 Set Configuration
+
 ```bash
 shard-md config set [OPTIONS] KEY VALUE
 ```
 
 Options:
+
 ```bash
 --global                 Set global configuration (user-level)
 --local                  Set local configuration (project-level)
 ```
 
 #### 3.4.3 Initialize Configuration
+
 ```bash
 shard-md config init [OPTIONS]
 ```
 
 Options:
+
 ```bash
 --global                 Initialize global configuration
 --force                  Overwrite existing configuration
@@ -214,11 +238,13 @@ Options:
 ### 3.5 Utility Commands
 
 #### 3.5.1 Validate Documents
+
 ```bash
 shard-md validate [OPTIONS] INPUT [INPUT...]
 ```
 
 Options:
+
 ```bash
 --recursive, -r          Validate directories recursively
 --pattern GLOB           File pattern for filtering [default: "*.md"]
@@ -228,11 +254,13 @@ Options:
 ```
 
 #### 3.5.2 Preview Chunking
+
 ```bash
 shard-md preview [OPTIONS] INPUT
 ```
 
 Options:
+
 ```bash
 --chunk-size, -s SIZE    Maximum chunk size [default: 1000]
 --chunk-overlap, -o SIZE Overlap between chunks [default: 200]
@@ -256,6 +284,7 @@ The CLI uses standard exit codes to indicate operation status:
 ## 5. Environment Variables
 
 ### 5.1 Configuration Override
+
 ```bash
 SHARD_MD_CONFIG_FILE        Override default config file location
 SHARD_MD_LOG_LEVEL          Set logging level (DEBUG|INFO|WARNING|ERROR)
@@ -263,6 +292,7 @@ SHARD_MD_LOG_FILE           Set log file location
 ```
 
 ### 5.2 ChromaDB Connection
+
 ```bash
 CHROMA_HOST                 ChromaDB host
 CHROMA_PORT                 ChromaDB port
@@ -271,6 +301,7 @@ CHROMA_SSL                  Use SSL (true|false)
 ```
 
 ### 5.3 Processing Defaults
+
 ```bash
 SHARD_MD_CHUNK_SIZE         Default chunk size
 SHARD_MD_CHUNK_OVERLAP      Default chunk overlap
@@ -281,6 +312,7 @@ SHARD_MD_MAX_WORKERS        Default worker count
 ## 6. Configuration File Format
 
 ### 6.1 YAML Configuration Example
+
 ```yaml
 # ~/.shard-md/config.yaml
 chromadb:
@@ -320,6 +352,7 @@ collections:
 ## 7. Help System
 
 ### 7.1 Built-in Help
+
 ```bash
 # General help
 shard-md --help
@@ -334,6 +367,7 @@ shard-md collections list --help
 ```
 
 ### 7.2 Man Page Support
+
 ```bash
 man shard-md                # Main manual page
 man shard-md-process        # Process command manual
@@ -343,18 +377,21 @@ man shard-md-collections    # Collections manual
 ## 8. Shell Completion
 
 ### 8.1 Bash Completion
+
 ```bash
 # Add to ~/.bashrc
 eval "$(_SHARD_MD_COMPLETE=bash_source shard-md)"
 ```
 
 ### 8.2 Zsh Completion
+
 ```bash
 # Add to ~/.zshrc
 eval "$(_SHARD_MD_COMPLETE=zsh_source shard-md)"
 ```
 
 ### 8.3 Fish Completion
+
 ```bash
 # Add to ~/.config/fish/completions/shard-md.fish
 eval (env _SHARD_MD_COMPLETE=fish_source shard-md)
@@ -363,6 +400,7 @@ eval (env _SHARD_MD_COMPLETE=fish_source shard-md)
 ## 9. Error Handling and User Feedback
 
 ### 9.1 Error Message Format
+
 ```
 Error: [ERROR_CODE] Brief description
 Details: Detailed explanation of the error
@@ -370,12 +408,14 @@ Suggestion: Recommended action to resolve the issue
 ```
 
 ### 9.2 Progress Indicators
+
 - Spinner for quick operations
 - Progress bar for long-running operations
 - Batch processing progress with ETA
 - Real-time operation status updates
 
 ### 9.3 Confirmation Prompts
+
 ```bash
 # Destructive operations require confirmation
 shard-md collections delete my-collection

@@ -7,6 +7,7 @@ This document provides comprehensive CI/CD configuration for the shard-markdown 
 ## CI/CD Architecture
 
 ### Pipeline Stages
+
 1. **Code Quality**: Linting, formatting, type checking
 2. **Unit Testing**: Fast, isolated tests
 3. **Integration Testing**: Component interaction tests

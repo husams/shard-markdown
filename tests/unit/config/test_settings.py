@@ -131,7 +131,11 @@ class TestChunkingConfig:
     def test_method_validation(self):
         """Test chunking method validation."""
         # Valid methods using enum
-        valid_methods = [ChunkingMethod.STRUCTURE, ChunkingMethod._FIXED, ChunkingMethod._SEMANTIC]
+        valid_methods = [
+            ChunkingMethod.STRUCTURE,
+            ChunkingMethod._FIXED,
+            ChunkingMethod._SEMANTIC,
+        ]
         for method in valid_methods:
             config = ChunkingConfig(method=method)
             assert config.method == method

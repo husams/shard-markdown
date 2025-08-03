@@ -15,6 +15,7 @@ This guide provides comprehensive instructions for deploying and using the shard
 ### Core Installation
 
 #### From PyPI (when published)
+
 ```bash
 # Core functionality with mock ChromaDB
 uv add shard-markdown
@@ -24,6 +25,7 @@ uv add shard-markdown[chromadb]
 ```
 
 #### Development Installation
+
 ```bash
 # Clone repository
 git clone https://github.com/shard-markdown/shard-markdown.git
@@ -44,6 +46,7 @@ uv pip install -e .[dev]
 ```
 
 #### Docker Installation (Future)
+
 ```bash
 docker run -v $(pwd):/workspace shard-markdown/cli:latest process --collection docs /workspace/*.md
 ```
@@ -53,11 +56,13 @@ docker run -v $(pwd):/workspace shard-markdown/cli:latest process --collection d
 ### Configuration File
 
 Create a configuration file at one of these locations:
+
 - `~/.shard-md/config.yaml`
 - `./shard-md.yaml`
 - Custom location via `--config` flag
 
 #### Example Configuration
+
 ```yaml
 # ChromaDB Configuration
 chromadb:
@@ -119,21 +124,25 @@ export SHARD_MD_USE_MOCK_CHROMADB=true
 ### Processing Documents
 
 #### Single File
+
 ```bash
 shard-md process --collection my-docs document.md
 ```
 
 #### Multiple Files
+
 ```bash
 shard-md process --collection tech-docs *.md
 ```
 
 #### Directory Processing
+
 ```bash
 shard-md process --collection all-docs --recursive ./docs/
 ```
 
 #### Custom Chunking
+
 ```bash
 shard-md process \
   --collection custom-docs \
@@ -144,6 +153,7 @@ shard-md process \
 ```
 
 #### Dry Run
+
 ```bash
 shard-md process --collection test --dry-run *.md
 ```
@@ -151,6 +161,7 @@ shard-md process --collection test --dry-run *.md
 ### Collection Management
 
 #### List Collections
+
 ```bash
 shard-md collections list
 shard-md collections list --format json
@@ -158,18 +169,21 @@ shard-md collections list --show-metadata
 ```
 
 #### Create Collection
+
 ```bash
 shard-md collections create my-docs --description "Documentation collection"
 shard-md collections create api-docs --metadata '{"version": "1.0", "source": "api"}'
 ```
 
 #### Collection Information
+
 ```bash
 shard-md collections info my-docs
 shard-md collections info my-docs --format json
 ```
 
 #### Delete Collection
+
 ```bash
 shard-md collections delete my-docs
 shard-md collections delete my-docs --force
@@ -178,6 +192,7 @@ shard-md collections delete my-docs --force
 ### Querying Documents
 
 #### Search Documents
+
 ```bash
 shard-md query search --collection my-docs "search term"
 shard-md query search --collection my-docs "Python code" --limit 5
@@ -185,6 +200,7 @@ shard-md query search --collection my-docs "API" --format json
 ```
 
 #### Get Specific Document
+
 ```bash
 shard-md query get --collection my-docs document-id-123
 shard-md query get --collection my-docs document-id-123 --format yaml
@@ -193,18 +209,21 @@ shard-md query get --collection my-docs document-id-123 --format yaml
 ### Configuration Management
 
 #### Show Configuration
+
 ```bash
 shard-md config show
 shard-md config show --format yaml
 ```
 
 #### Initialize Configuration
+
 ```bash
 shard-md config init
 shard-md config init --force
 ```
 
 #### Set Configuration Values
+
 ```bash
 shard-md config set chunking.default_size 1500
 shard-md config set chromadb.host production-server
@@ -215,12 +234,14 @@ shard-md config set chromadb.host production-server
 ### Development Environment
 
 #### Local Development with Mock ChromaDB
+
 ```bash
 # No additional setup required
 shard-md process --collection dev-docs *.md
 ```
 
 #### Local Development with Real ChromaDB
+
 ```bash
 # Start ChromaDB server
 docker run -p 8000:8000 chromadb/chroma:latest
@@ -234,6 +255,7 @@ shard-md process --collection dev-docs *.md
 ### Production Environment
 
 #### Production ChromaDB Setup
+
 ```bash
 # Environment configuration
 export CHROMA_HOST=chromadb.production.com
@@ -246,6 +268,7 @@ shard-md process --collection production-docs /path/to/docs/*.md
 ```
 
 #### Batch Processing Script
+
 ```bash
 #!/bin/bash
 # batch-process.sh
@@ -274,6 +297,7 @@ shard-md collections info "$COLLECTION_NAME"
 ### Container Deployment
 
 #### Dockerfile Example
+
 ```dockerfile
 FROM python:3.11-slim
 
@@ -295,6 +319,7 @@ ENTRYPOINT ["shard-md"]
 ```
 
 #### Docker Compose Example
+
 ```yaml
 version: '3.8'
 
@@ -324,6 +349,7 @@ volumes:
 ### CI/CD Integration
 
 #### GitHub Actions Example
+
 ```yaml
 name: Process Documentation
 
@@ -361,6 +387,7 @@ jobs:
 ## Monitoring and Logging
 
 ### Log Configuration
+
 ```yaml
 logging:
   level: INFO
@@ -371,6 +398,7 @@ logging:
 ```
 
 ### Log Analysis
+
 ```bash
 # Monitor processing
 tail -f /var/log/shard-md/application.log
@@ -383,6 +411,7 @@ grep "Processing completed" /var/log/shard-md/application.log | wc -l
 ```
 
 ### Health Checks
+
 ```bash
 # Check ChromaDB connectivity
 shard-md collections list > /dev/null && echo "ChromaDB OK" || echo "ChromaDB Error"
@@ -394,6 +423,7 @@ shard-md config show > /dev/null && echo "Config OK" || echo "Config Error"
 ## Performance Tuning
 
 ### Processing Optimization
+
 ```bash
 # Increase worker threads for large batches
 shard-md process --max-workers 16 --collection large-docs *.md
@@ -406,6 +436,7 @@ shard-md process --chunk-method fixed *.md
 ```
 
 ### Memory Management
+
 ```bash
 # Process large directories in smaller batches
 find docs/ -name "*.md" | head -100 | xargs shard-md process --collection batch1
@@ -417,6 +448,7 @@ find docs/ -name "*.md" | tail -n +101 | head -100 | xargs shard-md process --co
 ### Common Issues
 
 #### ChromaDB Connection Failed
+
 ```bash
 # Check ChromaDB server status
 curl http://localhost:8000/api/v1/heartbeat
@@ -426,6 +458,7 @@ shard-md process --use-mock --collection test *.md
 ```
 
 #### Permission Denied
+
 ```bash
 # Check file permissions
 ls -la document.md
@@ -436,6 +469,7 @@ chmod 644 /path/to/docs/*.md
 ```
 
 #### Out of Memory
+
 ```bash
 # Reduce worker threads
 shard-md process --max-workers 2 *.md
@@ -450,6 +484,7 @@ done
 ```
 
 ### Debug Mode
+
 ```bash
 # Enable verbose logging
 shard-md -vvv process --collection debug-docs *.md
@@ -462,6 +497,7 @@ shard-md process --collection debug-docs *.md
 ## Security Considerations
 
 ### Authentication
+
 ```bash
 # Use environment variables for sensitive data
 export CHROMA_AUTH_TOKEN="$(cat /path/to/token)"
@@ -472,6 +508,7 @@ export CHROMA_AUTH_TOKEN="$(cat /path/to/token)"
 ```
 
 ### File Permissions
+
 ```bash
 # Secure configuration file
 chmod 600 ~/.shard-md/config.yaml
@@ -482,6 +519,7 @@ chown app:app /var/log/shard-md/application.log
 ```
 
 ### Network Security
+
 ```yaml
 # Use SSL in production
 chromadb:
@@ -493,6 +531,7 @@ chromadb:
 ## Backup and Recovery
 
 ### Collection Backup
+
 ```bash
 # Export collection data (future feature)
 shard-md collections export my-docs --output backup.json
@@ -502,6 +541,7 @@ shard-md collections import backup.json --collection restored-docs
 ```
 
 ### Configuration Backup
+
 ```bash
 # Backup configuration
 cp ~/.shard-md/config.yaml config-backup-$(date +%Y%m%d).yaml
@@ -514,14 +554,16 @@ git commit -m "Update shard-md configuration"
 ## Support and Maintenance
 
 ### Regular Maintenance
+
 - Monitor log files for errors
 - Update shard-markdown regularly: `uv add shard-markdown` (automatically gets latest)
 - Clean up old log files: `logrotate /etc/logrotate.d/shard-md`
 - Monitor ChromaDB server health
 
 ### Getting Help
-- GitHub Issues: https://github.com/shard-markdown/shard-markdown/issues
-- Documentation: https://shard-markdown.readthedocs.io
+
+- GitHub Issues: <https://github.com/shard-markdown/shard-markdown/issues>
+- Documentation: <https://shard-markdown.readthedocs.io>
 - CLI Help: `shard-md --help`, `shard-md COMMAND --help`
 
 This deployment guide covers all major deployment scenarios and provides practical examples for getting started with shard-markdown CLI in any environment.

@@ -1,8 +1,7 @@
 """ChromaDB client factory with mock support."""
 
 import os
-from typing import Optional
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from ..config.settings import ChromaDBConfig
 from ..utils.logging import get_logger
@@ -15,7 +14,9 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 
-def create_chromadb_client(config: ChromaDBConfig, use_mock: Optional[bool] = None) -> ChromaDBClientProtocol:
+def create_chromadb_client(
+    config: ChromaDBConfig, use_mock: Optional[bool] = None
+) -> ChromaDBClientProtocol:
     """Create ChromaDB client with optional mock support.
 
     Args:

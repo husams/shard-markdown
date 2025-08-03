@@ -84,7 +84,7 @@ class MarkdownParser:
                                     type="paragraph",
                                     text=text_content,
                                     level=0,
-                                    metadata={"line_number": line_offset}
+                                    metadata={"line_number": line_offset},
                                 )
                             )
                         current_text = []
@@ -95,21 +95,21 @@ class MarkdownParser:
                     # Ending code block
                     current_text.append(line)
                     code_content = "\n".join(current_text)
-                    
+
                     # Extract language from first line
                     lang = None
                     if current_text and current_text[0].startswith("```"):
                         lang_match = current_text[0][3:].strip()
                         if lang_match:
                             lang = lang_match
-                    
+
                     elements.append(
                         MarkdownElement(
                             type="code_block",
                             text=code_content,
                             level=0,
                             language=lang,
-                            metadata={"line_number": line_offset}
+                            metadata={"line_number": line_offset},
                         )
                     )
                     current_text = []
@@ -132,7 +132,7 @@ class MarkdownParser:
                                 type="paragraph",
                                 text=text_content,
                                 level=0,
-                                metadata={"line_number": line_offset}
+                                metadata={"line_number": line_offset},
                             )
                         )
                     current_text = []
@@ -145,7 +145,7 @@ class MarkdownParser:
                         type="header",
                         text=title,
                         level=level,
-                        metadata={"line_number": line_num}
+                        metadata={"line_number": line_num},
                     )
                 )
                 continue
@@ -166,8 +166,8 @@ class MarkdownParser:
                         metadata={
                             "line_number": line_num,
                             "list_type": list_type,
-                            "marker": marker
-                        }
+                            "marker": marker,
+                        },
                     )
                 )
                 continue
@@ -179,7 +179,7 @@ class MarkdownParser:
                         type="table_row",
                         text=line.strip(),
                         level=0,
-                        metadata={"line_number": line_num}
+                        metadata={"line_number": line_num},
                     )
                 )
                 continue
@@ -198,7 +198,7 @@ class MarkdownParser:
                         type="paragraph",
                         text=text_content,
                         level=0,
-                        metadata={"line_number": line_offset}
+                        metadata={"line_number": line_offset},
                     )
                 )
 

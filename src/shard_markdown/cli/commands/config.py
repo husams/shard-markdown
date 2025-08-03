@@ -95,7 +95,9 @@ def show(ctx: click.Context, format: str, section: str) -> None:
     help="Set local configuration (project-level)",
 )
 @click.pass_context
-def set(ctx: click.Context, key: str, value: str, is_global: bool, is_local: bool) -> None:  # noqa: C901
+def set(
+    ctx: click.Context, key: str, value: str, is_global: bool, is_local: bool
+) -> None:  # noqa: C901
     """Set a configuration value.
 
     Key should be in dot notation (e.g., chromadb.host, chunking.default_size).
@@ -240,7 +242,9 @@ def path(ctx: click.Context) -> None:
 def _display_config_table(config_dict: Dict[str, Any]) -> None:
     """Display configuration in table format."""
 
-    def flatten_dict(d: Dict[str, Any], parent_key: str = "", sep: str = ".") -> Dict[str, Any]:
+    def flatten_dict(
+        d: Dict[str, Any], parent_key: str = "", sep: str = "."
+    ) -> Dict[str, Any]:
         """Flatten nested dictionary with dot notation keys."""
         items: List[Tuple[str, Any]] = []
         for k, v in d.items():

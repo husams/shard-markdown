@@ -7,6 +7,7 @@ This document outlines the comprehensive testing procedures for the shard-markdo
 ## Test Suite Organization
 
 ### Directory Structure
+
 ```
 tests/
 ├── conftest.py                 # Shared fixtures and configuration
@@ -58,6 +59,7 @@ python -m pytest tests/conftest.py --collect-only
 **Purpose**: Run relevant tests during active development
 
 #### Fast Development Loop
+
 ```bash
 # Run tests for current module
 python -m pytest tests/unit/core/test_models.py -v
@@ -70,6 +72,7 @@ python -m pytest tests/unit/core/ --cov=src/shard_markdown/core --cov-report=ter
 ```
 
 #### Feature Development
+
 ```bash
 # Test specific feature area
 python -m pytest tests/unit/core/test_chunking/ -v
@@ -144,6 +147,7 @@ shard-md --version
 ### 1. Unit Test Best Practices
 
 #### Test Structure
+
 ```python
 class TestComponentName:
     """Test suite for ComponentName class."""
@@ -172,12 +176,14 @@ class TestComponentName:
 ```
 
 #### Naming Conventions
+
 - Test files: `test_<module_name>.py`
 - Test classes: `TestClassName`
 - Test methods: `test_<functionality_being_tested>`
 - Fixtures: `<resource_name>` (descriptive, no test_ prefix)
 
 #### Test Categories
+
 ```python
 @pytest.mark.unit
 def test_unit_functionality():
@@ -208,6 +214,7 @@ def test_time_consuming_operation():
 ### 2. Mock and Fixture Guidelines
 
 #### Effective Mocking
+
 ```python
 # Mock external dependencies
 @pytest.fixture
@@ -227,6 +234,7 @@ class DocumentProcessor:
 ```
 
 #### Fixture Design
+
 ```python
 # Scope fixtures appropriately
 @pytest.fixture(scope="session")
@@ -251,6 +259,7 @@ def chunk_size(request):
 ### 3. CLI Testing Strategies
 
 #### Direct Command Testing
+
 ```python
 def test_cli_command_direct():
     """Test CLI command directly."""
@@ -265,6 +274,7 @@ def test_cli_command_direct():
 ```
 
 #### Isolated Runner Testing
+
 ```python
 def test_cli_isolated():
     """Test CLI in isolated environment."""
@@ -283,6 +293,7 @@ def test_cli_isolated():
 ### 4. Integration Testing Patterns
 
 #### Database Integration
+
 ```python
 @pytest.mark.integration
 def test_chromadb_integration():
@@ -295,6 +306,7 @@ def test_chromadb_integration():
 ```
 
 #### File System Testing
+
 ```python
 def test_file_processing(tmp_path):
     """Test file operations."""
@@ -315,6 +327,7 @@ def test_file_processing(tmp_path):
 ### 1. Test Fixtures
 
 #### Document Fixtures
+
 ```python
 @pytest.fixture
 def simple_markdown():
@@ -342,7 +355,9 @@ author: "Test"
 def example():
     return "hello"
 ```
+
 """
+
 ```
 
 #### Configuration Fixtures
@@ -359,6 +374,7 @@ def test_config():
 ### 2. Test Data Generation
 
 #### Dynamic Test Data
+
 ```python
 def generate_large_document(sections=100):
     """Generate large test document."""
@@ -377,6 +393,7 @@ def variable_document(request):
 ## Error Testing Procedures
 
 ### 1. Exception Testing
+
 ```python
 def test_error_conditions():
     """Test various error conditions."""
@@ -391,6 +408,7 @@ def test_error_conditions():
 ```
 
 ### 2. Edge Case Testing
+
 ```python
 @pytest.mark.parametrize("input_value,expected", [
     ("", ProcessingError),           # Empty input
@@ -407,6 +425,7 @@ def test_edge_cases(input_value, expected):
 ## Performance Testing Procedures
 
 ### 1. Benchmark Testing
+
 ```python
 def test_processing_performance(benchmark):
     """Benchmark processing performance."""
@@ -432,6 +451,7 @@ def test_memory_usage():
 ```
 
 ### 2. Load Testing
+
 ```python
 def test_concurrent_processing():
     """Test concurrent processing capacity."""
@@ -453,6 +473,7 @@ def test_concurrent_processing():
 ## Continuous Testing Procedures
 
 ### 1. Pre-commit Hooks
+
 ```yaml
 # .pre-commit-config.yaml
 repos:
@@ -472,6 +493,7 @@ repos:
 ```
 
 ### 2. CI/CD Pipeline Testing
+
 ```yaml
 # .github/workflows/test.yml
 name: Test Suite
@@ -509,16 +531,19 @@ jobs:
 ### 1. Regular Maintenance Tasks
 
 #### Weekly
+
 - Review test failures and flaky tests
 - Update test data and fixtures as needed
 - Check test execution times and optimize slow tests
 
 #### Monthly
+
 - Review test coverage reports
 - Update test documentation
 - Refactor redundant or outdated tests
 
 #### Quarterly
+
 - Comprehensive test suite review
 - Performance baseline updates
 - Test infrastructure improvements
@@ -526,16 +551,19 @@ jobs:
 ### 2. Test Quality Metrics
 
 #### Coverage Targets
+
 - **Unit tests**: >90% line coverage
 - **Integration tests**: >80% workflow coverage
 - **E2E tests**: 100% critical path coverage
 
 #### Performance Targets
+
 - **Unit test execution**: <2 minutes total
 - **Integration tests**: <10 minutes total
 - **E2E tests**: <30 minutes total
 
 #### Quality Indicators
+
 - Test reliability: >98% pass rate
 - Test maintainability: Clear, readable test code
 - Test documentation: Complete procedure coverage
@@ -543,6 +571,7 @@ jobs:
 ## Troubleshooting Common Issues
 
 ### 1. Test Environment Issues
+
 ```bash
 # Clean test environment
 rm -rf .pytest_cache __pycache__ .coverage htmlcov/
@@ -554,6 +583,7 @@ rm -rf test_chromadb/
 ```
 
 ### 2. Mock/Fixture Issues
+
 ```python
 # Debug fixture issues
 pytest --fixtures tests/unit/test_module.py
@@ -563,6 +593,7 @@ pytest tests/unit/test_module.py::test_function -vv -s --pdb
 ```
 
 ### 3. Coverage Issues
+
 ```bash
 # Detailed coverage report
 pytest tests/unit/ --cov=src/shard_markdown --cov-report=html --cov-report=term-missing

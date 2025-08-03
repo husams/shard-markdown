@@ -3,9 +3,11 @@
 ## 1. Project Overview
 
 ### 1.1 Purpose
+
 The Shard Markdown CLI tool is a Python utility designed to intelligently split markdown documents into smaller, manageable chunks and store them in ChromaDB collections for efficient retrieval and processing. This tool addresses the need for document preprocessing in RAG (Retrieval-Augmented Generation) workflows and vector database management.
 
 ### 1.2 Scope
+
 - Parse and process markdown files with respect to document structure
 - Intelligent chunking with configurable size and overlap parameters
 - ChromaDB integration for vector storage and retrieval
@@ -15,6 +17,7 @@ The Shard Markdown CLI tool is a Python utility designed to intelligently split 
 - Configuration management for repeated operations
 
 ### 1.3 Key Features
+
 - **Structure-Aware Chunking**: Respects markdown headers, lists, and code blocks
 - **Flexible Sizing**: Configurable chunk sizes with character or token-based limits
 - **Overlap Control**: Prevents context loss with configurable overlap between chunks
@@ -27,17 +30,20 @@ The Shard Markdown CLI tool is a Python utility designed to intelligently split 
 ## 2. System Requirements
 
 ### 2.1 Runtime Requirements
+
 - Python 3.8+ (recommended 3.10+)
 - Memory: Minimum 512MB RAM (scales with document size)
 - Storage: Variable based on document corpus size
 - Network: Required for ChromaDB remote instances (optional for local)
 
 ### 2.2 Platform Support
+
 - Linux (Ubuntu 20.04+, CentOS 8+)
 - macOS (10.15+)
 - Windows (10+)
 
 ### 2.3 Dependencies
+
 - **Core Dependencies**:
   - `chromadb>=0.4.0`: Vector database operations
   - `click>=8.0.0`: CLI framework
@@ -56,24 +62,28 @@ The Shard Markdown CLI tool is a Python utility designed to intelligently split 
 ### 3.1 Core Components
 
 #### 3.1.1 CLI Interface Layer
+
 - Command parsing and validation
 - User interaction and feedback
 - Configuration management
 - Progress reporting
 
 #### 3.1.2 Document Processing Engine
+
 - Markdown parsing and AST generation
 - Intelligent chunking algorithms
 - Metadata extraction and enhancement
 - Content validation and sanitization
 
 #### 3.1.3 ChromaDB Integration Layer
+
 - Collection management operations
 - Document embedding and storage
 - Query and retrieval operations
 - Connection management and pooling
 
 #### 3.1.4 Configuration Management
+
 - Settings validation and defaults
 - Environment variable integration
 - Configuration file management
@@ -124,17 +134,20 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 ## 5. Performance Specifications
 
 ### 5.1 Processing Targets
+
 - **Small files** (<1MB): <1 second processing time
 - **Medium files** (1-10MB): <10 seconds processing time
 - **Large files** (10-100MB): <2 minutes processing time
 - **Batch operations**: Process 1000 files/hour (average document size)
 
 ### 5.2 Memory Usage
+
 - **Base memory**: <50MB for CLI application
 - **Per document**: <2x document size during processing
 - **ChromaDB client**: <100MB for connection and caching
 
 ### 5.3 Scalability Considerations
+
 - Streaming processing for large documents
 - Lazy loading for batch operations
 - Connection pooling for ChromaDB
@@ -143,12 +156,14 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 ## 6. Security and Privacy
 
 ### 6.1 Data Security
+
 - No persistent storage of processed content (unless configured)
 - Secure ChromaDB connection handling
 - Input validation to prevent injection attacks
 - Temporary file cleanup
 
 ### 6.2 Privacy Considerations
+
 - Optional metadata scrubbing
 - Configurable data retention policies
 - Support for local-only ChromaDB instances
@@ -157,6 +172,7 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 ## 7. Quality Assurance
 
 ### 7.1 Testing Strategy
+
 - Unit tests for all core components (>90% coverage)
 - Integration tests for ChromaDB operations
 - End-to-end tests for CLI workflows
@@ -164,6 +180,7 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 - Cross-platform compatibility tests
 
 ### 7.2 Validation Requirements
+
 - Input file format validation
 - Configuration parameter validation
 - ChromaDB connection validation
@@ -172,12 +189,14 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 ## 8. Deployment and Distribution
 
 ### 8.1 Package Distribution
+
 - PyPI package with proper metadata
 - GitHub releases with binary distributions
 - Docker image for containerized deployment
 - Conda package for scientific computing environments
 
 ### 8.2 Installation Methods
+
 - `uv add shard-markdown`
 - `conda install -c conda-forge shard-markdown`
 - `docker run shard-markdown`
@@ -186,12 +205,14 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 ## 9. Monitoring and Logging
 
 ### 9.1 Logging Strategy
+
 - Structured logging with configurable levels
 - Separate logs for operations and errors
 - Progress tracking for long-running operations
 - Optional file-based logging
 
 ### 9.2 Metrics and Monitoring
+
 - Processing time measurements
 - Success/failure rates
 - ChromaDB operation metrics
@@ -200,6 +221,7 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 ## 10. Future Enhancements
 
 ### 10.1 Planned Features
+
 - Plugin system for custom chunking strategies
 - Integration with other vector databases
 - Web interface for batch operations
@@ -207,6 +229,7 @@ def intelligent_chunk(document, max_size, overlap, respect_structure=True):
 - Multi-language support for international documents
 
 ### 10.2 Extensibility Points
+
 - Custom chunking algorithm plugins
 - Metadata extractor plugins
 - Output format plugins

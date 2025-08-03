@@ -76,6 +76,7 @@
 ### 2.1 CLI Interface Module (`cli/`)
 
 #### 2.1.1 Command Parser (`cli/parser.py`)
+
 ```python
 class CommandParser:
     """Main CLI command parser using Click framework"""
@@ -94,6 +95,7 @@ class CommandParser:
 ```
 
 #### 2.1.2 Command Handlers (`cli/commands/`)
+
 ```python
 # cli/commands/process.py
 class ProcessCommand:
@@ -119,6 +121,7 @@ class CollectionsCommand:
 ### 2.2 Document Processing Engine (`core/`)
 
 #### 2.2.1 Document Processor (`core/processor.py`)
+
 ```python
 class DocumentProcessor:
     """Main document processing coordinator"""
@@ -139,6 +142,7 @@ class DocumentProcessor:
 ```
 
 #### 2.2.2 Markdown Parser (`core/parser.py`)
+
 ```python
 class MarkdownParser:
     """Markdown document parser with AST generation"""
@@ -153,6 +157,7 @@ class MarkdownParser:
 ```
 
 #### 2.2.3 Chunking Engine (`core/chunking.py`)
+
 ```python
 class ChunkingEngine:
     """Intelligent document chunking with structure awareness"""
@@ -173,6 +178,7 @@ class ChunkingEngine:
 ### 2.3 ChromaDB Integration (`chromadb/`)
 
 #### 2.3.1 ChromaDB Client (`chromadb/client.py`)
+
 ```python
 class ChromaDBClient:
     """ChromaDB client wrapper with connection management"""
@@ -192,6 +198,7 @@ class ChromaDBClient:
 ```
 
 #### 2.3.2 Collection Manager (`chromadb/collections.py`)
+
 ```python
 class CollectionManager:
     """High-level collection management operations"""
@@ -211,6 +218,7 @@ class CollectionManager:
 ### 2.4 Configuration Management (`config/`)
 
 #### 2.4.1 Configuration Schema (`config/schema.py`)
+
 ```python
 class ChromaDBConfig(BaseModel):
     """ChromaDB connection configuration"""

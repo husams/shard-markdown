@@ -321,7 +321,9 @@ def _show_dry_run_preview(
         console.print(f"  ... and {len(paths) - 10} more files")
 
 
-def _display_single_result(processing_result: ProcessingResult, insert_result: Any) -> None:
+def _display_single_result(
+    processing_result: ProcessingResult, insert_result: Any
+) -> None:
     """Display results for single file processing."""
     table = Table(title="Processing Results")
     table.add_column("Metric", style="cyan")
@@ -340,7 +342,9 @@ def _display_single_result(processing_result: ProcessingResult, insert_result: A
     )
 
 
-def _display_batch_results(batch_result: BatchResult, insert_result: Any, verbose: int) -> None:
+def _display_batch_results(
+    batch_result: BatchResult, insert_result: Any, verbose: int
+) -> None:
     """Display results for batch processing."""
     # Summary table
     table = Table(title="Batch Processing Results")

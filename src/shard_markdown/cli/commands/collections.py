@@ -54,7 +54,9 @@ def collections() -> None:
 )
 @click.option("--filter", help="Filter collections by name pattern")
 @click.pass_context
-def list(ctx: click.Context, format: str, show_metadata: bool, filter: str) -> None:  # noqa: C901
+def list(
+    ctx: click.Context, format: str, show_metadata: bool, filter: str
+) -> None:  # noqa: C901
     """List all ChromaDB collections."""
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
@@ -109,7 +111,9 @@ def list(ctx: click.Context, format: str, show_metadata: bool, filter: str) -> N
 @click.option("--metadata", help="Additional metadata as JSON string")
 @click.option("--force", is_flag=True, help="Force creation even if collection exists")
 @click.pass_context
-def create(ctx: click.Context, name: str, description: str, metadata: str, force: bool) -> None:  # noqa: C901
+def create(
+    ctx: click.Context, name: str, description: str, metadata: str, force: bool
+) -> None:  # noqa: C901
     """Create a new ChromaDB collection."""
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
@@ -174,7 +178,9 @@ def create(ctx: click.Context, name: str, description: str, metadata: str, force
 @click.option("--force", "-f", is_flag=True, help="Force deletion without confirmation")
 @click.option("--backup", is_flag=True, help="Create backup before deletion")
 @click.pass_context
-def delete(ctx: click.Context, name: str, force: bool, backup: bool) -> None:  # noqa: C901
+def delete(
+    ctx: click.Context, name: str, force: bool, backup: bool
+) -> None:  # noqa: C901
     """Delete a ChromaDB collection."""
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
@@ -233,7 +239,9 @@ def delete(ctx: click.Context, name: str, force: bool, backup: bool) -> None:  #
     help="Include document count and sample documents",
 )
 @click.pass_context
-def info(ctx: click.Context, name: str, format: str, show_documents: bool) -> None:  # noqa: C901
+def info(
+    ctx: click.Context, name: str, format: str, show_documents: bool
+) -> None:  # noqa: C901
     """Show detailed information about a collection."""
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
@@ -276,7 +284,9 @@ def info(ctx: click.Context, name: str, format: str, show_documents: bool) -> No
         raise click.Abort()
 
 
-def _display_collections_table(collections_info: List[Dict[str, Any]], show_metadata: bool) -> None:
+def _display_collections_table(
+    collections_info: List[Dict[str, Any]], show_metadata: bool
+) -> None:
     """Display collections in table format."""
     table = Table(title="ChromaDB Collections")
     table.add_column("Name", style="cyan")
@@ -303,7 +313,9 @@ def _display_collections_table(collections_info: List[Dict[str, Any]], show_meta
     console.print(table)
 
 
-def _display_collection_info_table(info_data: Dict[str, Any], show_documents: bool) -> None:
+def _display_collection_info_table(
+    info_data: Dict[str, Any], show_documents: bool
+) -> None:
     """Display collection info in table format."""
     table = Table(title=f"Collection: {info_data['name']}")
     table.add_column("Property", style="cyan")

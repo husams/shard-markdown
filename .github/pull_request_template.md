@@ -26,10 +26,12 @@
 <!-- Provide a detailed description of the changes -->
 
 ### Core Changes
+
 -
 -
 
 ### Additional Changes
+
 -
 -
 
@@ -38,12 +40,14 @@
 <!-- Describe how you tested your changes -->
 
 ### Test Coverage
+
 - [ ] Added new tests for the changes
 - [ ] Updated existing tests
 - [ ] All tests pass locally
 - [ ] Manual testing completed
 
 ### Test Commands Run
+
 ```bash
 # List the commands you ran to test your changes
 uv run pytest tests/
@@ -94,21 +98,25 @@ uv run pytest tests/
 <!-- Mark completed items with an "x" -->
 
 ### Code Quality
+
 - [ ] Code follows the project's style guidelines
 - [ ] Self-review of the code completed
 - [ ] Code is well-documented
 - [ ] No debugging/console statements left in code
 
 ### Testing
+
 - [ ] Tests added/updated for new functionality
 - [ ] All tests pass
 - [ ] Test coverage maintained or improved
 
 ### Documentation
+
 - [ ] Documentation updated (if needed)
 - [ ] Changelog updated (if needed)
 
 ### Dependencies
+
 - [ ] No new dependencies added, or dependencies are justified and documented
 - [ ] Security scan passes (if dependencies changed)
 

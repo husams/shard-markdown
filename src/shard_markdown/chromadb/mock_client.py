@@ -26,7 +26,9 @@ class MockCollection:
         self.documents: Dict[str, Dict[str, Any]] = {}
         self._count = 0
 
-    def add(self, ids: List[str], documents: List[str], metadatas: List[Dict[str, Any]]) -> None:
+    def add(
+        self, ids: List[str], documents: List[str], metadatas: List[Dict[str, Any]]
+    ) -> None:
         """Add documents to mock collection."""
         for id_, doc, meta in zip(ids, documents, metadatas):
             self.documents[id_] = {
