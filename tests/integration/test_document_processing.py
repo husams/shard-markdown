@@ -206,9 +206,7 @@ Final section with content.
         empty_sections_file = temp_dir / "empty_sections.md"
         empty_sections_file.write_text(content_with_empty)
 
-        result = processor.process_document(
-            empty_sections_file, "empty-sections-test"
-        )
+        result = processor.process_document(empty_sections_file, "empty-sections-test")
 
         assert result.success is True
         assert result.chunks_created > 0
@@ -355,9 +353,7 @@ features:
         file_paths = list(test_documents.values())
 
         start_time = time.time()
-        result = processor.process_batch(
-            file_paths, "performance-test", max_workers=1
-        )
+        result = processor.process_batch(file_paths, "performance-test", max_workers=1)
         end_time = time.time()
 
         # Basic performance checks
@@ -383,9 +379,7 @@ features:
         assert result_1_worker.total_files == result_4_workers.total_files
         assert result_1_worker.successful_files == result_4_workers.successful_files
         # Total chunks might vary slightly due to threading, but should be close
-        chunk_diff = abs(
-            result_1_worker.total_chunks - result_4_workers.total_chunks
-        )
+        chunk_diff = abs(result_1_worker.total_chunks - result_4_workers.total_chunks)
         assert chunk_diff <= 1
 
 
@@ -406,9 +400,7 @@ class TestDocumentProcessingErrors:
             restricted_file.write_text("# Restricted Document\nContent")
             restricted_file.chmod(0o000)  # No permissions
 
-            result = processor.process_document(
-                restricted_file, "test-permissions"
-            )
+            result = processor.process_document(restricted_file, "test-permissions")
 
             # Should handle permission error gracefully
             assert result.success is False
@@ -510,9 +502,7 @@ class TestDocumentProcessingMetadata:
         """Create processor for metadata testing."""
         return DocumentProcessor(chunking_config)
 
-    def test_metadata_extraction_and_enhancement(
-        self, processor, sample_markdown_file
-    ):
+    def test_metadata_extraction_and_enhancement(self, processor, sample_markdown_file):
         """Test that metadata is properly extracted and enhanced."""
         result = processor.process_document(sample_markdown_file, "metadata-test")
 

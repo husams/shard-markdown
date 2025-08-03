@@ -94,9 +94,7 @@ def search(  # noqa: C901
         )
 
         try:
-            results = collection_obj.query(
-                query_texts=[query_text], n_results=limit
-            )
+            results = collection_obj.query(query_texts=[query_text], n_results=limit)
         except Exception as e:
             raise click.ClickException(f"Search failed: {str(e)}")
 
@@ -111,19 +109,13 @@ def search(  # noqa: C901
                 results, include_metadata, similarity_threshold
             )
         elif format == "json":
-            formatted_results = _format_search_results(
-                results, include_metadata
-            )
+            formatted_results = _format_search_results(results, include_metadata)
             console.print(json.dumps(formatted_results, indent=2))
         elif format == "yaml":
             import yaml
 
-            formatted_results = _format_search_results(
-                results, include_metadata
-            )
-            console.print(
-                yaml.dump(formatted_results, default_flow_style=False)
-            )
+            formatted_results = _format_search_results(results, include_metadata)
+            console.print(yaml.dump(formatted_results, default_flow_style=False))
 
         count = len(results["ids"][0])
         console.print(f"[green]Found {count} document(s)[/green]")
@@ -185,40 +177,28 @@ def get(ctx, document_id, collection, format, include_metadata):  # noqa: C901
             results = collection_obj.get(
                 ids=[document_id],
                 include=(
-                    ["documents", "metadatas"]
-                    if include_metadata
-                    else ["documents"]
+                    ["documents", "metadatas"] if include_metadata else ["documents"]
                 ),
             )
         except Exception as e:
-            raise click.ClickException(
-                f"Failed to retrieve document: {str(e)}"
-            )
+            raise click.ClickException(f"Failed to retrieve document: {str(e)}")
 
         # Check if document exists
         if not results["ids"]:
-            console.print(
-                f"[yellow]Document '{document_id}' not found[/yellow]"
-            )
+            console.print(f"[yellow]Document '{document_id}' not found[/yellow]")
             return
 
         # Display result
         if format == "table":
             _display_document_table(results, include_metadata)
         elif format == "json":
-            formatted_result = _format_document_result(
-                results, include_metadata
-            )
+            formatted_result = _format_document_result(results, include_metadata)
             console.print(json.dumps(formatted_result, indent=2))
         elif format == "yaml":
             import yaml
 
-            formatted_result = _format_document_result(
-                results, include_metadata
-            )
-            console.print(
-                yaml.dump(formatted_result, default_flow_style=False)
-            )
+            formatted_result = _format_document_result(results, include_metadata)
+            console.print(yaml.dump(formatted_result, default_flow_style=False))
 
         console.print("[green]✓ Document retrieved successfully[/green]")
 
@@ -235,9 +215,7 @@ def get(ctx, document_id, collection, format, include_metadata):  # noqa: C901
         raise click.Abort()
 
 
-def _display_search_results_table(
-    results, include_metadata, similarity_threshold
-):
+def _display_search_results_table(results, include_metadata, similarity_threshold):
     """Display search results in table format."""
     table = Table(title="Search Results")
     table.add_column("Rank", style="cyan", width=6)
@@ -251,13 +229,9 @@ def _display_search_results_table(
     ids = results["ids"][0]
     documents = results["documents"][0]
     distances = results["distances"][0]
-    metadatas = (
-        results.get("metadatas", [[]])[0] if include_metadata else []
-    )
+    metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
 
-    for i, (doc_id, doc, distance) in enumerate(
-        zip(ids, documents, distances)
-    ):
+    for i, (doc_id, doc, distance) in enumerate(zip(ids, documents, distances)):
         # Skip if below similarity threshold
         similarity = 1 - distance  # Convert distance to similarity
         if similarity < similarity_threshold:
@@ -278,11 +252,13 @@ def _display_search_results_table(
                     "chunk_index",
                     "structural_context",
                 ]
-                metadata_str = ", ".join([
-                    f"{k}: {v}"
-                    for k, v in metadata.items()
-                    if k in key_fields and v is not None
-                ])
+                metadata_str = ", ".join(
+                    [
+                        f"{k}: {v}"
+                        for k, v in metadata.items()
+                        if k in key_fields and v is not None
+                    ]
+                )
                 if len(metadata_str) > 50:
                     metadata_str = metadata_str[:47] + "..."
                 row.append(metadata_str or "")
@@ -298,9 +274,7 @@ def _display_document_table(results, include_metadata):
     """Display document in table format."""
     doc_id = results["ids"][0]
     document = results["documents"][0]
-    metadata = (
-        results.get("metadatas", [{}])[0] if include_metadata else {}
-    )
+    metadata = results.get("metadatas", [{}])[0] if include_metadata else {}
 
     table = Table(title=f"Document: {doc_id}")
     table.add_column("Property", style="cyan")
@@ -325,14 +299,10 @@ def _format_search_results(results, include_metadata):
     ids = results["ids"][0]
     documents = results["documents"][0]
     distances = results["distances"][0]
-    metadatas = (
-        results.get("metadatas", [[]])[0] if include_metadata else []
-    )
+    metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
 
     formatted = []
-    for i, (doc_id, doc, distance) in enumerate(
-        zip(ids, documents, distances)
-    ):
+    for i, (doc_id, doc, distance) in enumerate(zip(ids, documents, distances)):
         result = {
             "id": doc_id,
             "content": doc,
@@ -353,9 +323,7 @@ def _format_document_result(results, include_metadata):
     result = {"id": results["ids"][0], "content": results["documents"][0]}
 
     metadata_exists = (
-        include_metadata
-        and results.get("metadatas")
-        and results["metadatas"][0]
+        include_metadata and results.get("metadatas") and results["metadatas"][0]
     )
     if metadata_exists:
         result["metadata"] = results["metadatas"][0]

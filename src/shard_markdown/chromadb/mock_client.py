@@ -63,12 +63,8 @@ class MockCollection:
         else:
             return {
                 "ids": list(self.documents.keys()),
-                "documents": [
-                    doc["document"] for doc in self.documents.values()
-                ],
-                "metadatas": [
-                    doc["metadata"] for doc in self.documents.values()
-                ],
+                "documents": [doc["document"] for doc in self.documents.values()],
+                "metadatas": [doc["metadata"] for doc in self.documents.values()],
             }
 
     def query(self, query_texts: List[str], n_results: int = 10):
@@ -176,8 +172,7 @@ class MockChromaDBClient:
 
             processing_time = time.time() - start_time
             logger.info(
-                f"Mock bulk insert: {len(chunks)} chunks in "
-                f"{processing_time:.2f}s"
+                f"Mock bulk insert: {len(chunks)} chunks in " f"{processing_time:.2f}s"
             )
 
             return InsertResult(
@@ -214,8 +209,7 @@ class MockChromaDBClient:
                     self.collections[name] = collection
 
                 logger.debug(
-                    f"Loaded {len(self.collections)} mock collections "
-                    "from storage"
+                    f"Loaded {len(self.collections)} mock collections " "from storage"
                 )
 
             except Exception as e:

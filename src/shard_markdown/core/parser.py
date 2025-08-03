@@ -40,17 +40,15 @@ class MarkdownParser:
         """
         try:
             # Extract frontmatter
-            doc_frontmatter, content_without_frontmatter = (
-                self.extract_frontmatter(content)
+            doc_frontmatter, content_without_frontmatter = self.extract_frontmatter(
+                content
             )
 
             # Parse elements
             elements = self._parse_elements(content_without_frontmatter)
 
             # Extract document metadata
-            doc_metadata = self._extract_document_metadata(
-                elements, doc_frontmatter
-            )
+            doc_metadata = self._extract_document_metadata(elements, doc_frontmatter)
 
             return MarkdownAST(
                 elements=elements,
@@ -116,9 +114,7 @@ class MarkdownParser:
                 i += consumed_lines
 
             # Check for lists
-            elif re.match(r"^[\s]*[-*+]\s", line) or re.match(
-                r"^[\s]*\d+\.\s", line
-            ):
+            elif re.match(r"^[\s]*[-*+]\s", line) or re.match(r"^[\s]*\d+\.\s", line):
                 element, consumed_lines = self._parse_list(lines[i:])
                 elements.append(element)
                 i += consumed_lines
@@ -208,9 +204,7 @@ class MarkdownParser:
             line = lines[i]
 
             # Check if this is a list item
-            if re.match(r"^[\s]*[-*+]\s", line) or re.match(
-                r"^[\s]*\d+\.\s", line
-            ):
+            if re.match(r"^[\s]*[-*+]\s", line) or re.match(r"^[\s]*\d+\.\s", line):
                 # Extract item text
                 item_text = re.sub(r"^[\s]*[-*+\d.]\s*", "", line)
                 items.append(item_text)
@@ -222,9 +216,7 @@ class MarkdownParser:
                 # Non-list line ends the list
                 break
 
-        list_type = (
-            "ordered" if re.match(r"^[\s]*\d+\.", lines[0]) else "unordered"
-        )
+        list_type = "ordered" if re.match(r"^[\s]*\d+\.", lines[0]) else "unordered"
 
         return (
             MarkdownElement(
@@ -317,9 +309,7 @@ class MarkdownParser:
                     [e for e in elements if e.type == "code_block"]
                 ),
                 "list_count": len([e for e in elements if e.type == "list"]),
-                "paragraph_count": len(
-                    [e for e in elements if e.type == "paragraph"]
-                ),
+                "paragraph_count": len([e for e in elements if e.type == "paragraph"]),
             }
         )
 

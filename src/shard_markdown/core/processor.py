@@ -54,9 +54,7 @@ class DocumentProcessor:
             ast = self.parser.parse(content)
 
             # Extract metadata
-            file_metadata = self.metadata_extractor.extract_file_metadata(
-                file_path
-            )
+            file_metadata = self.metadata_extractor.extract_file_metadata(file_path)
             doc_metadata = self.metadata_extractor.extract_document_metadata(ast)
 
             # Chunk document

@@ -1,8 +1,9 @@
 """Unit tests for process CLI command."""
 
+from unittest.mock import Mock, patch
+
 import pytest
 from click.testing import CliRunner
-from unittest.mock import Mock, patch
 
 from shard_markdown.cli.commands.process import process
 from shard_markdown.core.models import BatchResult, ProcessingResult
@@ -30,9 +31,7 @@ class TestProcessCommand:
     @pytest.fixture
     def mock_processor(self):
         """Mock DocumentProcessor."""
-        with patch(
-            "shard_markdown.cli.commands.process.DocumentProcessor"
-        ) as mock:
+        with patch("shard_markdown.cli.commands.process.DocumentProcessor") as mock:
             processor = Mock()
             mock.return_value = processor
             yield processor
@@ -40,9 +39,7 @@ class TestProcessCommand:
     @pytest.fixture
     def mock_collection_manager(self):
         """Mock CollectionManager."""
-        with patch(
-            "shard_markdown.cli.commands.process.CollectionManager"
-        ) as mock:
+        with patch("shard_markdown.cli.commands.process.CollectionManager") as mock:
             manager = Mock()
             mock.return_value = manager
             yield manager
@@ -73,9 +70,7 @@ class TestProcessCommand:
         # Verify processor was called correctly
         mock_processor.process_document.assert_called_once()
 
-    def test_process_command_missing_collection(
-        self, cli_runner, sample_markdown_file
-    ):
+    def test_process_command_missing_collection(self, cli_runner, sample_markdown_file):
         """Test process command with missing collection parameter."""
         result = cli_runner.invoke(process, [str(sample_markdown_file)])
 
@@ -282,9 +277,7 @@ class TestProcessCommand:
                 or "failed" in result.output.lower()
             )
 
-    def test_process_command_validation_error(
-        self, cli_runner, sample_markdown_file
-    ):
+    def test_process_command_validation_error(self, cli_runner, sample_markdown_file):
         """Test handling of validation errors."""
         with patch(
             "shard_markdown.cli.commands.process.validate_collection_name"
@@ -329,8 +322,7 @@ class TestProcessCommand:
         assert result.exit_code == 0
         # Should show progress information
         assert (
-            "processed" in result.output.lower()
-            or "progress" in result.output.lower()
+            "processed" in result.output.lower() or "progress" in result.output.lower()
         )
 
     def test_process_command_output_formats(

@@ -141,9 +141,7 @@ def validate_collection_name(name: str) -> None:
     """
     if not name or not name.strip():
         raise InputValidationError(
-            "Collection name cannot be empty",
-            error_code=1020,
-            context={"name": name}
+            "Collection name cannot be empty", error_code=1020, context={"name": name}
         )
 
     name = name.strip()
@@ -161,8 +159,7 @@ def validate_collection_name(name: str) -> None:
     )
     if invalid_chars:
         raise InputValidationError(
-            f"Collection name contains invalid characters: "
-            f"{sorted(invalid_chars)}",
+            f"Collection name contains invalid characters: " f"{sorted(invalid_chars)}",
             error_code=1022,
             context={"name": name, "invalid_chars": sorted(invalid_chars)},
         )

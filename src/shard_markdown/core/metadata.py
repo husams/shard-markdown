@@ -52,9 +52,7 @@ class MetadataExtractor:
             return metadata
 
         except Exception as e:
-            logger.warning(
-                f"Failed to extract file metadata for {file_path}: {e}"
-            )
+            logger.warning(f"Failed to extract file metadata for {file_path}: {e}")
             return {
                 "file_path": str(file_path),
                 "file_name": file_path.name,

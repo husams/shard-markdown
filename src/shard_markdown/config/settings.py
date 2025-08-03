@@ -19,16 +19,10 @@ class ChromaDBConfig(BaseModel):
     """ChromaDB connection configuration."""
 
     host: str = Field(default="localhost", description="ChromaDB server host")
-    port: int = Field(
-        default=8000, ge=1, le=65535, description="ChromaDB server port"
-    )
+    port: int = Field(default=8000, ge=1, le=65535, description="ChromaDB server port")
     ssl: bool = Field(default=False, description="Use SSL connection")
-    auth_token: Optional[str] = Field(
-        default=None, description="Authentication token"
-    )
-    timeout: int = Field(
-        default=30, ge=1, description="Connection timeout in seconds"
-    )
+    auth_token: Optional[str] = Field(default=None, description="Authentication token")
+    timeout: int = Field(default=30, ge=1, description="Connection timeout in seconds")
 
     @validator("host")
     def validate_host(cls, v: str) -> str:
@@ -105,9 +99,7 @@ class LoggingConfig(BaseModel):
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         description="Log message format",
     )
-    file_path: Optional[Path] = Field(
-        default=None, description="Log file path"
-    )
+    file_path: Optional[Path] = Field(default=None, description="Log file path")
     max_file_size: int = Field(
         default=10485760, description="Maximum log file size in bytes"  # 10MB
     )

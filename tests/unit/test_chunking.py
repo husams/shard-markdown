@@ -184,8 +184,7 @@ class TestFixedSizeChunker:
                     # Check if end of current chunk appears in next
                     current_end = current_chunk[-20:]
                     overlap_words = [
-                        word for word in current_end.split()[-3:]
-                        if len(word) > 3
+                        word for word in current_end.split()[-3:] if len(word) > 3
                     ]
                     if any(word in next_chunk[:100] for word in overlap_words):
                         # Overlap detected - this is expected behavior

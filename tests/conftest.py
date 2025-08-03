@@ -345,9 +345,7 @@ def large_document_content():
 
     for i in range(50):
         sections.append(f"## Section {i + 1}\n\n")
-        sections.append(
-            f"This is the content for section {i + 1}. " * 10 + "\n\n"
-        )
+        sections.append(f"This is the content for section {i + 1}. " * 10 + "\n\n")
 
         if i % 5 == 0:
             sections.append("```python\n")

@@ -71,9 +71,7 @@ def list(ctx, format, show_metadata, filter):  # noqa: C901
         # Apply filter if specified
         if filter:
             collections_info = [
-                col
-                for col in collections_info
-                if filter.lower() in col["name"].lower()
+                col for col in collections_info if filter.lower() in col["name"].lower()
             ]
 
         # Display results
@@ -84,16 +82,12 @@ def list(ctx, format, show_metadata, filter):  # noqa: C901
         elif format == "yaml":
             import yaml
 
-            console.print(
-                yaml.dump(collections_info, default_flow_style=False)
-            )
+            console.print(yaml.dump(collections_info, default_flow_style=False))
 
         if not collections_info:
             console.print("[yellow]No collections found[/yellow]")
         else:
-            console.print(
-                f"[green]Found {len(collections_info)} collection(s)[/green]"
-            )
+            console.print(f"[green]Found {len(collections_info)} collection(s)[/green]")
 
     except ShardMarkdownError as e:
         console.print(f"[red]Error:[/red] {e.message}")
@@ -112,9 +106,7 @@ def list(ctx, format, show_metadata, filter):  # noqa: C901
 @click.argument("name")
 @click.option("--description", help="Collection description")
 @click.option("--metadata", help="Additional metadata as JSON string")
-@click.option(
-    "--force", is_flag=True, help="Force creation even if collection exists"
-)
+@click.option("--force", is_flag=True, help="Force creation even if collection exists")
 @click.pass_context
 def create(ctx, name, description, metadata, force):  # noqa: C901
     """Create a new ChromaDB collection."""
@@ -178,9 +170,7 @@ def create(ctx, name, description, metadata, force):  # noqa: C901
 
 @collections.command()
 @click.argument("name")
-@click.option(
-    "--force", "-f", is_flag=True, help="Force deletion without confirmation"
-)
+@click.option("--force", "-f", is_flag=True, help="Force deletion without confirmation")
 @click.option("--backup", is_flag=True, help="Create backup before deletion")
 @click.pass_context
 def delete(ctx, name, force, backup):  # noqa: C901
@@ -202,15 +192,11 @@ def delete(ctx, name, force, backup):  # noqa: C901
 
         # Get collection info for backup
         if backup:
-            console.print(
-                "[yellow]Backup functionality not yet implemented[/yellow]"
-            )
+            console.print("[yellow]Backup functionality not yet implemented[/yellow]")
 
         # Confirm deletion
         if not force:
-            confirm_msg = (
-                f"Delete collection '{name}' and all its documents?"
-            )
+            confirm_msg = f"Delete collection '{name}' and all its documents?"
             if not click.confirm(confirm_msg):
                 raise click.Abort()
 

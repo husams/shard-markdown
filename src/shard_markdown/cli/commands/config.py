@@ -56,21 +56,15 @@ def show(ctx, format, section):
         # Filter to specific section if requested
         if section:
             if section not in config_dict:
-                console.print(
-                    f"[red]Configuration section '{section}' not found[/red]"
-                )
+                console.print(f"[red]Configuration section '{section}' not found[/red]")
                 available_sections = list(config_dict.keys())
-                console.print(
-                    f"Available sections: {', '.join(available_sections)}"
-                )
+                console.print(f"Available sections: {', '.join(available_sections)}")
                 return
             config_dict = {section: config_dict[section]}
 
         # Display based on format
         if format == "yaml":
-            console.print(
-                yaml.dump(config_dict, default_flow_style=False, indent=2)
-            )
+            console.print(yaml.dump(config_dict, default_flow_style=False, indent=2))
         elif format == "json":
             console.print(json.dumps(config_dict, indent=2))
         elif format == "table":
@@ -196,20 +190,15 @@ def init(ctx, is_global, force, template):
         # Check if file already exists
         if config_path.exists() and not force:
             console.print(
-                f"[yellow]Configuration file already exists: "
-                f"{config_path}[/yellow]"
+                f"[yellow]Configuration file already exists: " f"{config_path}[/yellow]"
             )
-            console.print(
-                "Use --force to overwrite, or edit the existing file."
-            )
+            console.print("Use --force to overwrite, or edit the existing file.")
             return
 
         # Create default configuration
         create_default_config(config_path, force=force)
 
-        console.print(
-            f"[green]✓ Initialized configuration file: {config_path}[/green]"
-        )
+        console.print(f"[green]✓ Initialized configuration file: {config_path}[/green]")
         console.print(
             "You can now edit the file or use 'shard-md config set' "
             "to modify values."
@@ -235,16 +224,13 @@ def path(ctx):
     for i, location in enumerate(DEFAULT_CONFIG_LOCATIONS, 1):
         exists = "✓" if location.exists() else "✗"
         status = (
-            "[green]exists[/green]"
-            if location.exists()
-            else "[dim]not found[/dim]"
+            "[green]exists[/green]" if location.exists() else "[dim]not found[/dim]"
         )
         console.print(f"  {i}. {exists} {location} ({status})")
 
     console.print("\n[dim]The first existing file will be used.[/dim]")
     console.print(
-        "[dim]Use 'shard-md config init' to create a new configuration "
-        "file.[/dim]"
+        "[dim]Use 'shard-md config init' to create a new configuration " "file.[/dim]"
     )
 
 

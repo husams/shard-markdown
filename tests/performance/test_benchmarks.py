@@ -24,9 +24,7 @@ class TestProcessingBenchmarks:
         """Standard configuration for benchmarking."""
         return ChunkingConfig(chunk_size=1000, overlap=200, method="structure")
 
-    def test_single_document_processing_benchmark(
-        self, temp_dir, benchmark_config
-    ):
+    def test_single_document_processing_benchmark(self, temp_dir, benchmark_config):
         """Benchmark processing of a single document."""
         processor = DocumentProcessor(benchmark_config)
 
@@ -350,9 +348,7 @@ class TestProcessingBenchmarks:
         doc_path.write_text(doc_content)
 
         for method in methods:
-            config = ChunkingConfig(
-                chunk_size=1000, overlap=200, method=method
-            )
+            config = ChunkingConfig(chunk_size=1000, overlap=200, method=method)
             processor = DocumentProcessor(config)
 
             # Run multiple times for statistical accuracy
@@ -361,9 +357,7 @@ class TestProcessingBenchmarks:
 
             for run in range(3):
                 start_time = time.perf_counter()
-                result = processor.process_document(
-                    doc_path, f"method-{method}-{run}"
-                )
+                result = processor.process_document(doc_path, f"method-{method}-{run}")
                 end_time = time.perf_counter()
 
                 assert (

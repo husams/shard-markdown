@@ -389,9 +389,7 @@ Content here.
                 # Queries might fail if ChromaDB isn't available,
                 # but we test the interface
 
-    def test_config_override_workflow(
-        self, cli_runner, sample_markdown_file, temp_dir
-    ):
+    def test_config_override_workflow(self, cli_runner, sample_markdown_file, temp_dir):
         """Test configuration override workflow."""
         # Create custom config
         custom_config = temp_dir / "custom_config.yaml"
@@ -537,9 +535,7 @@ class TestCLIErrorScenarios:
         """CLI runner for error scenario tests."""
         return CliRunner()
 
-    def test_invalid_collection_name_scenarios(
-        self, cli_runner, sample_markdown_file
-    ):
+    def test_invalid_collection_name_scenarios(self, cli_runner, sample_markdown_file):
         """Test various invalid collection names."""
         invalid_names = [
             "",  # Empty
