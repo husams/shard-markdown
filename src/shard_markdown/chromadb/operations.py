@@ -12,7 +12,7 @@ logger = get_logger(__name__)
 class ChromaDBOperations:
     """High-level ChromaDB operations for querying and retrieval."""
 
-    def __init__(self, client: ChromaDBClient):
+    def __init__(self, client: ChromaDBClient) -> None:
         """Initialize operations handler.
 
         Args:
@@ -43,7 +43,7 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If query fails
         """
-        if not self.client._connection_validated:
+        if not self.client._connection_validated or self.client.client is None:
             raise ChromaDBError(
                 "ChromaDB connection not established",
                 error_code=1400,
@@ -114,7 +114,7 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If retrieval fails
         """
-        if not self.client._connection_validated:
+        if not self.client._connection_validated or self.client.client is None:
             raise ChromaDBError(
                 "ChromaDB connection not established",
                 error_code=1400,
@@ -183,7 +183,7 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If listing fails
         """
-        if not self.client._connection_validated:
+        if not self.client._connection_validated or self.client.client is None:
             raise ChromaDBError(
                 "ChromaDB connection not established",
                 error_code=1400,
@@ -261,7 +261,7 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If deletion fails
         """
-        if not self.client._connection_validated:
+        if not self.client._connection_validated or self.client.client is None:
             raise ChromaDBError(
                 "ChromaDB connection not established",
                 error_code=1400,
@@ -297,7 +297,7 @@ class ChromaDBOperations:
 
     def _process_query_results(
         self,
-        results: Dict,
+        results: Dict[str, Any],
         similarity_threshold: float,
         include_metadata: bool,
     ) -> Dict[str, Any]:
@@ -311,7 +311,7 @@ class ChromaDBOperations:
         Returns:
             Processed results dictionary
         """
-        processed = {"results": []}
+        processed: Dict[str, Any] = {"results": []}
 
         if not results.get("ids") or not results["ids"][0]:
             return processed

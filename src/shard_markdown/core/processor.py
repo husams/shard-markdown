@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 class DocumentProcessor:
     """Main document processing coordinator."""
 
-    def __init__(self, chunking_config: ChunkingConfig):
+    def __init__(self, chunking_config: ChunkingConfig) -> None:
         """Initialize processor with configuration.
 
         Args:
@@ -239,6 +239,13 @@ class DocumentProcessor:
                     context={"file_path": str(file_path)},
                     cause=e,
                 )
+
+        # This should never be reached, but mypy needs it
+        raise FileSystemError(
+            f"Failed to read file: {file_path}",
+            error_code=1299,
+            context={"file_path": str(file_path)},
+        )
 
     def _enhance_chunks(
         self,

@@ -1,6 +1,7 @@
 """Config command for configuration management."""
 
 import json
+from typing import Any, Dict, List, Tuple
 
 import click
 import yaml
@@ -16,7 +17,7 @@ console = Console()
 
 
 @click.group()
-def config():
+def config() -> None:
     """Manage shard-markdown configuration.
 
     This command group provides operations for viewing, editing, and managing
@@ -34,7 +35,7 @@ def config():
 )
 @click.option("--section", help="Show specific configuration section only")
 @click.pass_context
-def show(ctx, format, section):
+def show(ctx: click.Context, format: str, section: str) -> None:
     """Show current configuration.
 
     Examples:
@@ -94,7 +95,7 @@ def show(ctx, format, section):
     help="Set local configuration (project-level)",
 )
 @click.pass_context
-def set(ctx, key, value, is_global, is_local):  # noqa: C901
+def set(ctx: click.Context, key: str, value: str, is_global: bool, is_local: bool) -> None:  # noqa: C901
     """Set a configuration value.
 
     Key should be in dot notation (e.g., chromadb.host, chunking.default_size).
@@ -113,13 +114,13 @@ def set(ctx, key, value, is_global, is_local):  # noqa: C901
 
     try:
         # Determine configuration file path
+        config_path = None
         if is_global:
             config_path = DEFAULT_CONFIG_LOCATIONS[0]
         elif is_local:
             config_path = DEFAULT_CONFIG_LOCATIONS[1]
         else:
             # Use the first existing config file, or global if none exist
-            config_path = None
             for location in DEFAULT_CONFIG_LOCATIONS:
                 if location.exists():
                     config_path = location
@@ -166,7 +167,7 @@ def set(ctx, key, value, is_global, is_local):  # noqa: C901
 @click.option("--force", is_flag=True, help="Overwrite existing configuration")
 @click.option("--template", help="Use configuration template (future feature)")
 @click.pass_context
-def init(ctx, is_global, force, template):
+def init(ctx: click.Context, is_global: bool, force: bool, template: str) -> None:
     """Initialize configuration file with defaults.
 
     Examples:
@@ -214,7 +215,7 @@ def init(ctx, is_global, force, template):
 
 @config.command()
 @click.pass_context
-def path(ctx):
+def path(ctx: click.Context) -> None:
     """Show configuration file locations.
 
     This shows the order of configuration file locations that shard-md checks.
@@ -236,12 +237,12 @@ def path(ctx):
     )
 
 
-def _display_config_table(config_dict):
+def _display_config_table(config_dict: Dict[str, Any]) -> None:
     """Display configuration in table format."""
 
-    def flatten_dict(d, parent_key="", sep="."):
+    def flatten_dict(d: Dict[str, Any], parent_key: str = "", sep: str = ".") -> Dict[str, Any]:
         """Flatten nested dictionary with dot notation keys."""
-        items = []
+        items: List[Tuple[str, Any]] = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
             if isinstance(v, dict):
@@ -253,7 +254,7 @@ def _display_config_table(config_dict):
     flat_config = flatten_dict(config_dict)
 
     # Group by section
-    sections = {}
+    sections: Dict[str, List[Tuple[str, Any]]] = {}
     for key, value in flat_config.items():
         section = key.split(".")[0]
         if section not in sections:
@@ -266,7 +267,8 @@ def _display_config_table(config_dict):
         table.add_column("Setting", style="cyan")
         table.add_column("Value", style="white")
 
-        for key, value in items:
+        items_list: List[Tuple[str, Any]] = items
+        for key, value in items_list:
             # Remove section prefix from key for display
             display_key = ".".join(key.split(".")[1:]) if "." in key else key
             table.add_row(display_key, str(value))
@@ -275,7 +277,7 @@ def _display_config_table(config_dict):
         console.print()
 
 
-def _set_nested_value(data, path, value):
+def _set_nested_value(data: Dict[str, Any], path: str, value: Any) -> None:
     """Set nested value in dictionary using dot notation."""
     keys = path.split(".")
     current = data
@@ -290,7 +292,7 @@ def _set_nested_value(data, path, value):
     current[keys[-1]] = value
 
 
-def _parse_config_value(value):
+def _parse_config_value(value: str) -> Any:
     """Parse configuration value to appropriate type."""
     # Handle boolean values
     if value.lower() in ("true", "1", "yes", "on"):

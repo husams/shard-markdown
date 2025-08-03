@@ -14,7 +14,7 @@ class ShardMarkdownError(Exception):
         category: str,
         context: Optional[Dict[str, Any]] = None,
         cause: Optional[Exception] = None,
-    ):
+    ) -> None:
         """Initialize the ShardMarkdownError.
 
         Args:
@@ -47,7 +47,7 @@ class ShardMarkdownError(Exception):
 class InputValidationError(ShardMarkdownError):
     """Errors related to invalid input validation."""
 
-    def __init__(self, message: str, error_code: int = 1000, **kwargs):
+    def __init__(self, message: str, error_code: int = 1000, **kwargs: Any) -> None:
         """Initialize the InputValidationError.
 
         Args:
@@ -61,7 +61,7 @@ class InputValidationError(ShardMarkdownError):
 class ConfigurationError(ShardMarkdownError):
     """Errors related to configuration issues."""
 
-    def __init__(self, message: str, error_code: int = 1100, **kwargs):
+    def __init__(self, message: str, error_code: int = 1100, **kwargs: Any) -> None:
         """Initialize the ConfigurationError.
 
         Args:
@@ -75,7 +75,7 @@ class ConfigurationError(ShardMarkdownError):
 class FileSystemError(ShardMarkdownError):
     """Errors related to file system operations."""
 
-    def __init__(self, message: str, error_code: int = 1200, **kwargs):
+    def __init__(self, message: str, error_code: int = 1200, **kwargs: Any) -> None:
         """Initialize the FileSystemError.
 
         Args:
@@ -89,7 +89,7 @@ class FileSystemError(ShardMarkdownError):
 class ProcessingError(ShardMarkdownError):
     """Errors during document processing."""
 
-    def __init__(self, message: str, error_code: int = 1300, **kwargs):
+    def __init__(self, message: str, error_code: int = 1300, **kwargs: Any) -> None:
         """Initialize the ProcessingError.
 
         Args:
@@ -103,7 +103,7 @@ class ProcessingError(ShardMarkdownError):
 class ChromaDBError(ShardMarkdownError):
     """Errors related to ChromaDB operations."""
 
-    def __init__(self, message: str, error_code: int = 1400, **kwargs):
+    def __init__(self, message: str, error_code: int = 1400, **kwargs: Any) -> None:
         """Initialize the ChromaDBError.
 
         Args:
@@ -117,7 +117,7 @@ class ChromaDBError(ShardMarkdownError):
 class SystemError(ShardMarkdownError):
     """System-level errors."""
 
-    def __init__(self, message: str, error_code: int = 1500, **kwargs):
+    def __init__(self, message: str, error_code: int = 1500, **kwargs: Any) -> None:
         """Initialize the SystemError.
 
         Args:
@@ -131,7 +131,7 @@ class SystemError(ShardMarkdownError):
 class NetworkError(ShardMarkdownError):
     """Network-related errors."""
 
-    def __init__(self, message: str, error_code: int = 1600, **kwargs):
+    def __init__(self, message: str, error_code: int = 1600, **kwargs: Any) -> None:
         """Initialize the NetworkError.
 
         Args:

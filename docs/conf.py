@@ -7,6 +7,7 @@ https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 import os
 import sys
+from typing import Dict, List, Optional, Union
 
 # -- Path setup --------------------------------------------------------------
 
@@ -16,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.abspath("../src"))
 
 # Mock modules that may not be available in the docs build environment
-autodoc_mock_imports = [
+autodoc_mock_imports: List[str] = [
     "chromadb",
     "colorama",
     "rich",
@@ -86,7 +87,7 @@ exclude_patterns = [
 ]
 
 # The suffix(es) of source filenames.
-source_suffix = {
+source_suffix: Dict[str, Optional[str]] = {
     ".rst": None,
     ".md": "markdown",
 }
@@ -109,7 +110,7 @@ napoleon_use_ivar = False
 napoleon_use_param = True
 napoleon_use_rtype = True
 napoleon_preprocess_types = False
-napoleon_type_aliases = None
+napoleon_type_aliases: Optional[Dict[str, str]] = None
 napoleon_attr_annotations = True
 
 # Autodoc settings
@@ -152,7 +153,7 @@ html_theme = "sphinx_rtd_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further. Removed unsupported 'display_version' option
-html_theme_options = {
+html_theme_options: Dict[str, Union[str, bool, int]] = {
     "canonical_url": "",
     "analytics_id": "",
     "logo_only": False,
@@ -175,7 +176,7 @@ html_static_path = ["_static"]
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
-html_sidebars = {}
+html_sidebars: Dict[str, List[str]] = {}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -184,7 +185,7 @@ htmlhelp_basename = "shardmarkdowndoc"
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements = {}
+latex_elements: Dict[str, str] = {}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,

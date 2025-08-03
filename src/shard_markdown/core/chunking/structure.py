@@ -3,7 +3,7 @@
 from typing import List
 
 from ...utils.logging import get_logger
-from ..models import DocumentChunk, MarkdownAST
+from ..models import DocumentChunk, MarkdownAST, MarkdownElement
 from .base import BaseChunker
 
 logger = get_logger(__name__)
@@ -27,7 +27,7 @@ class StructureAwareChunker(BaseChunker):
         chunks = []
         current_chunk = ""
         current_start = 0
-        current_context = []
+        current_context: List[str] = []
 
         for element in ast.elements:
             element_text = self._element_to_text(element)
@@ -95,7 +95,7 @@ class StructureAwareChunker(BaseChunker):
         logger.info(f"Created {len(chunks)} chunks using structure-aware method")
         return chunks
 
-    def _element_to_text(self, element) -> str:
+    def _element_to_text(self, element: MarkdownElement) -> str:
         """Convert AST element to text representation.
 
         Args:
@@ -105,7 +105,8 @@ class StructureAwareChunker(BaseChunker):
             Text representation of element
         """
         if element.type == "header":
-            return f"{'#' * element.level} {element.text}\n\n"
+            header_prefix = "#" * (element.level or 1)
+            return f"{header_prefix} {element.text}\n\n"
         elif element.type == "paragraph":
             return f"{element.text}\n\n"
         elif element.type == "code_block":
@@ -120,14 +121,14 @@ class StructureAwareChunker(BaseChunker):
         else:
             return f"{element.text}\n\n"
 
-    def _update_context(self, context: List[str], header_element) -> None:
+    def _update_context(self, context: List[str], header_element: MarkdownElement) -> None:
         """Update hierarchical context based on header level.
 
         Args:
             context: Current context list (modified in place)
             header_element: Header element to add to context
         """
-        level = header_element.level
+        level = header_element.level or 1
         header_text = header_element.text
 
         # Truncate context to appropriate level

@@ -1,9 +1,10 @@
 """Collection management operations."""
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
+from .protocol import ChromaDBClientProtocol
 
 logger = get_logger(__name__)
 
@@ -11,7 +12,7 @@ logger = get_logger(__name__)
 class CollectionManager:
     """High-level collection management operations."""
 
-    def __init__(self, client):
+    def __init__(self, client: ChromaDBClientProtocol) -> None:
         """Initialize collection manager.
 
         Args:
@@ -22,9 +23,9 @@ class CollectionManager:
     def create_collection(
         self,
         name: str,
-        description: str = None,
-        metadata: Optional[Dict] = None,
-    ):
+        description: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> Any:
         """Create a new collection with validation.
 
         Args:
@@ -38,13 +39,6 @@ class CollectionManager:
         Raises:
             ChromaDBError: If creation fails
         """
-        if not self.client._connection_validated:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "create_collection"},
-            )
-
         # Validate collection name
         self._validate_collection_name(name)
 
@@ -54,7 +48,10 @@ class CollectionManager:
             collection_metadata["description"] = description
 
         try:
-            collection = self.client.create_collection(name, collection_metadata)
+            # Use get_or_create_collection with create_if_missing=True
+            collection = self.client.get_or_create_collection(
+                name, create_if_missing=True, metadata=collection_metadata
+            )
             logger.info(
                 f"Created collection '{name}' with metadata: " f"{collection_metadata}"
             )
@@ -68,7 +65,7 @@ class CollectionManager:
                 cause=e,
             )
 
-    def get_collection(self, name: str):
+    def get_collection(self, name: str) -> Any:
         """Get existing collection.
 
         Args:
@@ -80,13 +77,6 @@ class CollectionManager:
         Raises:
             ChromaDBError: If collection doesn't exist
         """
-        if not self.client._connection_validated:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "get_collection"},
-            )
-
         try:
             return self.client.get_collection(name)
 
@@ -98,7 +88,7 @@ class CollectionManager:
                 cause=e,
             )
 
-    def list_collections(self) -> List[Dict]:
+    def list_collections(self) -> List[Dict[str, Any]]:
         """List all collections with metadata.
 
         Returns:
@@ -107,15 +97,9 @@ class CollectionManager:
         Raises:
             ChromaDBError: If listing fails
         """
-        if not self.client._connection_validated:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "list_collections"},
-            )
-
         try:
-            return self.client.list_collections()
+            collections_data = self.client.list_collections()
+            return collections_data
 
         except Exception as e:
             raise ChromaDBError(
@@ -137,17 +121,10 @@ class CollectionManager:
         Raises:
             ChromaDBError: If deletion fails
         """
-        if not self.client._connection_validated:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "delete_collection"},
-            )
-
         try:
-            self.client.delete_collection(name)
+            result = self.client.delete_collection(name)
             logger.info(f"Deleted collection '{name}'")
-            return True
+            return result if result is not None else True
 
         except Exception as e:
             raise ChromaDBError(
@@ -184,13 +161,6 @@ class CollectionManager:
         Raises:
             ChromaDBError: If clearing fails
         """
-        if not self.client._connection_validated:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "clear_collection"},
-            )
-
         try:
             # For mock client, this might not be implemented
             if hasattr(self.client, "clear_collection"):
@@ -213,7 +183,7 @@ class CollectionManager:
                 cause=e,
             )
 
-    def get_collection_info(self, name: str) -> Dict:
+    def get_collection_info(self, name: str) -> Dict[str, Any]:
         """Get detailed information about a collection.
 
         Args:

@@ -456,7 +456,7 @@ class TestModelValidation:
     def test_model_serialization(self, sample_chunks):
         """Test model serialization to dict."""
         chunk = sample_chunks[0]
-        chunk_dict = chunk.dict()
+        chunk_dict = chunk.model_dump()
 
         assert isinstance(chunk_dict, dict)
         assert chunk_dict["content"] == chunk.content
@@ -466,7 +466,7 @@ class TestModelValidation:
     def test_model_json_serialization(self, sample_chunks):
         """Test model JSON serialization."""
         chunk = sample_chunks[0]
-        chunk_json = chunk.json()
+        chunk_json = chunk.model_dump_json()
 
         assert isinstance(chunk_json, str)
 

@@ -8,8 +8,8 @@ import pytest
 from click.testing import CliRunner
 
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.core.models import ChunkingConfig, DocumentChunk, ProcessingResult
+from shard_markdown.config.settings import AppConfig, ChromaDBConfig, ChunkingConfig as SettingsChunkingConfig
+from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig, DocumentChunk, MarkdownAST, MarkdownElement, ProcessingResult
 
 
 @pytest.fixture
@@ -239,8 +239,8 @@ Thanks for reading!
 
 @pytest.fixture
 def chunking_config():
-    """Create default chunking configuration."""
-    return ChunkingConfig(
+    """Create default chunking configuration for core models."""
+    return ModelsChunkingConfig(
         chunk_size=1000,
         overlap=200,
         method="structure",
@@ -256,9 +256,9 @@ def app_config():
             host="localhost",
             port=8000,
         ),
-        chunking=ChunkingConfig(
-            chunk_size=1000,
-            overlap=200,
+        chunking=SettingsChunkingConfig(
+            default_size=1000,
+            default_overlap=200,
             method="structure",
         ),
     )
@@ -308,6 +308,30 @@ def sample_chunks():
             end_position=90,
         ),
     ]
+
+
+@pytest.fixture
+def sample_ast():
+    """Create sample markdown AST for testing."""
+    elements = [
+        MarkdownElement(type="header", text="Main Title", level=1),
+        MarkdownElement(type="paragraph", text="This is the introduction paragraph."),
+        MarkdownElement(type="header", text="Section 1", level=2),
+        MarkdownElement(type="paragraph", text="Content for section 1."),
+        MarkdownElement(type="header", text="Section 2", level=2),
+        MarkdownElement(type="paragraph", text="Content for section 2."),
+        MarkdownElement(
+            type="code_block",
+            text="def hello():\n    return 'Hello, World!'",
+            language="python"
+        ),
+    ]
+    
+    return MarkdownAST(
+        elements=elements,
+        frontmatter={"title": "Sample Document", "author": "Test Author"},
+        metadata={"word_count": 50, "reading_time": 1}
+    )
 
 
 @pytest.fixture

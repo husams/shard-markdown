@@ -2,6 +2,7 @@
 
 import statistics
 import time
+from typing import Any, Dict, List
 
 import psutil
 import pytest
@@ -15,16 +16,16 @@ class TestProcessingBenchmarks:
     """Performance benchmarks for document processing."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig):
+    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
         """Create processor for benchmarking."""
         return DocumentProcessor(chunking_config)
 
     @pytest.fixture
-    def benchmark_config(self):
+    def benchmark_config(self) -> ChunkingConfig:
         """Provide standard configuration for benchmarking."""
         return ChunkingConfig(chunk_size=1000, overlap=200, method="structure")
 
-    def test_single_document_processing_benchmark(self, temp_dir, benchmark_config):
+    def test_single_document_processing_benchmark(self, temp_dir: Any, benchmark_config: ChunkingConfig) -> None:
         """Benchmark processing of a single document."""
         processor = DocumentProcessor(benchmark_config)
 
@@ -70,7 +71,7 @@ class TestProcessingBenchmarks:
             std_dev < avg_time * 0.5
         ), f"High variance in processing time: {std_dev:.3f}s"
 
-    def test_batch_processing_benchmark(self, temp_dir, benchmark_config):
+    def test_batch_processing_benchmark(self, temp_dir: Any, benchmark_config: ChunkingConfig) -> None:
         """Benchmark batch processing performance."""
         processor = DocumentProcessor(benchmark_config)
 
@@ -86,7 +87,7 @@ class TestProcessingBenchmarks:
 
         # Test different worker counts
         worker_counts = [1, 2, 4]
-        results = {}
+        results: Dict[int, Dict[str, Any]] = {}
 
         for workers in worker_counts:
             start_time = time.perf_counter()
@@ -126,7 +127,7 @@ class TestProcessingBenchmarks:
             (2000, 400),
         ],
     )
-    def test_chunking_performance_by_size(self, temp_dir, chunk_size, overlap):
+    def test_chunking_performance_by_size(self, temp_dir: Any, chunk_size: int, overlap: int) -> Dict[str, Any]:
         """Benchmark performance with different chunk sizes."""
         config = ChunkingConfig(
             chunk_size=chunk_size, overlap=overlap, method="structure"
@@ -166,7 +167,7 @@ class TestProcessingBenchmarks:
             "chunks_per_second": result.chunks_created / processing_time,
         }
 
-    def test_memory_usage_benchmark(self, temp_dir, benchmark_config):
+    def test_memory_usage_benchmark(self, temp_dir: Any, benchmark_config: ChunkingConfig) -> None:
         """Monitor memory usage during processing."""
         import os
 
@@ -188,7 +189,7 @@ class TestProcessingBenchmarks:
         memory_samples = []
         start_time = time.perf_counter()
 
-        def memory_monitor():
+        def memory_monitor() -> None:
             while True:
                 current_memory = process.memory_info().rss / 1024 / 1024
                 memory_samples.append(current_memory - baseline_memory)
@@ -226,7 +227,7 @@ class TestProcessingBenchmarks:
             ), f"Memory usage too high: {max_memory_increase:.1f}MB"
             assert result.success, f"Processing failed: {result.error}"
 
-    def test_large_document_scalability(self, temp_dir, benchmark_config):
+    def test_large_document_scalability(self, temp_dir: Any, benchmark_config: ChunkingConfig) -> None:
         """Test scalability with increasingly large documents."""
         processor = DocumentProcessor(benchmark_config)
 
@@ -280,7 +281,7 @@ class TestProcessingBenchmarks:
         )
         assert time_ratio < size_ratio * 1.5, scaling_msg
 
-    def test_concurrent_processing_scalability(self, temp_dir, benchmark_config):
+    def test_concurrent_processing_scalability(self, temp_dir: Any, benchmark_config: ChunkingConfig) -> None:
         """Test scalability of concurrent processing."""
         processor = DocumentProcessor(benchmark_config)
 
@@ -335,10 +336,10 @@ class TestProcessingBenchmarks:
             efficiency_ratio > 0.5
         ), f"Efficiency degraded too much: {efficiency_ratio:.2f}"
 
-    def test_chunking_method_performance_comparison(self, temp_dir):
+    def test_chunking_method_performance_comparison(self, temp_dir: Any) -> None:
         """Compare performance of different chunking methods."""
         methods = ["structure", "fixed"]
-        results = {}
+        results: Dict[str, Dict[str, float]] = {}
 
         # Create test document
         doc_content = self._generate_document_content(
@@ -431,7 +432,7 @@ class TestProcessingBenchmarks:
 class TestMemoryEfficiency:
     """Test memory efficiency and resource usage."""
 
-    def test_memory_leak_detection(self, temp_dir, benchmark_config):
+    def test_memory_leak_detection(self, temp_dir: Any, benchmark_config: ChunkingConfig) -> None:
         """Test for memory leaks during repeated processing."""
         import gc
         import os
@@ -477,7 +478,7 @@ class TestMemoryEfficiency:
             memory_growth < 10
         ), f"Potential memory leak detected: {memory_growth:.1f} MB growth"
 
-    def test_large_file_memory_efficiency(self, temp_dir, benchmark_config):
+    def test_large_file_memory_efficiency(self, temp_dir: Any, benchmark_config: ChunkingConfig) -> None:
         """Test memory efficiency with large files."""
         import os
 

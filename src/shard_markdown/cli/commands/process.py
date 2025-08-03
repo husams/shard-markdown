@@ -1,7 +1,7 @@
 """Process command for document processing."""
 
 from pathlib import Path
-from typing import List
+from typing import Any, List, Optional
 
 import click
 from rich.console import Console
@@ -16,7 +16,7 @@ from rich.table import Table
 
 from ...chromadb.collections import CollectionManager
 from ...chromadb.factory import create_chromadb_client
-from ...core.models import ChunkingConfig
+from ...core.models import BatchResult, ChunkingConfig, ProcessingResult
 from ...core.processor import DocumentProcessor
 from ...utils.errors import ShardMarkdownError
 from ...utils.logging import get_logger
@@ -88,20 +88,20 @@ console = Console()
 )
 @click.pass_context
 def process(  # noqa: C901
-    ctx,
-    input_paths,
-    collection,
-    chunk_size,
-    chunk_overlap,
-    chunk_method,
-    recursive,
-    create_collection,
-    clear_collection,
-    dry_run,
-    max_workers,
-    collection_metadata,
-    use_mock,
-):
+    ctx: click.Context,
+    input_paths: tuple,
+    collection: str,
+    chunk_size: int,
+    chunk_overlap: int,
+    chunk_method: str,
+    recursive: bool,
+    create_collection: bool,
+    clear_collection: bool,
+    dry_run: bool,
+    max_workers: int,
+    collection_metadata: Optional[str],
+    use_mock: bool,
+) -> None:
     """Process markdown files into ChromaDB collections.
 
     This command processes one or more markdown files, intelligently chunks
@@ -154,14 +154,10 @@ def process(  # noqa: C901
         collection_manager = CollectionManager(chroma_client)
 
         # Check if collection exists for clearing
+        collection_exists = False
         try:
-            collection_exists = hasattr(chroma_client, "get_collection")
-            if collection_exists:
-                try:
-                    chroma_client.get_collection(collection)
-                    collection_exists = True
-                except Exception:
-                    collection_exists = False
+            chroma_client.get_collection(collection)
+            collection_exists = True
         except Exception:
             collection_exists = False
 
@@ -304,7 +300,7 @@ def process(  # noqa: C901
 
 def _show_dry_run_preview(
     paths: List[Path], collection: str, chunk_size: int, chunk_overlap: int
-):
+) -> None:
     """Display dry run preview of what would be processed."""
     table = Table(title="Dry Run Preview")
     table.add_column("Setting", style="cyan")
@@ -325,7 +321,7 @@ def _show_dry_run_preview(
         console.print(f"  ... and {len(paths) - 10} more files")
 
 
-def _display_single_result(processing_result, insert_result):
+def _display_single_result(processing_result: ProcessingResult, insert_result: Any) -> None:
     """Display results for single file processing."""
     table = Table(title="Processing Results")
     table.add_column("Metric", style="cyan")
@@ -344,7 +340,7 @@ def _display_single_result(processing_result, insert_result):
     )
 
 
-def _display_batch_results(batch_result, insert_result, verbose: int):
+def _display_batch_results(batch_result: BatchResult, insert_result: Any, verbose: int) -> None:
     """Display results for batch processing."""
     # Summary table
     table = Table(title="Batch Processing Results")

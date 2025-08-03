@@ -31,7 +31,7 @@ console = Console()
 @click.option("--log-file", type=click.Path(), help="Write logs to specified file")
 @click.version_option(version="0.1.0", prog_name="shard-md")
 @click.pass_context
-def cli(ctx, config, verbose, quiet, log_file):
+def cli(ctx: click.Context, config: str, verbose: int, quiet: bool, log_file: str) -> None:
     """Shard Markdown - Intelligent document chunking for ChromaDB.
 
     This tool processes markdown documents into intelligent chunks and stores
@@ -84,7 +84,7 @@ def cli(ctx, config, verbose, quiet, log_file):
 
 @cli.command()
 @click.pass_context
-def version(ctx):
+def version(ctx: click.Context) -> None:
     """Show version information."""
     console.print("shard-md version 0.1.0")
     console.print("Intelligent markdown document chunking for ChromaDB")
@@ -97,7 +97,7 @@ cli.add_command(query.query)
 cli.add_command(config.config)
 
 
-def main():
+def main() -> None:
     """Entry point for the CLI application."""
     cli()
 

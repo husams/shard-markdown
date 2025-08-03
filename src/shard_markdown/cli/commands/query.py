@@ -1,6 +1,7 @@
 """Query command for searching and retrieving documents."""
 
 import json
+from typing import Any, Dict, List
 
 import click
 from rich.console import Console
@@ -15,7 +16,7 @@ console = Console()
 
 
 @click.group()
-def query():
+def query() -> None:
     """Query and search documents in collections.
 
     This command group provides functionality to search for documents
@@ -63,14 +64,14 @@ def query():
 )
 @click.pass_context
 def search(  # noqa: C901
-    ctx,
-    query_text,
-    collection,
-    limit,
-    similarity_threshold,
-    include_metadata,
-    format,
-):
+    ctx: click.Context,
+    query_text: str,
+    collection: str,
+    limit: int,
+    similarity_threshold: float,
+    include_metadata: bool,
+    format: str,
+) -> None:
     """Search for documents using similarity search."""
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
@@ -150,7 +151,7 @@ def search(  # noqa: C901
     help="Include metadata in results [default: true]",
 )
 @click.pass_context
-def get(ctx, document_id, collection, format, include_metadata):  # noqa: C901
+def get(ctx: click.Context, document_id: str, collection: str, format: str, include_metadata: bool) -> None:  # noqa: C901
     """Get a specific document by ID."""
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
@@ -215,7 +216,7 @@ def get(ctx, document_id, collection, format, include_metadata):  # noqa: C901
         raise click.Abort()
 
 
-def _display_search_results_table(results, include_metadata, similarity_threshold):
+def _display_search_results_table(results: Dict[str, Any], include_metadata: bool, similarity_threshold: float) -> None:
     """Display search results in table format."""
     table = Table(title="Search Results")
     table.add_column("Rank", style="cyan", width=6)
@@ -270,7 +271,7 @@ def _display_search_results_table(results, include_metadata, similarity_threshol
     console.print(table)
 
 
-def _display_document_table(results, include_metadata):
+def _display_document_table(results: Dict[str, Any], include_metadata: bool) -> None:
     """Display document in table format."""
     doc_id = results["ids"][0]
     document = results["documents"][0]
@@ -294,7 +295,7 @@ def _display_document_table(results, include_metadata):
     console.print(f"[white]{document}[/white]")
 
 
-def _format_search_results(results, include_metadata):
+def _format_search_results(results: Dict[str, Any], include_metadata: bool) -> List[Dict[str, Any]]:
     """Format search results for JSON/YAML output."""
     ids = results["ids"][0]
     documents = results["documents"][0]
@@ -318,7 +319,7 @@ def _format_search_results(results, include_metadata):
     return formatted
 
 
-def _format_document_result(results, include_metadata):
+def _format_document_result(results: Dict[str, Any], include_metadata: bool) -> Dict[str, Any]:
     """Format document result for JSON/YAML output."""
     result = {"id": results["ids"][0], "content": results["documents"][0]}
 

@@ -1,7 +1,7 @@
 """Base chunker interface."""
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Dict, List, Optional
 
 from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
 
@@ -9,7 +9,7 @@ from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
 class BaseChunker(ABC):
     """Base class for document chunkers."""
 
-    def __init__(self, config: ChunkingConfig):
+    def __init__(self, config: ChunkingConfig) -> None:
         """Initialize chunker with configuration.
 
         Args:
@@ -30,7 +30,7 @@ class BaseChunker(ABC):
         pass
 
     def _create_chunk(
-        self, content: str, start: int, end: int, metadata: dict = None
+        self, content: str, start: int, end: int, metadata: Optional[Dict] = None
     ) -> DocumentChunk:
         """Create a document chunk with standard metadata.
 
