@@ -21,7 +21,7 @@ class TestProcessingBenchmarks:
 
     @pytest.fixture
     def benchmark_config(self):
-        """Standard configuration for benchmarking."""
+        """Provide standard configuration for benchmarking."""
         return ChunkingConfig(chunk_size=1000, overlap=200, method="structure")
 
     def test_single_document_processing_benchmark(self, temp_dir, benchmark_config):

@@ -155,7 +155,6 @@ class TestProcessCommand:
             return ProcessingResult(
                 file_path=file_path,
                 success=True,
-                chunks_created=3,
                 processing_time=0.5,
                 collection_name=collection_name,
             )

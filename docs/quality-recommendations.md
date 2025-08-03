@@ -37,16 +37,16 @@ def test_process_command_integration(cli_runner, temp_dir):
     # Create real test file
     test_file = temp_dir / "test.md"
     test_file.write_text("# Test\nContent")
-    
+
     # Use mock ChromaDB client instead of mocking internal calls
     with patch('shard_markdown.chromadb.factory.create_chromadb_client') as mock_factory:
         mock_factory.return_value = MockChromaDBClient()
-        
+
         result = cli_runner.invoke(process, [
             '--collection', 'test',
             str(test_file)
         ])
-        
+
         assert result.exit_code == 0
 ```
 
@@ -62,16 +62,16 @@ def test_process_command_integration(cli_runner, temp_dir):
 ```python
 class MockChromaDBClient:
     """Enhanced mock client with full interface."""
-    
+
     def __init__(self):
         self._collections = {}
         self._connected = False
-    
+
     def connect(self) -> bool:
         """Simulate connection."""
         self._connected = True
         return True
-    
+
     def get_or_create_collection(self, name: str, create_if_missing: bool = False):
         """Create or retrieve mock collection."""
         if name not in self._collections:
@@ -79,7 +79,7 @@ class MockChromaDBClient:
                 raise CollectionNotFoundError(f"Collection {name} not found")
             self._collections[name] = MockCollection(name)
         return self._collections[name]
-    
+
     def bulk_insert(self, collection, chunks):
         """Mock bulk insertion with realistic behavior."""
         collection._documents.extend(chunks)
@@ -116,7 +116,7 @@ def processor_with_mocks(chunking_config):
     mock_parser = Mock()
     mock_chunker = Mock()
     mock_metadata_extractor = Mock()
-    
+
     return DocumentProcessor(
         chunking_config,
         parser=mock_parser,
@@ -146,10 +146,10 @@ chromadb:
   host: localhost
   port: 8000
 """)
-    
+
     # Test environment override
     monkeypatch.setenv("SHARD_MD_CHROMADB_HOST", "remote-host")
-    
+
     config = load_config(config_file)
     assert config.chromadb.host == "remote-host"
 
@@ -159,11 +159,11 @@ def test_config_file_scenarios(tmp_path):
     # Missing file
     with pytest.raises(ConfigError):
         load_config(tmp_path / "missing.yaml")
-    
+
     # Invalid YAML
     bad_file = tmp_path / "bad.yaml"
     bad_file.write_text("invalid: yaml: content:")
-    
+
     with pytest.raises(ConfigError):
         load_config(bad_file)
 ```
@@ -211,7 +211,7 @@ def test_collection_name_validation(collection_name, should_pass):
 # Standardize error hierarchy
 class ShardMarkdownError(Exception):
     """Base exception for all shard-markdown errors."""
-    
+
     def __init__(self, message: str, error_code: int = None, context: dict = None):
         super().__init__(message)
         self.message = message
@@ -269,27 +269,27 @@ class OptimizedDocumentProcessor:
     def __init__(self, config):
         self.config = config
         self.batch_size = config.processing.batch_size
-        
+
     def process_batch_optimized(self, file_paths, collection_name):
         """Optimized batch processing with chunked operations."""
         all_chunks = []
-        
+
         # Process files in parallel
         with ThreadPoolExecutor(max_workers=self.config.processing.max_workers) as executor:
             futures = [
                 executor.submit(self._process_file_to_chunks, path)
                 for path in file_paths
             ]
-            
+
             for future in as_completed(futures):
                 chunks = future.result()
                 all_chunks.extend(chunks)
-                
+
                 # Batch database operations
                 if len(all_chunks) >= self.batch_size:
                     self._flush_chunks_to_db(all_chunks, collection_name)
                     all_chunks.clear()
-        
+
         # Final flush
         if all_chunks:
             self._flush_chunks_to_db(all_chunks, collection_name)
@@ -360,59 +360,59 @@ jobs:
       matrix:
         python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev]"
-      
+
       - name: Lint code
         run: |
           black --check src/ tests/
           isort --check-only src/ tests/
           flake8 src/ tests/
-      
+
       - name: Type checking
         run: mypy src/
-      
+
       - name: Run unit tests
         run: pytest tests/unit/ --cov=src/shard_markdown --cov-report=xml
-      
+
       - name: Run integration tests
         run: pytest tests/integration/ -v
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.xml
-  
+
   performance:
     needs: test
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
-      
+
       - name: Install dependencies
         run: uv pip install -e ".[dev]"
-      
+
       - name: Run performance tests
         run: pytest tests/performance/ --benchmark-json=benchmark.json
-      
+
       - name: Store benchmark results
         uses: benchmark-action/github-action-benchmark@v1
         with:

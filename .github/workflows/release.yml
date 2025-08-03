@@ -43,10 +43,10 @@ jobs:
             VERSION="${{ github.event.inputs.version }}"
             ENVIRONMENT="${{ github.event.inputs.environment }}"
           fi
-          
+
           # Remove 'v' prefix if present
           VERSION=${VERSION#v}
-          
+
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "environment=${ENVIRONMENT}" >> $GITHUB_OUTPUT
           echo "Version: ${VERSION}"
@@ -159,12 +159,12 @@ jobs:
           # Create fresh virtual environment to test installation
           python -m venv test_env
           source test_env/bin/activate
-          
+
           # Test wheel installation
           pip install dist/*.whl
           shard-md --version
           shard-md --help
-          
+
           deactivate
           rm -rf test_env
 
@@ -210,25 +210,25 @@ jobs:
         id: changelog
         run: |
           VERSION="v${{ needs.validate-release.outputs.version }}"
-          
+
           # Get commits since last tag
           LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          
+
           if [ -n "$LAST_TAG" ]; then
             COMMITS=$(git log --pretty=format:"- %s (%h)" ${LAST_TAG}..HEAD)
           else
             COMMITS=$(git log --pretty=format:"- %s (%h)")
           fi
-          
+
           # Create changelog
           cat > CHANGELOG.md << EOF
           ## What's Changed
-          
+
           ${COMMITS}
-          
+
           **Full Changelog**: https://github.com/${{ github.repository }}/compare/${LAST_TAG}...${VERSION}
           EOF
-          
+
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           cat CHANGELOG.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT

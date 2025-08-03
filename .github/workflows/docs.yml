@@ -48,7 +48,7 @@ jobs:
         run: |
           # Create API docs directory if it doesn't exist
           mkdir -p docs/api
-          
+
           # Generate module documentation
           uv run sphinx-apidoc -o docs/api src/shard_markdown --force --separate
 
@@ -90,7 +90,7 @@ jobs:
       - name: Generate CLI documentation
         run: |
           mkdir -p docs/cli
-          
+
           # Generate help text for main command
           echo "# CLI Reference" > docs/cli/reference.md
           echo "" >> docs/cli/reference.md
@@ -100,7 +100,7 @@ jobs:
           uv run shard-md --help >> docs/cli/reference.md
           echo "\`\`\`" >> docs/cli/reference.md
           echo "" >> docs/cli/reference.md
-          
+
           # Generate help for subcommands
           for cmd in process collections query config; do
             echo "## shard-md $cmd" >> docs/cli/reference.md
@@ -190,11 +190,11 @@ jobs:
           if ! grep -q "## Installation" README.md; then
             echo "Warning: README.md missing Installation section"
           fi
-          
+
           if ! grep -q "## Usage" README.md && ! grep -q "## Quick Start" README.md; then
             echo "Warning: README.md missing Usage/Quick Start section"
           fi
-          
+
           if ! grep -q "## License" README.md; then
             echo "Warning: README.md missing License section"
           fi
@@ -233,7 +233,7 @@ jobs:
         id: update_cli_docs
         run: |
           mkdir -p docs/cli
-          
+
           # Generate updated CLI documentation
           echo "# CLI Reference" > docs/cli/reference.md
           echo "" >> docs/cli/reference.md
@@ -244,7 +244,7 @@ jobs:
           echo "\`\`\`" >> docs/cli/reference.md
           uv run shard-md --help >> docs/cli/reference.md
           echo "\`\`\`" >> docs/cli/reference.md
-          
+
           # Check if there are changes
           if ! git diff --quiet docs/cli/reference.md; then
             echo "changes=true" >> $GITHUB_OUTPUT
@@ -256,13 +256,13 @@ jobs:
         id: update_version
         run: |
           VERSION=$(grep "version =" pyproject.toml | sed 's/version = "\(.*\)"/\1/')
-          
+
           # Update version in Sphinx config if it exists
           if [ -f docs/conf.py ]; then
             sed -i "s/version = '.*'/version = '${VERSION}'/" docs/conf.py
             sed -i "s/release = '.*'/release = '${VERSION}'/" docs/conf.py
           fi
-          
+
           if ! git diff --quiet docs/; then
             echo "changes=true" >> $GITHUB_OUTPUT
           else

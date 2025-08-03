@@ -12,7 +12,7 @@ This document provides performance metrics, benchmarks, and quality assessments 
 ```
 Unit Tests (Working):
 - Core Models (38 tests): ~0.04s
-- Markdown Parser (8 tests): ~0.02s 
+- Markdown Parser (8 tests): ~0.02s
 - Chunking Engine (9 tests): ~0.02s
 - Total Unit Tests: ~0.08s
 
@@ -78,7 +78,7 @@ Target Metrics:
 - Boundary Respect: No split code blocks
 - Overlap Consistency: ±5% variance
 
-# Fixed-Size Chunking  
+# Fixed-Size Chunking
 Target Metrics:
 - Speed: >200 chunks/second
 - Size Consistency: ±10% target size
@@ -183,13 +183,13 @@ CPU Usage: <50% single core
 def test_single_document_benchmark():
     processor = DocumentProcessor(standard_config)
     doc = generate_test_document(5000)  # 5k words
-    
+
     start_time = time.perf_counter()
     result = processor.process_document(doc, "benchmark")
     end_time = time.perf_counter()
-    
+
     processing_time = end_time - start_time
-    
+
     assert processing_time < 2.0  # Performance target
     assert result.chunks_created > 10  # Minimum output
     assert result.success is True
@@ -392,7 +392,7 @@ Memory Stability: Stable long-term usage
 - 95th percentile processing time: <5 seconds
 - Error rate: <1%
 
-# System Performance  
+# System Performance
 - Memory usage: <500 MB peak
 - CPU utilization: <70% average
 - Disk I/O: <100 MB/s

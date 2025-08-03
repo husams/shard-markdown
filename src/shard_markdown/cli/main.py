@@ -33,11 +33,11 @@ console = Console()
 @click.pass_context
 def cli(ctx, config, verbose, quiet, log_file):
     """Shard Markdown - Intelligent document chunking for ChromaDB.
+
     This tool processes markdown documents into intelligent chunks and stores
     them in ChromaDB collections for efficient retrieval and processing.
 
     Examples:
-
       # Process a single document
       shard-md process --collection my-docs document.md
 

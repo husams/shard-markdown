@@ -18,6 +18,7 @@ console = Console()
 @click.group()
 def config():
     """Manage shard-markdown configuration.
+
     This command group provides operations for viewing, editing, and managing
     the shard-markdown configuration file.
     """
@@ -35,8 +36,8 @@ def config():
 @click.pass_context
 def show(ctx, format, section):
     """Show current configuration.
-    Examples:
 
+    Examples:
       # Show full configuration
       shard-md config show
 
@@ -95,10 +96,10 @@ def show(ctx, format, section):
 @click.pass_context
 def set(ctx, key, value, is_global, is_local):  # noqa: C901
     """Set a configuration value.
+
     Key should be in dot notation (e.g., chromadb.host, chunking.default_size).
 
     Examples:
-
       # Set ChromaDB host
       shard-md config set chromadb.host localhost
 
@@ -167,8 +168,8 @@ def set(ctx, key, value, is_global, is_local):  # noqa: C901
 @click.pass_context
 def init(ctx, is_global, force, template):
     """Initialize configuration file with defaults.
-    Examples:
 
+    Examples:
       # Initialize local configuration
       shard-md config init
 
@@ -215,6 +216,7 @@ def init(ctx, is_global, force, template):
 @click.pass_context
 def path(ctx):
     """Show configuration file locations.
+
     This shows the order of configuration file locations that shard-md checks.
     """
     console.print(

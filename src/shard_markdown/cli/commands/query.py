@@ -17,12 +17,12 @@ console = Console()
 @click.group()
 def query():
     """Query and search documents in collections.
+
     This command group provides functionality to search for documents
     in ChromaDB collections using similarity search and retrieve
     specific documents by ID.
 
     Examples:
-
       # Search for documents
       shard-md query search --collection my-docs "search term"
 

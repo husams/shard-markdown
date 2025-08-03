@@ -26,12 +26,12 @@
 <!-- Provide a detailed description of the changes -->
 
 ### Core Changes
-- 
-- 
+-
+-
 
 ### Additional Changes
-- 
-- 
+-
+-
 
 ## Testing
 
@@ -51,8 +51,8 @@ uv run pytest tests/
 
 ### Manual Testing
 <!-- Describe any manual testing performed -->
-- 
-- 
+-
+-
 
 ## Breaking Changes
 
@@ -122,8 +122,8 @@ uv run pytest tests/
 
 ---
 
-<!-- 
-Thank you for contributing to shard-markdown! 
+<!--
+Thank you for contributing to shard-markdown!
 Please ensure all checkboxes are marked before requesting a review.
 -->
 

@@ -49,11 +49,9 @@ If $ARGUMENTS are provided when running the command, pass them as input to all a
 
 **How to use this command:**
 - Save the markdown file in `.claude/commands/build-cli-tool.md`.
-- In Claude Code, run:  
-  `/build-cli-tool`  
-  or, to specify extra requirements:  
+- In Claude Code, run:
+  `/build-cli-tool`
+  or, to specify extra requirements:
   `/build-cli-tool use argparse not click`
 
 This will trigger a multi-step workflow, delegating each task to the specialized agent you define, ensuring consistency and automation for your Python CLI development process.
-
-

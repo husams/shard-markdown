@@ -132,7 +132,7 @@ Restrict pushes: true
 
 #### Environments
 1. **testpypi**: For test releases
-2. **pypi**: For production releases  
+2. **pypi**: For production releases
 3. **github-pages**: For documentation deployment
 
 #### Labels

@@ -452,20 +452,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
-      
+
       - name: Install shard-markdown
         run: uv add shard-markdown
-      
+
       - name: Start ChromaDB
         run: |
           docker run -d -p 8000:8000 chromadb/chroma
           sleep 10
-      
+
       - name: Process documentation
         run: |
           shard-md process \

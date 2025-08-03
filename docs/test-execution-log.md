@@ -71,7 +71,7 @@ error: cannot format tests/unit/core/test_processor.py: Cannot parse for target 
 **Command**: `pre-commit run --all-files`
 **Status**: ❌ FAILED
 
-**Error**: 
+**Error**:
 ```
 RuntimeError: failed to find interpreter for Builtin discover of python_spec='python3.11'
 ```
@@ -94,7 +94,7 @@ ImportError: cannot import name 'DEFAULT_CONFIG_LOCATIONS' from 'shard_markdown.
 ### Installed Tools
 ```bash
 Black: 25.1.0 (compiled: yes) - ✅ INSTALLED
-isort: 6.0.1 - ✅ INSTALLED  
+isort: 6.0.1 - ✅ INSTALLED
 flake8: 7.3.0 - ✅ INSTALLED
 mypy: Available in environment - ✅ INSTALLED
 pre-commit: Available - ✅ INSTALLED
@@ -151,7 +151,7 @@ tests/
 ## Recommended Fix Order
 
 1. **CRITICAL**: Fix configuration import error
-2. **CRITICAL**: Fix test file syntax errors  
+2. **CRITICAL**: Fix test file syntax errors
 3. **HIGH**: Run Black and isort formatting
 4. **HIGH**: Verify tests can run
 5. **MEDIUM**: Address type annotation issues

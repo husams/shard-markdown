@@ -41,16 +41,16 @@ jobs:
   code-quality:
     name: Code Quality
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
-      
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
@@ -58,27 +58,27 @@ jobs:
           key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev]"
-      
+
       - name: Code formatting check
         run: |
           black --check --diff src/ tests/
           echo "✅ Code formatting verified"
-      
+
       - name: Import sorting check
         run: |
           isort --check-only --diff src/ tests/
           echo "✅ Import sorting verified"
-      
+
       - name: Linting
         run: |
           flake8 src/ tests/ --statistics
           echo "✅ Linting completed"
-      
+
       - name: Type checking
         run: |
           mypy src/ --show-error-codes
@@ -98,29 +98,29 @@ jobs:
             python-version: '3.8'
           - os: macos-latest
             python-version: '3.8'
-    
+
     runs-on: ${{ matrix.os }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Cache pip dependencies
         uses: actions/cache@v3
         with:
           path: ~/.cache/pip
           key: ${{ runner.os }}-${{ matrix.python-version }}-pip-${{ hashFiles('**/pyproject.toml') }}
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev]"
-      
+
       - name: Run unit tests
         run: |
           pytest tests/unit/ \
@@ -130,14 +130,14 @@ jobs:
             --cov-fail-under=80 \
             --junitxml=test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml \
             -v
-      
+
       - name: Upload test results
         uses: actions/upload-artifact@v3
         if: always()
         with:
           name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
           path: test-results-${{ matrix.os }}-${{ matrix.python-version }}.xml
-      
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         if: matrix.python-version == env.PYTHON_VERSION_DEFAULT && matrix.os == 'ubuntu-latest'
@@ -151,7 +151,7 @@ jobs:
     name: Integration Tests
     needs: unit-tests
     runs-on: ubuntu-latest
-    
+
     services:
       # ChromaDB test instance (if using real ChromaDB)
       chromadb:
@@ -163,25 +163,25 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev,chromadb]"
-      
+
       - name: Wait for ChromaDB to be ready
         run: |
           timeout 30 bash -c 'until curl -f http://localhost:8000/api/v1/heartbeat; do sleep 1; done'
-      
+
       - name: Run integration tests
         env:
           CHROMADB_HOST: localhost
@@ -193,7 +193,7 @@ jobs:
             --cov-report=xml \
             -v \
             --tb=short
-      
+
       - name: Upload integration coverage
         uses: codecov/codecov-action@v3
         with:
@@ -206,43 +206,43 @@ jobs:
     name: End-to-End Tests
     needs: integration-tests
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev]"
-      
+
       - name: Create test project structure
         run: |
           mkdir -p test_project/docs/{api,guides}
           echo "# API Documentation" > test_project/docs/api/readme.md
           echo "# User Guide" > test_project/docs/guides/getting-started.md
-      
+
       - name: Run end-to-end tests
         run: |
           pytest tests/e2e/ \
             -v \
             --tb=short \
             --maxfail=3
-      
+
       - name: Test CLI installation and basic usage
         run: |
           # Test package installation
           uv pip install -e .
-          
+
           # Test CLI help
           shard-md --help
           shard-md --version
-          
+
           # Test basic command structure
           shard-md process --help
           shard-md collections --help || echo "Collections command not yet implemented"
@@ -253,21 +253,21 @@ jobs:
     needs: unit-tests
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev]"
-      
+
       - name: Run performance tests
         run: |
           pytest tests/performance/ \
@@ -275,7 +275,7 @@ jobs:
             --benchmark-json=benchmark.json \
             --benchmark-save=ci-${{ github.sha }} \
             -v
-      
+
       - name: Store benchmark results
         uses: benchmark-action/github-action-benchmark@v1
         with:
@@ -291,32 +291,32 @@ jobs:
   security:
     name: Security Scanning
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev]"
           uv pip install safety bandit
-      
+
       - name: Run safety check for vulnerabilities
         run: |
           safety check --json --output safety-report.json || true
           safety check
-      
+
       - name: Run bandit security linter
         run: |
           bandit -r src/ -f json -o bandit-report.json || true
           bandit -r src/
-      
+
       - name: Upload security reports
         uses: actions/upload-artifact@v3
         if: always()
@@ -330,48 +330,48 @@ jobs:
   documentation:
     name: Documentation
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
-      
+
       - name: Install dependencies
         run: |
           pip install uv
           uv pip install -e ".[dev]"
           uv pip install sphinx sphinx-rtd-theme
-      
+
       - name: Check documentation links
         run: |
           # Check for broken links in markdown files
           find docs/ -name "*.md" -exec echo "Checking {}" \;
-      
+
       - name: Generate API documentation
         run: |
           # Generate API docs with sphinx-apidoc if configured
           echo "API documentation generation placeholder"
-      
+
       - name: Validate documentation completeness
         run: |
           # Check that all public modules have documentation
           python -c "
           import ast
           import os
-          
+
           def check_docstrings(filepath):
               with open(filepath, 'r') as f:
                   tree = ast.parse(f.read())
-              
+
               for node in ast.walk(tree):
                   if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
                       if not ast.get_docstring(node):
                           print(f'Missing docstring: {filepath}:{node.lineno}:{node.name}')
-          
+
           for root, dirs, files in os.walk('src/'):
               for file in files:
                   if file.endswith('.py'):
@@ -399,27 +399,27 @@ jobs:
     name: Build Distribution
     needs: test
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
+
       - name: Install build dependencies
         run: |
           pip install uv
           uv pip install build twine
-      
+
       - name: Build package
         run: python -m build
-      
+
       - name: Check package
         run: twine check dist/*
-      
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
@@ -430,17 +430,17 @@ jobs:
     name: Create Release
     needs: build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           name: distributions
           path: dist/
-      
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -456,14 +456,14 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     environment: release
-    
+
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           name: distributions
           path: dist/
-      
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
@@ -761,20 +761,20 @@ quality_gates:
     coverage_threshold: 80
     pass_rate_threshold: 98
     max_duration_minutes: 5
-    
+
   integration_tests:
     pass_rate_threshold: 95
     max_duration_minutes: 15
-    
+
   performance_tests:
     regression_threshold: 120  # 20% performance degradation max
     memory_threshold_mb: 500
     max_duration_minutes: 30
-    
+
   security_scan:
     max_high_vulnerabilities: 0
     max_medium_vulnerabilities: 2
-    
+
   code_quality:
     min_maintainability_index: 70
     max_complexity: 10
@@ -789,16 +789,16 @@ environments:
   development:
     auto_deploy: true
     quality_gates: [unit_tests, code_quality]
-    
+
   staging:
     auto_deploy: false  # Manual approval required
     quality_gates: [unit_tests, integration_tests, code_quality, security_scan]
-    
+
   production:
     auto_deploy: false  # Manual approval required
     quality_gates: [unit_tests, integration_tests, e2e_tests, performance_tests, security_scan]
     approval_required: 2  # Two approvals needed
-    
+
 deployment_process:
   1. Automated testing on pull request
   2. Code review and approval

@@ -7,10 +7,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 1: Foundation and Setup (Week 1)
 
 ### Phase Overview
-**Duration**: 5-7 days  
-**Effort**: ~15 hours  
-**Team Size**: 1-2 developers  
-**Priority**: Critical  
+**Duration**: 5-7 days
+**Effort**: ~15 hours
+**Team Size**: 1-2 developers
+**Priority**: Critical
 
 **Objective**: Establish a solid foundation for development with proper tooling, project structure, and configuration management.
 
@@ -23,8 +23,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 1.1 Development Environment Setup (SETUP-001)
-**Owner**: Lead Developer  
-**Duration**: 4 hours  
+**Owner**: Lead Developer
+**Duration**: 4 hours
 
 **Deliverables**:
 - [ ] Poetry project with `pyproject.toml`
@@ -39,8 +39,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Basic CI pipeline runs successfully
 
 #### 1.2 Project Structure Creation (SETUP-002)
-**Owner**: Lead Developer  
-**Duration**: 3 hours  
+**Owner**: Lead Developer
+**Duration**: 3 hours
 
 **Deliverables**:
 - [ ] Complete `src/shard_markdown/` package structure
@@ -54,8 +54,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Package structure follows Python best practices
 
 #### 1.3 Configuration Management (SETUP-003)
-**Owner**: Senior Developer  
-**Duration**: 6 hours  
+**Owner**: Senior Developer
+**Duration**: 6 hours
 
 **Deliverables**:
 - [ ] Pydantic configuration models
@@ -96,10 +96,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 2: Core Processing Engine (Week 2)
 
 ### Phase Overview
-**Duration**: 7-10 days  
-**Effort**: ~48 hours  
-**Team Size**: 2-3 developers  
-**Priority**: Critical  
+**Duration**: 7-10 days
+**Effort**: ~48 hours
+**Team Size**: 2-3 developers
+**Priority**: Critical
 
 **Objective**: Implement the core document processing capabilities including parsing, chunking, and metadata extraction.
 
@@ -112,8 +112,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 2.1 Markdown Parser Implementation (CORE-001)
-**Owner**: Senior Developer  
-**Duration**: 12 hours  
+**Owner**: Senior Developer
+**Duration**: 12 hours
 
 **Deliverables**:
 - [ ] `MarkdownParser` class with AST generation
@@ -129,8 +129,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Preserves document structure information
 
 #### 2.2 Structure-Aware Chunking (CORE-002)
-**Owner**: Senior Developer  
-**Duration**: 16 hours  
+**Owner**: Senior Developer
+**Duration**: 16 hours
 
 **Deliverables**:
 - [ ] `StructureAwareChunker` implementation
@@ -146,8 +146,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Preserves enough context for meaningful retrieval
 
 #### 2.3 Alternative Chunking Strategies (CORE-003)
-**Owner**: Mid-level Developer  
-**Duration**: 10 hours  
+**Owner**: Mid-level Developer
+**Duration**: 10 hours
 
 **Deliverables**:
 - [ ] `FixedSizeChunker` implementation
@@ -161,8 +161,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Performance is acceptable for all strategies
 
 #### 2.4 Metadata Extraction (CORE-004)
-**Owner**: Mid-level Developer  
-**Duration**: 8 hours  
+**Owner**: Mid-level Developer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] `MetadataExtractor` class
@@ -177,8 +177,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Custom metadata integration works correctly
 
 #### 2.5 Document Processor Orchestration (CORE-005)
-**Owner**: Lead Developer  
-**Duration**: 12 hours  
+**Owner**: Lead Developer
+**Duration**: 12 hours
 
 **Deliverables**:
 - [ ] `DocumentProcessor` coordinator class
@@ -221,10 +221,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 3: Database Integration (Week 3)
 
 ### Phase Overview
-**Duration**: 6-8 days  
-**Effort**: ~30 hours  
-**Team Size**: 1-2 developers  
-**Priority**: Critical  
+**Duration**: 6-8 days
+**Effort**: ~30 hours
+**Team Size**: 1-2 developers
+**Priority**: Critical
 
 **Objective**: Implement ChromaDB integration for storing and retrieving document chunks with full collection management capabilities.
 
@@ -237,8 +237,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 3.1 ChromaDB Client Implementation (CHROMA-001)
-**Owner**: Senior Developer  
-**Duration**: 10 hours  
+**Owner**: Senior Developer
+**Duration**: 10 hours
 
 **Deliverables**:
 - [ ] `ChromaDBClient` wrapper class
@@ -254,8 +254,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Provides meaningful error messages for connection failures
 
 #### 3.2 Collection Management (CHROMA-002)
-**Owner**: Senior Developer  
-**Duration**: 12 hours  
+**Owner**: Senior Developer
+**Duration**: 12 hours
 
 **Deliverables**:
 - [ ] `CollectionManager` class
@@ -271,8 +271,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Performance is acceptable for typical use cases
 
 #### 3.3 Document Storage Operations (CHROMA-003)
-**Owner**: Mid-level Developer  
-**Duration**: 8 hours  
+**Owner**: Mid-level Developer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] Bulk document insertion with batching
@@ -315,10 +315,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 4: CLI Interface Development (Week 4-5)
 
 ### Phase Overview
-**Duration**: 10-12 days  
-**Effort**: ~52 hours  
-**Team Size**: 2-3 developers  
-**Priority**: Critical  
+**Duration**: 10-12 days
+**Effort**: ~52 hours
+**Team Size**: 2-3 developers
+**Priority**: Critical
 
 **Objective**: Implement comprehensive CLI interface with all user-facing commands and features.
 
@@ -331,8 +331,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 4.1 CLI Framework and Main Entry (CLI-001)
-**Owner**: Lead Developer  
-**Duration**: 8 hours  
+**Owner**: Lead Developer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] Click-based CLI application structure
@@ -348,8 +348,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Output formatting is consistent and attractive
 
 #### 4.2 Process Command Implementation (CLI-002)
-**Owner**: Senior Developer  
-**Duration**: 12 hours  
+**Owner**: Senior Developer
+**Duration**: 12 hours
 
 **Deliverables**:
 - [ ] Primary document processing command
@@ -365,8 +365,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Results are clearly summarized
 
 #### 4.3 Collection Management Commands (CLI-003)
-**Owner**: Mid-level Developer  
-**Duration**: 10 hours  
+**Owner**: Mid-level Developer
+**Duration**: 10 hours
 
 **Deliverables**:
 - [ ] Collection listing with formatting
@@ -380,8 +380,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Safety mechanisms prevent accidental data loss
 
 #### 4.4 Query and Search Commands (CLI-004)
-**Owner**: Mid-level Developer  
-**Duration**: 8 hours  
+**Owner**: Mid-level Developer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] Similarity search functionality
@@ -395,8 +395,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Export options work correctly
 
 #### 4.5 Configuration Commands (CLI-005)
-**Owner**: Junior Developer  
-**Duration**: 6 hours  
+**Owner**: Junior Developer
+**Duration**: 6 hours
 
 **Deliverables**:
 - [ ] Configuration initialization
@@ -410,8 +410,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Templates provide good starting points
 
 #### 4.6 Utility Commands (CLI-006)
-**Owner**: Mid-level Developer  
-**Duration**: 8 hours  
+**Owner**: Mid-level Developer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] Document preview functionality
@@ -452,10 +452,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 5: Error Handling and Monitoring (Week 5-6)
 
 ### Phase Overview
-**Duration**: 5-7 days  
-**Effort**: ~22 hours  
-**Team Size**: 1-2 developers  
-**Priority**: High  
+**Duration**: 5-7 days
+**Effort**: ~22 hours
+**Team Size**: 1-2 developers
+**Priority**: High
 
 **Objective**: Implement comprehensive error handling, logging, and monitoring systems for reliability and debuggability.
 
@@ -468,8 +468,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 5.1 Error Handling Framework (ERROR-001)
-**Owner**: Senior Developer  
-**Duration**: 10 hours  
+**Owner**: Senior Developer
+**Duration**: 10 hours
 
 **Deliverables**:
 - [ ] Custom exception hierarchy
@@ -485,8 +485,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Context information aids debugging
 
 #### 5.2 Logging and Monitoring (ERROR-002)
-**Owner**: Mid-level Developer  
-**Duration**: 6 hours  
+**Owner**: Mid-level Developer
+**Duration**: 6 hours
 
 **Deliverables**:
 - [ ] Structured logging configuration
@@ -500,8 +500,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Performance metrics are collected accurately
 
 #### 5.3 Progress Tracking and Feedback (ERROR-003)
-**Owner**: Mid-level Developer  
-**Duration**: 6 hours  
+**Owner**: Mid-level Developer
+**Duration**: 6 hours
 
 **Deliverables**:
 - [ ] Rich progress bars for long operations
@@ -532,10 +532,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 6: Testing and Quality Assurance (Week 6-7)
 
 ### Phase Overview
-**Duration**: 10-12 days  
-**Effort**: ~56 hours  
-**Team Size**: 2-3 developers  
-**Priority**: High  
+**Duration**: 10-12 days
+**Effort**: ~56 hours
+**Team Size**: 2-3 developers
+**Priority**: High
 
 **Objective**: Implement comprehensive testing suite ensuring reliability, performance, and maintainability.
 
@@ -548,8 +548,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 6.1 Unit Test Suite (TEST-001)
-**Owner**: All developers  
-**Duration**: 20 hours  
+**Owner**: All developers
+**Duration**: 20 hours
 
 **Deliverables**:
 - [ ] Unit tests for all core components (>90% coverage)
@@ -563,8 +563,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Edge cases are covered appropriately
 
 #### 6.2 Integration Test Suite (TEST-002)
-**Owner**: Senior Developer  
-**Duration**: 16 hours  
+**Owner**: Senior Developer
+**Duration**: 16 hours
 
 **Deliverables**:
 - [ ] End-to-end processing pipeline tests
@@ -578,8 +578,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Error scenarios are validated
 
 #### 6.3 End-to-End Test Suite (TEST-003)
-**Owner**: Mid-level Developer  
-**Duration**: 12 hours  
+**Owner**: Mid-level Developer
+**Duration**: 12 hours
 
 **Deliverables**:
 - [ ] Complete workflow testing
@@ -593,8 +593,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Performance is acceptable in realistic scenarios
 
 #### 6.4 Performance and Load Testing (TEST-004)
-**Owner**: Senior Developer  
-**Duration**: 8 hours  
+**Owner**: Senior Developer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] Processing performance benchmarks
@@ -626,10 +626,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 7: Documentation and User Experience (Week 7-8)
 
 ### Phase Overview
-**Duration**: 8-10 days  
-**Effort**: ~20 hours  
-**Team Size**: 1-2 developers  
-**Priority**: Medium  
+**Duration**: 8-10 days
+**Effort**: ~20 hours
+**Team Size**: 1-2 developers
+**Priority**: Medium
 
 **Objective**: Create comprehensive documentation and ensure excellent user experience.
 
@@ -642,8 +642,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 7.1 API Documentation (DOC-001)
-**Owner**: Senior Developer  
-**Duration**: 8 hours  
+**Owner**: Senior Developer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] Sphinx documentation setup
@@ -657,8 +657,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Architecture is clearly explained
 
 #### 7.2 User Documentation (DOC-002)
-**Owner**: Technical Writer / Developer  
-**Duration**: 12 hours  
+**Owner**: Technical Writer / Developer
+**Duration**: 12 hours
 
 **Deliverables**:
 - [ ] Installation instructions
@@ -689,10 +689,10 @@ This document defines the development phases for the shard-markdown CLI project,
 ## Phase 8: Deployment and Release (Week 8-9)
 
 ### Phase Overview
-**Duration**: 8-10 days  
-**Effort**: ~26 hours  
-**Team Size**: 1-2 developers  
-**Priority**: High  
+**Duration**: 8-10 days
+**Effort**: ~26 hours
+**Team Size**: 1-2 developers
+**Priority**: High
 
 **Objective**: Prepare for production release with proper packaging, distribution, and deployment automation.
 
@@ -705,8 +705,8 @@ This document defines the development phases for the shard-markdown CLI project,
 ### Tasks and Deliverables
 
 #### 8.1 Package Distribution Setup (PKG-001)
-**Owner**: DevOps Engineer / Lead Developer  
-**Duration**: 6 hours  
+**Owner**: DevOps Engineer / Lead Developer
+**Duration**: 6 hours
 
 **Deliverables**:
 - [ ] PyPI package configuration
@@ -720,8 +720,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Docker image is properly configured
 
 #### 8.2 Security and Compliance (PKG-002)
-**Owner**: Security-conscious Developer  
-**Duration**: 4 hours  
+**Owner**: Security-conscious Developer
+**Duration**: 4 hours
 
 **Deliverables**:
 - [ ] Dependency vulnerability scanning
@@ -735,8 +735,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Security policies are documented
 
 #### 8.3 CI/CD Pipeline Completion (DEPLOY-001)
-**Owner**: DevOps Engineer  
-**Duration**: 8 hours  
+**Owner**: DevOps Engineer
+**Duration**: 8 hours
 
 **Deliverables**:
 - [ ] Multi-platform testing automation
@@ -750,8 +750,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Performance regressions are detected
 
 #### 8.4 Release Preparation (DEPLOY-002)
-**Owner**: Lead Developer  
-**Duration**: 6 hours  
+**Owner**: Lead Developer
+**Duration**: 6 hours
 
 **Deliverables**:
 - [ ] Release notes and changelog
@@ -765,8 +765,8 @@ This document defines the development phases for the shard-markdown CLI project,
 - Community guidelines are clear
 
 #### 8.5 Beta Testing and Feedback (DEPLOY-003)
-**Owner**: Product Manager / Lead Developer  
-**Duration**: 12 hours  
+**Owner**: Product Manager / Lead Developer
+**Duration**: 12 hours
 
 **Deliverables**:
 - [ ] Beta release distribution

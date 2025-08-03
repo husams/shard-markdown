@@ -53,7 +53,7 @@
 ```python
 class ShardMarkdownError(Exception):
     """Base exception for all shard-markdown errors."""
-    
+
     def __init__(self, message: str, error_code: int, category: str,
                  context: Optional[Dict[str, Any]] = None,
                  cause: Optional[Exception] = None):
@@ -64,7 +64,7 @@ class ShardMarkdownError(Exception):
         self.context = context or {}
         self.cause = cause
         self.timestamp = datetime.utcnow()
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert error to dictionary for logging/reporting."""
         return {
@@ -78,43 +78,43 @@ class ShardMarkdownError(Exception):
 
 class InputValidationError(ShardMarkdownError):
     """Errors related to invalid input validation."""
-    
+
     def __init__(self, message: str, error_code: int = 1000, **kwargs):
         super().__init__(message, error_code, "INPUT", **kwargs)
 
 class ConfigurationError(ShardMarkdownError):
     """Errors related to configuration issues."""
-    
+
     def __init__(self, message: str, error_code: int = 1100, **kwargs):
         super().__init__(message, error_code, "CONFIG", **kwargs)
 
 class FileSystemError(ShardMarkdownError):
     """Errors related to file system operations."""
-    
+
     def __init__(self, message: str, error_code: int = 1200, **kwargs):
         super().__init__(message, error_code, "FILESYSTEM", **kwargs)
 
 class ProcessingError(ShardMarkdownError):
     """Errors during document processing."""
-    
+
     def __init__(self, message: str, error_code: int = 1300, **kwargs):
         super().__init__(message, error_code, "PROCESSING", **kwargs)
 
 class ChromaDBError(ShardMarkdownError):
     """Errors related to ChromaDB operations."""
-    
+
     def __init__(self, message: str, error_code: int = 1400, **kwargs):
         super().__init__(message, error_code, "DATABASE", **kwargs)
 
 class SystemError(ShardMarkdownError):
     """System-level errors."""
-    
+
     def __init__(self, message: str, error_code: int = 1500, **kwargs):
         super().__init__(message, error_code, "SYSTEM", **kwargs)
 
 class NetworkError(ShardMarkdownError):
     """Network-related errors."""
-    
+
     def __init__(self, message: str, error_code: int = 1600, **kwargs):
         super().__init__(message, error_code, "NETWORK", **kwargs)
 ```
@@ -124,10 +124,10 @@ class NetworkError(ShardMarkdownError):
 ```python
 class ErrorContext:
     """Collects and manages error context information."""
-    
+
     def __init__(self):
         self._context = {}
-    
+
     def add_file_context(self, file_path: Path, operation: str):
         """Add file-related context."""
         self._context.update({
@@ -136,7 +136,7 @@ class ErrorContext:
             'operation': operation,
             'file_exists': file_path.exists()
         })
-    
+
     def add_processing_context(self, chunk_count: int, chunk_size: int, method: str):
         """Add processing-related context."""
         self._context.update({
@@ -144,14 +144,14 @@ class ErrorContext:
             'chunk_size': chunk_size,
             'chunking_method': method
         })
-    
+
     def add_chromadb_context(self, collection_name: str, operation: str):
         """Add ChromaDB-related context."""
         self._context.update({
             'collection_name': collection_name,
             'database_operation': operation
         })
-    
+
     def add_system_context(self):
         """Add system-related context."""
         import psutil
@@ -160,7 +160,7 @@ class ErrorContext:
             'cpu_percent': psutil.cpu_percent(),
             'disk_free': psutil.disk_usage('/').free
         })
-    
+
     def get_context(self) -> Dict[str, Any]:
         """Get current context."""
         return self._context.copy()
@@ -174,19 +174,19 @@ class ErrorContext:
 ```python
 def validate_input_paths(paths: List[str], recursive: bool) -> List[Path]:
     """Validate input file paths."""
-    
+
     validated_paths = []
     for path_str in paths:
         try:
             path = Path(path_str).resolve()
-            
+
             if not path.exists():
                 raise InputValidationError(
                     f"Path does not exist: {path}",
                     error_code=1001,
                     context={'path': str(path), 'operation': 'path_validation'}
                 )
-            
+
             if path.is_file():
                 if not path.suffix.lower() == '.md':
                     raise InputValidationError(
@@ -195,7 +195,7 @@ def validate_input_paths(paths: List[str], recursive: bool) -> List[Path]:
                         context={'path': str(path), 'suffix': path.suffix}
                     )
                 validated_paths.append(path)
-            
+
             elif path.is_dir():
                 if recursive:
                     md_files = list(path.rglob('*.md'))
@@ -212,7 +212,7 @@ def validate_input_paths(paths: List[str], recursive: bool) -> List[Path]:
                         error_code=1004,
                         context={'path': str(path), 'recursive': False}
                     )
-            
+
         except OSError as e:
             raise FileSystemError(
                 f"Cannot access path: {path_str}",
@@ -220,7 +220,7 @@ def validate_input_paths(paths: List[str], recursive: bool) -> List[Path]:
                 context={'path': path_str, 'os_error': str(e)},
                 cause=e
             )
-    
+
     return validated_paths
 ```
 
@@ -228,35 +228,35 @@ def validate_input_paths(paths: List[str], recursive: bool) -> List[Path]:
 ```python
 def validate_chunk_size(chunk_size: int, chunk_overlap: int) -> None:
     """Validate chunking parameters."""
-    
+
     if chunk_size <= 0:
         raise ConfigurationError(
             "Chunk size must be positive",
             error_code=1101,
             context={'chunk_size': chunk_size}
         )
-    
+
     if chunk_size < 100:
         raise ConfigurationError(
             "Chunk size too small (minimum 100 characters)",
             error_code=1102,
             context={'chunk_size': chunk_size, 'minimum': 100}
         )
-    
+
     if chunk_size > 50000:
         raise ConfigurationError(
             "Chunk size too large (maximum 50,000 characters)",
             error_code=1103,
             context={'chunk_size': chunk_size, 'maximum': 50000}
         )
-    
+
     if chunk_overlap < 0:
         raise ConfigurationError(
             "Chunk overlap cannot be negative",
             error_code=1104,
             context={'chunk_overlap': chunk_overlap}
         )
-    
+
     if chunk_overlap >= chunk_size:
         raise ConfigurationError(
             "Chunk overlap must be smaller than chunk size",
@@ -271,10 +271,10 @@ def validate_chunk_size(chunk_size: int, chunk_overlap: int) -> None:
 ```python
 def read_file_with_error_handling(file_path: Path) -> str:
     """Read file with comprehensive error handling."""
-    
+
     context = ErrorContext()
     context.add_file_context(file_path, 'read')
-    
+
     try:
         # Check file permissions
         if not os.access(file_path, os.R_OK):
@@ -283,7 +283,7 @@ def read_file_with_error_handling(file_path: Path) -> str:
                 error_code=1201,
                 context=context.get_context()
             )
-        
+
         # Check file size
         file_size = file_path.stat().st_size
         if file_size > 100 * 1024 * 1024:  # 100MB limit
@@ -292,10 +292,10 @@ def read_file_with_error_handling(file_path: Path) -> str:
                 error_code=1202,
                 context=context.get_context()
             )
-        
+
         # Try multiple encodings
         encodings = ['utf-8', 'utf-8-sig', 'latin-1', 'cp1252']
-        
+
         for encoding in encodings:
             try:
                 with open(file_path, 'r', encoding=encoding) as f:
@@ -310,7 +310,7 @@ def read_file_with_error_handling(file_path: Path) -> str:
                         cause=e
                     )
                 continue
-    
+
     except FileNotFoundError as e:
         raise FileSystemError(
             f"File not found: {file_path}",
@@ -318,7 +318,7 @@ def read_file_with_error_handling(file_path: Path) -> str:
             context=context.get_context(),
             cause=e
         )
-    
+
     except PermissionError as e:
         raise FileSystemError(
             f"Permission denied: {file_path}",
@@ -326,7 +326,7 @@ def read_file_with_error_handling(file_path: Path) -> str:
             context=context.get_context(),
             cause=e
         )
-    
+
     except OSError as e:
         raise FileSystemError(
             f"OS error reading file: {file_path}",
@@ -342,10 +342,10 @@ def read_file_with_error_handling(file_path: Path) -> str:
 ```python
 def parse_markdown_with_error_handling(content: str, file_path: Path) -> MarkdownAST:
     """Parse markdown with error handling."""
-    
+
     context = ErrorContext()
     context.add_file_context(file_path, 'parse')
-    
+
     try:
         # Validate content
         if not content.strip():
@@ -354,7 +354,7 @@ def parse_markdown_with_error_handling(content: str, file_path: Path) -> Markdow
                 error_code=1301,
                 context=context.get_context()
             )
-        
+
         # Check for extremely long lines that might cause issues
         lines = content.split('\n')
         max_line_length = max(len(line) for line in lines)
@@ -364,24 +364,24 @@ def parse_markdown_with_error_handling(content: str, file_path: Path) -> Markdow
                 error_code=1302,
                 context={**context.get_context(), 'max_line_length': max_line_length}
             )
-        
+
         # Parse markdown
         parser = MarkdownParser()
         ast = parser.parse(content)
-        
+
         if not ast.elements:
             raise ProcessingError(
                 f"No valid markdown elements found: {file_path}",
                 error_code=1303,
                 context=context.get_context()
             )
-        
+
         return ast
-    
+
     except Exception as e:
         if isinstance(e, ProcessingError):
             raise
-        
+
         raise ProcessingError(
             f"Markdown parsing failed: {file_path}",
             error_code=1304,
@@ -392,45 +392,45 @@ def parse_markdown_with_error_handling(content: str, file_path: Path) -> Markdow
 
 #### 3.3.2 Chunking Errors (Code: 1311-1320)
 ```python
-def chunk_document_with_error_handling(ast: MarkdownAST, config: ChunkingConfig, 
+def chunk_document_with_error_handling(ast: MarkdownAST, config: ChunkingConfig,
                                      file_path: Path) -> List[DocumentChunk]:
     """Chunk document with error handling."""
-    
+
     context = ErrorContext()
     context.add_file_context(file_path, 'chunk')
     context.add_processing_context(0, config.chunk_size, config.method)
-    
+
     try:
         chunker = ChunkingEngine(config)
         chunks = chunker.chunk_document(ast)
-        
+
         if not chunks:
             raise ProcessingError(
                 f"No chunks generated from document: {file_path}",
                 error_code=1311,
                 context=context.get_context()
             )
-        
+
         # Validate chunk sizes
-        oversized_chunks = [i for i, chunk in enumerate(chunks) 
+        oversized_chunks = [i for i, chunk in enumerate(chunks)
                            if len(chunk.content) > config.chunk_size * 1.5]
-        
+
         if oversized_chunks:
             raise ProcessingError(
                 f"Generated chunks exceed size limits: {file_path}",
                 error_code=1312,
-                context={**context.get_context(), 
+                context={**context.get_context(),
                         'oversized_chunks': oversized_chunks,
                         'max_allowed': config.chunk_size * 1.5}
             )
-        
+
         context.add_processing_context(len(chunks), config.chunk_size, config.method)
         return chunks
-    
+
     except Exception as e:
         if isinstance(e, ProcessingError):
             raise
-        
+
         raise ProcessingError(
             f"Document chunking failed: {file_path}",
             error_code=1313,
@@ -445,13 +445,13 @@ def chunk_document_with_error_handling(ast: MarkdownAST, config: ChunkingConfig,
 ```python
 def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Client:
     """Connect to ChromaDB with comprehensive error handling."""
-    
+
     context = {
         'host': config.host,
         'port': config.port,
         'ssl': config.ssl
     }
-    
+
     try:
         # Test basic connectivity
         import socket
@@ -459,21 +459,21 @@ def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Cli
         sock.settimeout(5)
         result = sock.connect_ex((config.host, config.port))
         sock.close()
-        
+
         if result != 0:
             raise NetworkError(
                 f"Cannot connect to ChromaDB server: {config.host}:{config.port}",
                 error_code=1601,
                 context=context
             )
-        
+
         # Create client
         client = chromadb.HttpClient(
             host=config.host,
             port=config.port,
             ssl=config.ssl
         )
-        
+
         # Test connection
         try:
             client.heartbeat()
@@ -484,9 +484,9 @@ def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Cli
                 context={**context, 'heartbeat_error': str(e)},
                 cause=e
             )
-        
+
         return client
-    
+
     except socket.gaierror as e:
         raise NetworkError(
             f"DNS resolution failed for ChromaDB host: {config.host}",
@@ -494,7 +494,7 @@ def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Cli
             context={**context, 'dns_error': str(e)},
             cause=e
         )
-    
+
     except socket.timeout as e:
         raise NetworkError(
             f"Connection timeout to ChromaDB: {config.host}:{config.port}",
@@ -502,11 +502,11 @@ def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Cli
             context={**context, 'timeout': config.timeout},
             cause=e
         )
-    
+
     except Exception as e:
         if isinstance(e, (ChromaDBError, NetworkError)):
             raise
-        
+
         raise ChromaDBError(
             f"Unexpected error connecting to ChromaDB: {config.host}:{config.port}",
             error_code=1402,
@@ -517,14 +517,14 @@ def connect_chromadb_with_error_handling(config: ChromaDBConfig) -> chromadb.Cli
 
 #### 3.4.2 Collection Operation Errors (Code: 1411-1420)
 ```python
-def get_or_create_collection_with_error_handling(client: chromadb.Client, 
-                                               name: str, 
+def get_or_create_collection_with_error_handling(client: chromadb.Client,
+                                               name: str,
                                                create_if_missing: bool) -> chromadb.Collection:
     """Get or create collection with error handling."""
-    
+
     context = ErrorContext()
     context.add_chromadb_context(name, 'get_or_create_collection')
-    
+
     try:
         # Validate collection name
         if not name or not name.strip():
@@ -533,19 +533,19 @@ def get_or_create_collection_with_error_handling(client: chromadb.Client,
                 error_code=1411,
                 context=context.get_context()
             )
-        
+
         if len(name) > 63:  # ChromaDB collection name limit
             raise ChromaDBError(
                 f"Collection name too long: {name} (max 63 characters)",
                 error_code=1412,
                 context={**context.get_context(), 'name_length': len(name)}
             )
-        
+
         # Try to get existing collection
         try:
             collection = client.get_collection(name)
             return collection
-        
+
         except Exception as get_error:
             if not create_if_missing:
                 raise ChromaDBError(
@@ -554,26 +554,26 @@ def get_or_create_collection_with_error_handling(client: chromadb.Client,
                     context=context.get_context(),
                     cause=get_error
                 )
-            
+
             # Create new collection
             try:
                 collection = client.create_collection(name)
                 return collection
-            
+
             except Exception as create_error:
                 raise ChromaDBError(
                     f"Failed to create collection: {name}",
                     error_code=1414,
-                    context={**context.get_context(), 
+                    context={**context.get_context(),
                             'get_error': str(get_error),
                             'create_error': str(create_error)},
                     cause=create_error
                 )
-    
+
     except Exception as e:
         if isinstance(e, ChromaDBError):
             raise
-        
+
         raise ChromaDBError(
             f"Unexpected error with collection: {name}",
             error_code=1415,
@@ -589,53 +589,53 @@ def get_or_create_collection_with_error_handling(client: chromadb.Client,
 ```python
 class RetryStrategy:
     """Configurable retry strategy for error recovery."""
-    
+
     def __init__(self, max_attempts: int = 3, base_delay: float = 1.0,
                  max_delay: float = 30.0, backoff_factor: float = 2.0):
         self.max_attempts = max_attempts
         self.base_delay = base_delay
         self.max_delay = max_delay
         self.backoff_factor = backoff_factor
-    
+
     def should_retry(self, error: ShardMarkdownError, attempt: int) -> bool:
         """Determine if error should be retried."""
-        
+
         # Never retry input validation errors
         if isinstance(error, InputValidationError):
             return False
-        
+
         # Retry network and ChromaDB errors
         if isinstance(error, (NetworkError, ChromaDBError)):
             return attempt < self.max_attempts
-        
+
         # Retry some file system errors
         if isinstance(error, FileSystemError) and error.error_code in [1206]:  # OS errors
             return attempt < self.max_attempts
-        
+
         return False
-    
+
     def get_delay(self, attempt: int) -> float:
         """Calculate delay before retry attempt."""
-        
+
         delay = self.base_delay * (self.backoff_factor ** (attempt - 1))
         return min(delay, self.max_delay)
 
-async def retry_with_strategy(operation: Callable, strategy: RetryStrategy, 
+async def retry_with_strategy(operation: Callable, strategy: RetryStrategy,
                             context: Optional[Dict] = None) -> Any:
     """Execute operation with retry strategy."""
-    
+
     last_error = None
-    
+
     for attempt in range(1, strategy.max_attempts + 1):
         try:
             return await operation()
-        
+
         except ShardMarkdownError as e:
             last_error = e
-            
+
             if not strategy.should_retry(e, attempt):
                 raise
-            
+
             if attempt < strategy.max_attempts:
                 delay = strategy.get_delay(attempt)
                 logger.warning(f"Operation failed (attempt {attempt}/{strategy.max_attempts}), "
@@ -644,7 +644,7 @@ async def retry_with_strategy(operation: Callable, strategy: RetryStrategy,
             else:
                 logger.error(f"Operation failed after {strategy.max_attempts} attempts")
                 raise
-    
+
     # Should not reach here, but raise last error if we do
     if last_error:
         raise last_error
@@ -655,42 +655,42 @@ async def retry_with_strategy(operation: Callable, strategy: RetryStrategy,
 ```python
 class GracefulDegradationHandler:
     """Handle errors with graceful degradation strategies."""
-    
+
     def __init__(self, config: AppConfig):
         self.config = config
         self.failed_files = []
         self.partial_results = []
-    
-    def handle_file_processing_error(self, error: ShardMarkdownError, 
+
+    def handle_file_processing_error(self, error: ShardMarkdownError,
                                    file_path: Path) -> bool:
         """Handle errors during file processing."""
-        
+
         self.failed_files.append({
             'file_path': file_path,
             'error': error,
             'timestamp': datetime.utcnow()
         })
-        
+
         # Log error but continue processing other files
         logger.error(f"Failed to process {file_path}: {error.message}")
-        
+
         # For certain errors, we can continue
         if isinstance(error, (ProcessingError, FileSystemError)):
             return True  # Continue processing other files
-        
+
         # For system-critical errors, we should stop
         if isinstance(error, SystemError):
             return False  # Stop processing
-        
+
         return True  # Default: continue processing
-    
-    def handle_chromadb_error(self, error: ChromaDBError, 
+
+    def handle_chromadb_error(self, error: ChromaDBError,
                             chunks: List[DocumentChunk]) -> bool:
         """Handle ChromaDB operation errors."""
-        
+
         # Try to save chunks to local backup
         backup_path = Path(f"backup_chunks_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json")
-        
+
         try:
             import json
             chunk_data = [
@@ -701,20 +701,20 @@ class GracefulDegradationHandler:
                 }
                 for chunk in chunks
             ]
-            
+
             with open(backup_path, 'w') as f:
                 json.dump(chunk_data, f, indent=2)
-            
+
             logger.warning(f"ChromaDB operation failed, saved {len(chunks)} chunks to {backup_path}")
             return True
-        
+
         except Exception as backup_error:
             logger.error(f"Failed to save backup: {backup_error}")
             return False
-    
+
     def generate_error_report(self) -> Dict[str, Any]:
         """Generate comprehensive error report."""
-        
+
         return {
             'summary': {
                 'total_failed_files': len(self.failed_files),
@@ -733,20 +733,20 @@ class GracefulDegradationHandler:
             ],
             'recommendations': self._generate_recommendations()
         }
-    
+
     def _categorize_errors(self) -> Dict[str, int]:
         """Categorize errors by type."""
-        
+
         categories = {}
         for item in self.failed_files:
             category = item['error'].category
             categories[category] = categories.get(category, 0) + 1
-        
+
         return categories
-    
+
     def _get_common_errors(self) -> List[Dict[str, Any]]:
         """Get most common error codes."""
-        
+
         error_counts = {}
         for item in self.failed_files:
             code = item['error'].error_code
@@ -757,38 +757,38 @@ class GracefulDegradationHandler:
                     'category': item['error'].category
                 }
             error_counts[code]['count'] += 1
-        
+
         # Return top 5 most common errors
         return sorted(error_counts.values(), key=lambda x: x['count'], reverse=True)[:5]
-    
+
     def _generate_recommendations(self) -> List[str]:
         """Generate recommendations based on error patterns."""
-        
+
         recommendations = []
-        
+
         # Analyze error patterns
         categories = self._categorize_errors()
-        
+
         if categories.get('FILESYSTEM', 0) > 0:
             recommendations.append(
                 "Check file permissions and ensure all input files are accessible"
             )
-        
+
         if categories.get('DATABASE', 0) > 0:
             recommendations.append(
                 "Verify ChromaDB connection settings and ensure the server is running"
             )
-        
+
         if categories.get('PROCESSING', 0) > 0:
             recommendations.append(
                 "Consider adjusting chunk size parameters or using a different chunking method"
             )
-        
+
         if categories.get('CONFIG', 0) > 0:
             recommendations.append(
                 "Review configuration file settings and ensure all required values are provided"
             )
-        
+
         return recommendations
 ```
 
@@ -799,39 +799,39 @@ class GracefulDegradationHandler:
 ```python
 def display_error_to_user(error: ShardMarkdownError, verbose: bool = False):
     """Display user-friendly error message."""
-    
+
     console = Console()
-    
+
     # Error header
     console.print(f"\n[bold red]Error {error.error_code}:[/bold red] {error.message}")
-    
+
     # Context information
     if error.context:
         console.print("\n[yellow]Context:[/yellow]")
         for key, value in error.context.items():
             if isinstance(value, (str, int, float, bool)):
                 console.print(f"  {key}: {value}")
-    
+
     # Suggestions based on error type
     suggestions = get_error_suggestions(error)
     if suggestions:
         console.print("\n[blue]Suggestions:[/blue]")
         for suggestion in suggestions:
             console.print(f"  • {suggestion}")
-    
+
     # Verbose information
     if verbose:
         console.print(f"\n[dim]Category:[/dim] {error.category}")
         console.print(f"[dim]Timestamp:[/dim] {error.timestamp}")
-        
+
         if error.cause:
             console.print(f"[dim]Underlying cause:[/dim] {error.cause}")
 
 def get_error_suggestions(error: ShardMarkdownError) -> List[str]:
     """Get user-friendly suggestions for error resolution."""
-    
+
     suggestions = []
-    
+
     if isinstance(error, InputValidationError):
         if error.error_code == 1001:  # File not found
             suggestions.append("Check that the file path is correct and the file exists")
@@ -839,12 +839,12 @@ def get_error_suggestions(error: ShardMarkdownError) -> List[str]:
         elif error.error_code == 1002:  # Not markdown file
             suggestions.append("Ensure the file has a .md extension")
             suggestions.append("Verify the file contains markdown content")
-    
+
     elif isinstance(error, ConfigurationError):
         suggestions.append("Review your configuration file settings")
         suggestions.append("Run 'shard-md config show' to see current configuration")
         suggestions.append("Use 'shard-md config init' to create a new configuration")
-    
+
     elif isinstance(error, FileSystemError):
         if error.error_code == 1201:  # Permission denied
             suggestions.append("Check file permissions (chmod +r filename)")
@@ -852,17 +852,17 @@ def get_error_suggestions(error: ShardMarkdownError) -> List[str]:
         elif error.error_code == 1203:  # Encoding error
             suggestions.append("The file may contain non-UTF-8 characters")
             suggestions.append("Try saving the file with UTF-8 encoding")
-    
+
     elif isinstance(error, ChromaDBError):
         suggestions.append("Verify ChromaDB server is running and accessible")
         suggestions.append("Check connection settings (host, port, SSL)")
         suggestions.append("Ensure you have proper authentication credentials")
-    
+
     elif isinstance(error, NetworkError):
         suggestions.append("Check your network connection")
         suggestions.append("Verify the ChromaDB server address and port")
         suggestions.append("Check firewall settings")
-    
+
     return suggestions
 ```
 
@@ -871,13 +871,13 @@ def get_error_suggestions(error: ShardMarkdownError) -> List[str]:
 ```python
 class ProgressReporter:
     """Report progress and handle errors during long operations."""
-    
+
     def __init__(self, total_items: int, description: str = "Processing"):
         self.total_items = total_items
         self.processed = 0
         self.failed = 0
         self.errors = []
-        
+
         self.progress = Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -887,46 +887,46 @@ class ProgressReporter:
             TimeElapsedColumn(),
             TimeRemainingColumn(),
         )
-        
+
         self.task_id = self.progress.add_task(description, total=total_items)
-    
+
     def __enter__(self):
         self.progress.start()
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.progress.stop()
         self._display_summary()
-    
+
     def report_success(self, item_name: str):
         """Report successful processing of an item."""
         self.processed += 1
-        self.progress.update(self.task_id, advance=1, 
+        self.progress.update(self.task_id, advance=1,
                            description=f"Processing: {item_name}")
-    
+
     def report_error(self, item_name: str, error: ShardMarkdownError):
         """Report error processing an item."""
         self.failed += 1
         self.errors.append({'item': item_name, 'error': error})
         self.progress.update(self.task_id, advance=1,
                            description=f"Failed: {item_name}")
-    
+
     def _display_summary(self):
         """Display processing summary."""
         console = Console()
-        
+
         # Success summary
         if self.processed > 0:
             console.print(f"\n[green]✓ Successfully processed: {self.processed} items[/green]")
-        
+
         # Error summary
         if self.failed > 0:
             console.print(f"[red]✗ Failed: {self.failed} items[/red]")
-            
+
             # Show first few errors
             for error_info in self.errors[:3]:
                 console.print(f"  • {error_info['item']}: {error_info['error'].message}")
-            
+
             if len(self.errors) > 3:
                 console.print(f"  ... and {len(self.errors) - 3} more errors")
                 console.print("  Use --verbose for full error details")

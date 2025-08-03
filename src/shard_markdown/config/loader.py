@@ -28,6 +28,7 @@ def load_config(config_path: Optional[Path] = None) -> AppConfig:
     load_dotenv()
 
     # Determine configuration file path
+    config_file: Optional[Path]
     if config_path:
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")

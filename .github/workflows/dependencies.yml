@@ -84,7 +84,7 @@ jobs:
           script: |
             const fs = require('fs');
             const report = fs.readFileSync('security_report.md', 'utf8');
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
@@ -113,7 +113,7 @@ jobs:
         run: |
           echo "## Dependency Status" > dependency_report.md
           echo "" >> dependency_report.md
-          
+
           # Check if uv.lock is up to date
           uv sync --dev
           if git diff --quiet uv.lock; then
@@ -166,10 +166,10 @@ jobs:
         run: |
           # Create backup of current lock file
           cp uv.lock uv.lock.backup
-          
+
           # Update dependencies
           uv sync --upgrade
-          
+
           # Check if there are changes
           if ! git diff --quiet uv.lock; then
             echo "changes=true" >> $GITHUB_OUTPUT
@@ -194,19 +194,19 @@ jobs:
           title: "chore: automated dependency updates"
           body: |
             ## Automated Dependency Updates
-            
+
             This PR contains automated updates to project dependencies.
-            
+
             ### Changes
             - Updated `uv.lock` with latest compatible versions
             - All unit tests pass with updated dependencies
-            
+
             ### Review Checklist
             - [ ] Review dependency changes in `uv.lock`
             - [ ] Check for any breaking changes in updated packages
             - [ ] Verify all tests pass
             - [ ] Test CLI functionality manually if needed
-            
+
             Generated automatically by the Dependencies workflow.
           branch: chore/dependency-updates
           delete-branch: true

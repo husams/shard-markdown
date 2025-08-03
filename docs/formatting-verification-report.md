@@ -14,10 +14,10 @@ The comprehensive verification of code formatting fixes reveals **critical issue
   - Syntax parsing errors
   - One file requires reformatting
 
-### ❌ Import Sorting (isort) - FAILED 
+### ❌ Import Sorting (isort) - FAILED
 - **Status**: MINOR ISSUES
 - **Files Affected**: 2 files need import reordering
-- **Files**: 
+- **Files**:
   - `src/shard_markdown/core/chunking/structure.py`
   - `tests/integration/test_document_processing.py`
 
@@ -32,7 +32,7 @@ The comprehensive verification of code formatting fixes reveals **critical issue
   - Undefined variables (F821)
 
 ### ❌ Type Checking (MyPy) - FAILED
-- **Status**: CRITICAL FAILURES  
+- **Status**: CRITICAL FAILURES
 - **Total Errors**: 98 errors across 20 files
 - **Major Issues**:
   - Missing type annotations

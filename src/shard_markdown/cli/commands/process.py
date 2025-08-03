@@ -103,12 +103,12 @@ def process(  # noqa: C901
     use_mock,
 ):
     """Process markdown files into ChromaDB collections.
+
     This command processes one or more markdown files, intelligently chunks
     them based on document structure, and stores the results in a ChromaDB
     collection.
 
     Examples:
-
       # Process a single file
       shard-md process --collection my-docs document.md
 

@@ -71,7 +71,7 @@ jobs:
       - name: Create test markdown files
         run: |
           mkdir -p test-docs
-          
+
           echo "# Test Document 1" > test-docs/doc1.md
           echo "" >> test-docs/doc1.md
           echo "This is a test document for the CLI." >> test-docs/doc1.md
@@ -81,7 +81,7 @@ jobs:
           echo "" >> test-docs/doc1.md
           echo "## Section B" >> test-docs/doc1.md
           echo "Some content in section B." >> test-docs/doc1.md
-          
+
           echo "---" > test-docs/doc2.md
           echo "title: Test Document 2" >> test-docs/doc2.md
           echo "author: Test Author" >> test-docs/doc2.md
@@ -107,7 +107,7 @@ jobs:
         run: |
           # Initialize configuration
           uv run shard-md config init --force
-          
+
           # Show configuration
           uv run shard-md config show
 
@@ -118,10 +118,10 @@ jobs:
         run: |
           # Create collection
           uv run shard-md collections create test-collection --description "Test collection for E2E"
-          
+
           # List collections
           uv run shard-md collections list
-          
+
           # Get collection info
           uv run shard-md collections info test-collection
 
@@ -132,10 +132,10 @@ jobs:
         run: |
           # Process single document
           uv run shard-md process --collection test-collection test-docs/doc1.md
-          
+
           # Process multiple documents
           uv run shard-md process --collection test-collection --recursive test-docs/
-          
+
           # Dry run
           uv run shard-md process --collection test-collection --dry-run test-docs/doc2.md
 
@@ -146,7 +146,7 @@ jobs:
         run: |
           # Search documents
           uv run shard-md query search "test document" --collection test-collection --limit 5
-          
+
           # List documents
           uv run shard-md query list-docs --collection test-collection
 
@@ -162,7 +162,7 @@ jobs:
             echo "❌ Error handling failed for non-existent collection"
             exit 1
           fi
-          
+
           # Test with non-existent file
           if uv run shard-md process --collection test-collection non-existent.md 2>&1 | grep -q "error\|Error"; then
             echo "✅ Error handling works for non-existent file"
@@ -204,14 +204,14 @@ jobs:
           # Create fresh environment
           python -m venv test-wheel-env
           source test-wheel-env/bin/activate
-          
+
           # Install from wheel
           pip install dist/*.whl
-          
+
           # Test basic functionality
           shard-md --help
           shard-md --version
-          
+
           deactivate
           rm -rf test-wheel-env
 
@@ -220,14 +220,14 @@ jobs:
           # Create fresh environment
           python -m venv test-source-env
           source test-source-env/bin/activate
-          
+
           # Install from source
           pip install dist/*.tar.gz
-          
+
           # Test basic functionality
           shard-md --help
           shard-md --version
-          
+
           deactivate
           rm -rf test-source-env
 
@@ -236,14 +236,14 @@ jobs:
           # Create fresh environment
           python -m venv test-editable-env
           source test-editable-env/bin/activate
-          
+
           # Install in editable mode
           pip install -e .
-          
+
           # Test basic functionality
           shard-md --help
           shard-md --version
-          
+
           deactivate
           rm -rf test-editable-env
 
@@ -296,10 +296,10 @@ jobs:
         run: |
           # Test connection and basic operations
           uv run shard-md collections create e2e-config-test
-          
+
           echo "# Config Test" > config-test.md
           echo "Testing ChromaDB configuration ${{ matrix.chromadb-config.image }}" >> config-test.md
-          
+
           uv run shard-md process --collection e2e-config-test config-test.md
           uv run shard-md query search "ChromaDB" --collection e2e-config-test
           uv run shard-md collections delete e2e-config-test
@@ -342,7 +342,7 @@ jobs:
       - name: Generate large test dataset
         run: |
           mkdir -p large-test-docs
-          
+
           for i in {1..50}; do
             echo "---" > large-test-docs/doc$i.md
             echo "title: Large Document $i" >> large-test-docs/doc$i.md
@@ -351,7 +351,7 @@ jobs:
             echo "" >> large-test-docs/doc$i.md
             echo "# Large Document $i" >> large-test-docs/doc$i.md
             echo "" >> large-test-docs/doc$i.md
-            
+
             for j in {1..20}; do
               echo "## Section $j" >> large-test-docs/doc$i.md
               echo "" >> large-test-docs/doc$i.md
@@ -367,13 +367,13 @@ jobs:
           CHROMA_PORT: 8000
         run: |
           uv run shard-md collections create performance-test
-          
+
           time uv run shard-md process --collection performance-test --recursive large-test-docs/
-          
+
           # Verify all documents were processed
           DOC_COUNT=$(uv run shard-md query list-docs --collection performance-test | wc -l)
           echo "Processed $DOC_COUNT document chunks"
-          
+
           if [ "$DOC_COUNT" -lt 100 ]; then
             echo "❌ Performance test failed: Too few documents processed"
             exit 1

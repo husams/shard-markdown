@@ -334,18 +334,18 @@ on:
 jobs:
   process-docs:
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-    
+
     - name: Install shard-markdown
       run: uv add shard-markdown[chromadb]
-    
+
     - name: Process documentation
       env:
         CHROMA_HOST: ${{ secrets.CHROMA_HOST }}

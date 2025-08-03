@@ -188,7 +188,7 @@ jobs:
           # Test wheel installation
           uv pip install dist/*.whl
           shard-md --help
-          
+
           # Test source distribution
           uv pip uninstall shard-markdown -y
           uv pip install dist/*.tar.gz

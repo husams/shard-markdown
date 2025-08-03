@@ -98,7 +98,7 @@ Based on the current test execution, here's the coverage breakdown:
 
 ### Passing Tests (55 total)
 - Core models: All tests passing
-- Markdown parser: All tests passing  
+- Markdown parser: All tests passing
 - Chunking engine: All tests passing
 - Basic CLI help: Working
 

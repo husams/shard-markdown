@@ -79,15 +79,15 @@
 ```python
 class CommandParser:
     """Main CLI command parser using Click framework"""
-    
+
     def __init__(self):
         self.app = click.Group()
         self._register_commands()
-    
+
     def _register_commands(self):
         """Register all CLI commands and subcommands"""
         pass
-    
+
     def parse_and_execute(self, args: List[str]) -> int:
         """Parse arguments and execute appropriate command"""
         pass
@@ -98,7 +98,7 @@ class CommandParser:
 # cli/commands/process.py
 class ProcessCommand:
     """Handler for document processing operations"""
-    
+
     def execute(self, input_paths: List[str], options: ProcessOptions) -> ProcessResult:
         """Execute document processing workflow"""
         pass
@@ -106,11 +106,11 @@ class ProcessCommand:
 # cli/commands/collections.py
 class CollectionsCommand:
     """Handler for collection management operations"""
-    
+
     def list_collections(self, options: ListOptions) -> List[CollectionInfo]:
         """List available collections"""
         pass
-    
+
     def create_collection(self, name: str, options: CreateOptions) -> CollectionInfo:
         """Create new collection"""
         pass
@@ -122,17 +122,17 @@ class CollectionsCommand:
 ```python
 class DocumentProcessor:
     """Main document processing coordinator"""
-    
+
     def __init__(self, config: ProcessingConfig):
         self.config = config
         self.parser = MarkdownParser()
         self.chunker = ChunkingEngine(config.chunking)
         self.metadata_extractor = MetadataExtractor()
-    
+
     def process_document(self, file_path: Path) -> ProcessingResult:
         """Process single document through full pipeline"""
         pass
-    
+
     def process_batch(self, file_paths: List[Path]) -> BatchResult:
         """Process multiple documents with concurrency"""
         pass
@@ -142,11 +142,11 @@ class DocumentProcessor:
 ```python
 class MarkdownParser:
     """Markdown document parser with AST generation"""
-    
+
     def parse(self, content: str) -> MarkdownAST:
         """Parse markdown content into structured AST"""
         pass
-    
+
     def extract_frontmatter(self, content: str) -> Tuple[Dict, str]:
         """Extract YAML frontmatter and content"""
         pass
@@ -156,7 +156,7 @@ class MarkdownParser:
 ```python
 class ChunkingEngine:
     """Intelligent document chunking with structure awareness"""
-    
+
     def __init__(self, config: ChunkingConfig):
         self.config = config
         self.strategies = {
@@ -164,7 +164,7 @@ class ChunkingEngine:
             'fixed': FixedSizeChunker(),
             'semantic': SemanticChunker()
         }
-    
+
     def chunk_document(self, ast: MarkdownAST) -> List[DocumentChunk]:
         """Chunk document based on configured strategy"""
         pass
@@ -176,16 +176,16 @@ class ChunkingEngine:
 ```python
 class ChromaDBClient:
     """ChromaDB client wrapper with connection management"""
-    
+
     def __init__(self, config: ChromaDBConfig):
         self.config = config
         self.client = None
         self.connection_pool = ConnectionPool()
-    
+
     def connect(self) -> bool:
         """Establish connection to ChromaDB instance"""
         pass
-    
+
     def get_or_create_collection(self, name: str, metadata: Dict) -> Collection:
         """Get existing or create new collection"""
         pass
@@ -195,14 +195,14 @@ class ChromaDBClient:
 ```python
 class CollectionManager:
     """High-level collection management operations"""
-    
+
     def __init__(self, client: ChromaDBClient):
         self.client = client
-    
+
     def create_collection(self, spec: CollectionSpec) -> Collection:
         """Create collection with validation"""
         pass
-    
+
     def bulk_insert(self, collection: Collection, chunks: List[DocumentChunk]) -> InsertResult:
         """Bulk insert chunks with progress tracking"""
         pass
@@ -354,13 +354,13 @@ chunk_document = {
         "file_size": 12345,
         "file_modified": "2024-01-01T00:00:00Z",
         "file_hash": "sha256_hash",
-        
+
         # Document-level metadata
         "title": "Document Title",
         "author": "Author Name",
         "tags": ["tag1", "tag2"],
         "frontmatter": {...},
-        
+
         # Chunk-level metadata
         "chunk_index": 0,
         "chunk_size": 875,
@@ -370,7 +370,7 @@ chunk_document = {
         "overlap_end": 100,
         "structural_context": "## Section Title",
         "parent_sections": ["# Main Title", "## Section Title"],
-        
+
         # Processing metadata
         "processed_at": "2024-01-01T00:00:00Z",
         "processed_by": "shard-md-cli",
@@ -388,18 +388,18 @@ chunk_document = {
 ```python
 class ProcessingPool:
     """Manages concurrent document processing"""
-    
+
     def __init__(self, max_workers: int = 4):
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
         self.semaphore = Semaphore(max_workers)
-    
+
     async def process_batch(self, documents: List[Path]) -> List[ProcessingResult]:
         """Process documents concurrently with resource management"""
         tasks = []
         for doc in documents:
             task = self.executor.submit(self._process_single, doc)
             tasks.append(task)
-        
+
         return await asyncio.gather(*tasks)
 ```
 
@@ -408,11 +408,11 @@ class ProcessingPool:
 ```python
 class MemoryManager:
     """Manages memory usage during processing"""
-    
+
     def __init__(self, max_memory_mb: int = 512):
         self.max_memory = max_memory_mb * 1024 * 1024
         self.current_usage = 0
-    
+
     def can_process(self, document_size: int) -> bool:
         """Check if document can be processed within memory limits"""
         estimated_usage = document_size * 2.5  # Processing overhead
@@ -426,7 +426,7 @@ class MemoryManager:
 ```python
 class ChunkingPlugin(ABC):
     """Base class for custom chunking strategies"""
-    
+
     @abstractmethod
     def chunk(self, document: MarkdownAST, config: ChunkingConfig) -> List[DocumentChunk]:
         """Implement custom chunking logic"""
@@ -434,7 +434,7 @@ class ChunkingPlugin(ABC):
 
 class MetadataExtractorPlugin(ABC):
     """Base class for custom metadata extractors"""
-    
+
     @abstractmethod
     def extract(self, document: MarkdownAST, file_path: Path) -> Dict[str, Any]:
         """Extract custom metadata from document"""
@@ -446,15 +446,15 @@ class MetadataExtractorPlugin(ABC):
 ```python
 class PluginManager:
     """Manages loading and execution of plugins"""
-    
+
     def __init__(self):
         self.chunking_plugins: Dict[str, ChunkingPlugin] = {}
         self.metadata_plugins: List[MetadataExtractorPlugin] = []
-    
+
     def register_chunking_plugin(self, name: str, plugin: ChunkingPlugin):
         """Register custom chunking strategy"""
         self.chunking_plugins[name] = plugin
-    
+
     def load_plugins_from_config(self, config: PluginConfig):
         """Load plugins specified in configuration"""
         pass
@@ -492,11 +492,11 @@ tests/
 ```python
 class MockChromaDBClient:
     """Mock ChromaDB client for testing"""
-    
+
     def __init__(self):
         self.collections = {}
         self.documents = {}
-    
+
     def create_collection(self, name: str, metadata: Dict) -> MockCollection:
         """Create mock collection"""
         pass

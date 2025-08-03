@@ -18,11 +18,11 @@ console = Console()
 @click.group()
 def collections():
     """Manage ChromaDB collections.
+
     This command group provides functionality to create, list, delete,
     and manage ChromaDB collections for storing document chunks.
 
     Examples:
-
       # List all collections
       shard-md collections list
 
