@@ -24,7 +24,7 @@ class ChromaDBConfig(BaseModel):
     auth_token: Optional[str] = Field(default=None, description="Authentication token")
     timeout: int = Field(default=30, ge=1, description="Connection timeout in seconds")
 
-    @field_validator("host")
+    @field_validator("host")  # type: ignore[misc]
     @classmethod
     def validate_host(cls, v: str) -> str:
         """Validate host is not empty."""
@@ -58,7 +58,7 @@ class ChunkingConfig(BaseModel):
         default=None, ge=1, description="Maximum tokens per chunk"
     )
 
-    @field_validator("default_overlap")
+    @field_validator("default_overlap")  # type: ignore[misc]
     @classmethod
     def validate_overlap(cls, v: int, info: Any) -> int:
         """Validate overlap is less than chunk size."""
