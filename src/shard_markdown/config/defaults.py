@@ -56,3 +56,8 @@ _ENV_VAR_MAPPINGS = {
     "SHARD_MD_MAX_WORKERS": "processing.max_workers",
     "SHARD_MD_LOG_LEVEL": "logging.level",
 }
+
+# Export without underscores for imports
+DEFAULT_CONFIG_LOCATIONS = _DEFAULT_CONFIG_LOCATIONS
+DEFAULT_CONFIG_YAML = _DEFAULT_CONFIG_YAML
+ENV_VAR_MAPPINGS = _ENV_VAR_MAPPINGS

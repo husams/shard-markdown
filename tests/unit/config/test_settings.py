@@ -16,7 +16,7 @@ class TestChromaDBConfig:
 
     def test_valid_config(self):
         """Test valid ChromaDB configuration."""
-config = ChromaDBConfig(host="localhost",
+        config = ChromaDBConfig(host="localhost",
             port=8000,
             ssl=False,
             timeout=30

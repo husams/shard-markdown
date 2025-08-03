@@ -233,7 +233,7 @@ class TestDocumentProcessor:
         mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
 
         file_paths = list(test_documents.values())
-result = processor.process_batch(file_paths,
+        result = processor.process_batch(file_paths,
             "test-collection",
             max_workers=2
         )
@@ -271,7 +271,7 @@ result = processor.process_batch(file_paths,
         mock_metadata_extractor.extract_document_metadata.return_value = {}
 
         file_paths = list(test_documents.values())[:2]  # Only test 2 files
-result = processor.process_batch(file_paths,
+        result = processor.process_batch(file_paths,
             "test-collection",
             max_workers=1
         )
@@ -316,7 +316,7 @@ result = processor.process_batch(file_paths,
         file_paths = list(test_documents.values())
 
         start_time = time.time()
-result = processor.process_batch(file_paths,
+        result = processor.process_batch(file_paths,
             "test-collection",
             max_workers=4
         )
