@@ -1,0 +1,376 @@
+name: Automation
+
+on:
+  issues:
+    types: [opened, labeled]
+  pull_request:
+    types: [opened, synchronize, labeled]
+  schedule:
+    # Run weekly cleanup on Sundays at 6 AM UTC
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+
+jobs:
+  # Auto-label issues and PRs
+  auto-label:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' || github.event_name == 'pull_request'
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Auto-label issues
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const labels = [];
+            
+            // Auto-label based on title and body content
+            const title = issue.title.toLowerCase();
+            const body = issue.body ? issue.body.toLowerCase() : '';
+            
+            // Bug detection
+            if (title.includes('bug') || title.includes('error') || title.includes('fail') || 
+                body.includes('traceback') || body.includes('exception') || body.includes('error')) {
+              labels.push('bug');
+            }
+            
+            // Feature request detection
+            if (title.includes('feature') || title.includes('enhancement') || title.includes('add') ||
+                body.includes('feature request') || body.includes('would be nice')) {
+              labels.push('enhancement');
+            }
+            
+            // Documentation detection
+            if (title.includes('doc') || title.includes('readme') || 
+                body.includes('documentation') || body.includes('docs')) {
+              labels.push('documentation');
+            }
+            
+            // CLI-related issues
+            if (title.includes('cli') || title.includes('command') || 
+                body.includes('shard-md') || body.includes('command line')) {
+              labels.push('cli');
+            }
+            
+            // ChromaDB-related issues
+            if (title.includes('chromadb') || title.includes('chroma') || title.includes('database') ||
+                body.includes('chromadb') || body.includes('collection')) {
+              labels.push('chromadb');
+            }
+            
+            // Performance issues
+            if (title.includes('slow') || title.includes('performance') || title.includes('speed') ||
+                body.includes('performance') || body.includes('slow') || body.includes('timeout')) {
+              labels.push('performance');
+            }
+            
+            // Question detection
+            if (title.includes('how') || title.includes('?') || 
+                body.includes('how do i') || body.includes('how to')) {
+              labels.push('question');
+            }
+            
+            // Add labels if any were detected
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels
+              });
+            }
+
+      - name: Auto-label PRs
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = [];
+            
+            // Get changed files
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const changedFiles = files.data.map(file => file.filename);
+            
+            // Label based on changed files
+            if (changedFiles.some(file => file.startsWith('docs/'))) {
+              labels.push('documentation');
+            }
+            
+            if (changedFiles.some(file => file.startsWith('tests/'))) {
+              labels.push('tests');
+            }
+            
+            if (changedFiles.some(file => file.includes('.github/workflows/'))) {
+              labels.push('ci/cd');
+            }
+            
+            if (changedFiles.some(file => file.startsWith('src/shard_markdown/cli/'))) {
+              labels.push('cli');
+            }
+            
+            if (changedFiles.some(file => file.startsWith('src/shard_markdown/core/'))) {
+              labels.push('core');
+            }
+            
+            if (changedFiles.some(file => file.includes('chromadb'))) {
+              labels.push('chromadb');
+            }
+            
+            if (changedFiles.some(file => file.includes('config'))) {
+              labels.push('configuration');
+            }
+            
+            // Label based on PR title
+            const title = pr.title.toLowerCase();
+            if (title.startsWith('feat') || title.startsWith('feature')) {
+              labels.push('enhancement');
+            } else if (title.startsWith('fix') || title.startsWith('bug')) {
+              labels.push('bug');
+            } else if (title.startsWith('docs')) {
+              labels.push('documentation');
+            } else if (title.startsWith('refactor')) {
+              labels.push('refactoring');
+            } else if (title.startsWith('test')) {
+              labels.push('tests');
+            } else if (title.startsWith('chore')) {
+              labels.push('maintenance');
+            }
+            
+            // Size labeling based on changes
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const totalChanges = additions + deletions;
+            
+            if (totalChanges < 10) {
+              labels.push('size/XS');
+            } else if (totalChanges < 30) {
+              labels.push('size/S');
+            } else if (totalChanges < 100) {
+              labels.push('size/M');
+            } else if (totalChanges < 500) {
+              labels.push('size/L');
+            } else {
+              labels.push('size/XL');
+            }
+            
+            // Add labels if any were detected
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labels
+              });
+            }
+
+  # Stale issue and PR management
+  stale-management:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Mark stale issues and PRs
+        uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          stale-issue-message: |
+            This issue has been automatically marked as stale because it has not had recent activity. 
+            It will be closed if no further activity occurs within 7 days. 
+            
+            If this issue is still relevant, please add a comment to keep it open.
+            Thank you for your contributions!
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity.
+            It will be closed if no further activity occurs within 7 days.
+            
+            If this PR is still relevant, please add a comment or push new commits to keep it open.
+            Thank you for your contributions!
+          close-issue-message: |
+            This issue has been automatically closed due to inactivity.
+            If you believe this issue is still relevant, please reopen it or create a new issue with updated information.
+          close-pr-message: |
+            This pull request has been automatically closed due to inactivity.
+            If you believe this PR is still relevant, please reopen it or create a new PR with updated changes.
+          days-before-stale: 30
+          days-before-close: 7
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
+          exempt-issue-labels: 'pinned,security'
+          exempt-pr-labels: 'pinned,security'
+
+  # Welcome new contributors
+  welcome:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' || github.event_name == 'pull_request'
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Welcome new contributors
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isFirstTime = async (username, type) => {
+              const query = type === 'issue' ? 
+                'is:issue author:' + username :
+                'is:pr author:' + username;
+              
+              const result = await github.rest.search.issuesAndPullRequests({
+                q: query + ' repo:' + context.repo.owner + '/' + context.repo.repo
+              });
+              
+              return result.data.total_count === 1;
+            };
+            
+            if (context.eventName === 'issues' && context.payload.action === 'opened') {
+              const issue = context.payload.issue;
+              const isFirstIssue = await isFirstTime(issue.user.login, 'issue');
+              
+              if (isFirstIssue) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `👋 Welcome to shard-markdown, @${issue.user.login}! 
+
+Thank you for opening your first issue. We appreciate your contribution to the project.
+
+A few things to help us help you:
+- Make sure you've read our [README](../README.md) and checked existing issues
+- Provide as much detail as possible about your environment and the issue
+- If this is a bug report, include steps to reproduce the issue
+- If this is a feature request, explain the use case and expected behavior
+
+Our team will review this issue and respond as soon as possible. Thanks again! 🚀`
+                });
+              }
+            }
+            
+            if (context.eventName === 'pull_request' && context.payload.action === 'opened') {
+              const pr = context.payload.pull_request;
+              const isFirstPR = await isFirstTime(pr.user.login, 'pr');
+              
+              if (isFirstPR) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `🎉 Welcome to shard-markdown, @${pr.user.login}! 
+
+Thank you for your first pull request! We're excited to review your contribution.
+
+A few things to note:
+- Our CI will automatically run tests and code quality checks
+- Please make sure your PR description clearly explains what changes you've made
+- If this fixes an issue, please reference it using "Fixes #issue_number"
+- Don't worry if the automated checks fail initially - we're here to help!
+
+Our team will review this PR and provide feedback. Thanks for contributing! 🙏`
+                });
+              }
+            }
+
+  # PR size warnings
+  pr-size-warning:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Check PR size and warn if too large
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const totalChanges = additions + deletions;
+            
+            if (totalChanges > 500) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `⚠️ **Large PR Warning**
+
+This pull request contains ${totalChanges} line changes (${additions} additions, ${deletions} deletions).
+
+Large PRs are harder to review and more likely to introduce bugs. Consider:
+- Breaking this PR into smaller, focused changes
+- Separating refactoring from feature additions
+- Moving documentation updates to a separate PR
+
+If this large change is necessary, please provide a detailed description of:
+- What changes are included and why
+- How the changes have been tested
+- Any breaking changes or migration steps needed
+
+Thanks for understanding! 🙏`
+              });
+            }
+
+  # Dependency update notifications
+  dependency-notifications:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      pull-requests: write
+
+    steps:
+      - name: Notify on dependency updates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Get changed files
+            const files = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            const changedFiles = files.data.map(file => file.filename);
+            const isDependencyUpdate = changedFiles.some(file => 
+              file === 'pyproject.toml' || file === 'uv.lock' || 
+              file === 'requirements.txt' || file.endsWith('.lock')
+            );
+            
+            if (isDependencyUpdate && pr.title.toLowerCase().includes('update') || pr.title.toLowerCase().includes('bump')) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `🔄 **Dependency Update Detected**
+
+This PR appears to update project dependencies. Please ensure:
+
+- [ ] All tests pass with the new dependencies
+- [ ] No breaking changes are introduced
+- [ ] Security vulnerabilities (if any) are addressed
+- [ ] Version constraints are appropriate
+- [ ] Documentation is updated if APIs change
+
+The automated security scan will run to check for vulnerabilities.
+
+If this is an automated dependency update, please verify the changes look correct! 🔍`
+              });
+            }
