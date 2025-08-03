@@ -147,24 +147,24 @@ shard-md --version
 ```python
 class TestComponentName:
     """Test suite for ComponentName class."""
-    
+
     @pytest.fixture
     def component(self):
         """Create component instance for testing."""
         return ComponentName(config)
-    
+
     def test_basic_functionality(self, component):
         """Test basic functionality."""
         # Arrange
         input_data = "test input"
         expected_output = "expected result"
-        
+
         # Act
         result = component.process(input_data)
-        
+
         # Assert
         assert result == expected_output
-    
+
     def test_error_condition(self, component):
         """Test error handling."""
         with pytest.raises(ExpectedError):
@@ -184,7 +184,7 @@ def test_unit_functionality():
     """Fast, isolated test."""
     pass
 
-@pytest.mark.integration  
+@pytest.mark.integration
 def test_integration_workflow():
     """Test component interactions."""
     pass
@@ -256,10 +256,10 @@ def test_cli_command_direct():
     """Test CLI command directly."""
     from click.testing import CliRunner
     from mymodule import cli
-    
+
     runner = CliRunner()
     result = runner.invoke(cli, ['command', '--option', 'value'])
-    
+
     assert result.exit_code == 0
     assert "expected output" in result.output
 ```
@@ -269,12 +269,12 @@ def test_cli_command_direct():
 def test_cli_isolated():
     """Test CLI in isolated environment."""
     runner = CliRunner()
-    
+
     with runner.isolated_filesystem():
         # Create test files
         with open('test.md', 'w') as f:
             f.write('# Test\nContent')
-        
+
         # Run command
         result = runner.invoke(cli, ['process', '--collection', 'test', 'test.md'])
         assert result.exit_code == 0
@@ -301,10 +301,10 @@ def test_file_processing(tmp_path):
     # Create test files
     test_file = tmp_path / "test.md"
     test_file.write_text("# Test\nContent")
-    
+
     # Process
     result = processor.process_document(test_file, "collection")
-    
+
     # Verify
     assert result.success
     assert test_file.exists()  # Original file preserved
@@ -320,7 +320,7 @@ def test_file_processing(tmp_path):
 def simple_markdown():
     """Simple markdown document."""
     return """# Title
-    
+
 Introduction paragraph.
 
 ## Section 1
@@ -383,7 +383,7 @@ def test_error_conditions():
     # Expected exceptions
     with pytest.raises(ValidationError):
         ComponentName(invalid_config)
-    
+
     # Error message validation
     with pytest.raises(ProcessingError) as exc_info:
         component.process(bad_input)
@@ -418,16 +418,16 @@ def test_memory_usage():
     """Test memory usage patterns."""
     import psutil
     import os
-    
+
     process = psutil.Process(os.getpid())
     baseline = process.memory_info().rss
-    
+
     # Perform operation
     processor.process_large_document(large_file)
-    
+
     peak = process.memory_info().rss
     increase = (peak - baseline) / 1024 / 1024  # MB
-    
+
     assert increase < 100, f"Memory usage too high: {increase}MB"
 ```
 
@@ -436,17 +436,17 @@ def test_memory_usage():
 def test_concurrent_processing():
     """Test concurrent processing capacity."""
     import concurrent.futures
-    
+
     files = [create_test_file(i) for i in range(10)]
-    
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         futures = [
             executor.submit(processor.process_document, f, "collection")
             for f in files
         ]
-        
+
         results = [f.result() for f in futures]
-    
+
     assert all(r.success for r in results)
 ```
 
@@ -463,7 +463,7 @@ repos:
         entry: pytest tests/unit/
         language: system
         pass_filenames: false
-        
+
       - id: coverage-check
         name: coverage-check
         entry: pytest tests/unit/ --cov=src/shard_markdown --cov-fail-under=80
@@ -484,22 +484,22 @@ jobs:
       matrix:
         python-version: [3.8, 3.9, 3.10, 3.11, 3.12]
         os: [ubuntu-latest, windows-latest, macos-latest]
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      
+
       - name: Install dependencies
         run: |
           uv pip install -e ".[dev]"
-      
+
       - name: Run unit tests
         run: pytest tests/unit/ --cov=src/shard_markdown --cov-report=xml
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
 ```
@@ -513,7 +513,7 @@ jobs:
 - Update test data and fixtures as needed
 - Check test execution times and optimize slow tests
 
-#### Monthly  
+#### Monthly
 - Review test coverage reports
 - Update test documentation
 - Refactor redundant or outdated tests
@@ -527,7 +527,7 @@ jobs:
 
 #### Coverage Targets
 - **Unit tests**: >90% line coverage
-- **Integration tests**: >80% workflow coverage  
+- **Integration tests**: >80% workflow coverage
 - **E2E tests**: 100% critical path coverage
 
 #### Performance Targets

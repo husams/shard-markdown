@@ -104,7 +104,7 @@ Input Files → Parser → Chunker → Metadata Extractor → ChromaDB Writer
 def intelligent_chunk(document, max_size, overlap, respect_structure=True):
     """
     Chunks document while respecting markdown structure
-    
+
     Priority order:
     1. Never split within code blocks
     2. Prefer splits at header boundaries

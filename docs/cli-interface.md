@@ -380,5 +380,5 @@ Suggestion: Recommended action to resolve the issue
 # Destructive operations require confirmation
 shard-md collections delete my-collection
 > This will permanently delete collection 'my-collection' and all its documents.
-> Are you sure? [y/N]: 
+> Are you sure? [y/N]:
 ```

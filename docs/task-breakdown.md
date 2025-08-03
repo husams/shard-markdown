@@ -7,10 +7,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 1: Project Setup and Foundation
 
 ### 1.1 Development Environment Setup
-**Task ID**: SETUP-001  
-**Estimated Effort**: 4 hours  
-**Priority**: Critical  
-**Dependencies**: None  
+**Task ID**: SETUP-001
+**Estimated Effort**: 4 hours
+**Priority**: Critical
+**Dependencies**: None
 
 **Description**: Establish the development environment, project structure, and core tooling.
 
@@ -29,10 +29,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Development environment documentation
 
 ### 1.2 Core Package Structure
-**Task ID**: SETUP-002  
-**Estimated Effort**: 3 hours  
-**Priority**: Critical  
-**Dependencies**: SETUP-001  
+**Task ID**: SETUP-002
+**Estimated Effort**: 3 hours
+**Priority**: Critical
+**Dependencies**: SETUP-001
 
 **Description**: Create the core package structure and module organization.
 
@@ -49,10 +49,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Module initialization files
 
 ### 1.3 Configuration Management Foundation
-**Task ID**: SETUP-003  
-**Estimated Effort**: 6 hours  
-**Priority**: High  
-**Dependencies**: SETUP-002  
+**Task ID**: SETUP-003
+**Estimated Effort**: 6 hours
+**Priority**: High
+**Dependencies**: SETUP-002
 
 **Description**: Implement configuration management system with Pydantic models.
 
@@ -73,10 +73,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 2: Core Components Implementation
 
 ### 2.1 Markdown Parser Implementation
-**Task ID**: CORE-001  
-**Estimated Effort**: 12 hours  
-**Priority**: Critical  
-**Dependencies**: SETUP-003  
+**Task ID**: CORE-001
+**Estimated Effort**: 12 hours
+**Priority**: Critical
+**Dependencies**: SETUP-003
 
 **Description**: Implement markdown parsing with AST generation and frontmatter support.
 
@@ -95,10 +95,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Sample markdown files for testing
 
 ### 2.2 Structure-Aware Chunking Engine
-**Task ID**: CORE-002  
-**Estimated Effort**: 16 hours  
-**Priority**: Critical  
-**Dependencies**: CORE-001  
+**Task ID**: CORE-002
+**Estimated Effort**: 16 hours
+**Priority**: Critical
+**Dependencies**: CORE-001
 
 **Description**: Implement intelligent chunking that respects markdown structure.
 
@@ -117,10 +117,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Performance benchmarks for chunking
 
 ### 2.3 Fixed-Size and Semantic Chunking
-**Task ID**: CORE-003  
-**Estimated Effort**: 10 hours  
-**Priority**: Medium  
-**Dependencies**: CORE-002  
+**Task ID**: CORE-003
+**Estimated Effort**: 10 hours
+**Priority**: Medium
+**Dependencies**: CORE-002
 
 **Description**: Implement alternative chunking strategies for flexibility.
 
@@ -138,10 +138,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Comparative performance tests
 
 ### 2.4 Metadata Extraction System
-**Task ID**: CORE-004  
-**Estimated Effort**: 8 hours  
-**Priority**: High  
-**Dependencies**: CORE-001  
+**Task ID**: CORE-004
+**Estimated Effort**: 8 hours
+**Priority**: High
+**Dependencies**: CORE-001
 
 **Description**: Implement comprehensive metadata extraction and enhancement.
 
@@ -159,10 +159,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Custom metadata configuration support
 
 ### 2.5 Document Processor Orchestration
-**Task ID**: CORE-005  
-**Estimated Effort**: 12 hours  
-**Priority**: Critical  
-**Dependencies**: CORE-002, CORE-004  
+**Task ID**: CORE-005
+**Estimated Effort**: 12 hours
+**Priority**: Critical
+**Dependencies**: CORE-002, CORE-004
 
 **Description**: Implement main document processing coordinator with error handling.
 
@@ -183,10 +183,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 3: ChromaDB Integration
 
 ### 3.1 ChromaDB Client Implementation
-**Task ID**: CHROMA-001  
-**Estimated Effort**: 10 hours  
-**Priority**: Critical  
-**Dependencies**: SETUP-003  
+**Task ID**: CHROMA-001
+**Estimated Effort**: 10 hours
+**Priority**: Critical
+**Dependencies**: SETUP-003
 
 **Description**: Implement ChromaDB client wrapper with connection management.
 
@@ -205,10 +205,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Connection error handling
 
 ### 3.2 Collection Management Operations
-**Task ID**: CHROMA-002  
-**Estimated Effort**: 12 hours  
-**Priority**: Critical  
-**Dependencies**: CHROMA-001  
+**Task ID**: CHROMA-002
+**Estimated Effort**: 12 hours
+**Priority**: Critical
+**Dependencies**: CHROMA-001
 
 **Description**: Implement collection management with CRUD operations.
 
@@ -227,10 +227,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Collection validation logic
 
 ### 3.3 Document Storage Operations
-**Task ID**: CHROMA-003  
-**Estimated Effort**: 8 hours  
-**Priority**: Critical  
-**Dependencies**: CHROMA-002, CORE-005  
+**Task ID**: CHROMA-003
+**Estimated Effort**: 8 hours
+**Priority**: Critical
+**Dependencies**: CHROMA-002, CORE-005
 
 **Description**: Implement bulk document insertion and retrieval operations.
 
@@ -251,10 +251,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 4: CLI Interface Implementation
 
 ### 4.1 CLI Framework and Main Entry Point
-**Task ID**: CLI-001  
-**Estimated Effort**: 8 hours  
-**Priority**: Critical  
-**Dependencies**: SETUP-002  
+**Task ID**: CLI-001
+**Estimated Effort**: 8 hours
+**Priority**: Critical
+**Dependencies**: SETUP-002
 
 **Description**: Implement Click-based CLI framework with command structure.
 
@@ -273,10 +273,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Help and version commands
 
 ### 4.2 Process Command Implementation
-**Task ID**: CLI-002  
-**Estimated Effort**: 12 hours  
-**Priority**: Critical  
-**Dependencies**: CLI-001, CORE-005, CHROMA-003  
+**Task ID**: CLI-002
+**Estimated Effort**: 12 hours
+**Priority**: Critical
+**Dependencies**: CLI-001, CORE-005, CHROMA-003
 
 **Description**: Implement the primary document processing command.
 
@@ -295,10 +295,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Results reporting system
 
 ### 4.3 Collection Management Commands
-**Task ID**: CLI-003  
-**Estimated Effort**: 10 hours  
-**Priority**: High  
-**Dependencies**: CLI-001, CHROMA-002  
+**Task ID**: CLI-003
+**Estimated Effort**: 10 hours
+**Priority**: High
+**Dependencies**: CLI-001, CHROMA-002
 
 **Description**: Implement collection management CLI commands.
 
@@ -317,10 +317,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Export/import functionality
 
 ### 4.4 Query and Search Commands
-**Task ID**: CLI-004  
-**Estimated Effort**: 8 hours  
-**Priority**: High  
-**Dependencies**: CLI-001, CHROMA-003  
+**Task ID**: CLI-004
+**Estimated Effort**: 8 hours
+**Priority**: High
+**Dependencies**: CLI-001, CHROMA-003
 
 **Description**: Implement document query and search functionality.
 
@@ -339,10 +339,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Export functionality
 
 ### 4.5 Configuration Commands
-**Task ID**: CLI-005  
-**Estimated Effort**: 6 hours  
-**Priority**: Medium  
-**Dependencies**: CLI-001, SETUP-003  
+**Task ID**: CLI-005
+**Estimated Effort**: 6 hours
+**Priority**: Medium
+**Dependencies**: CLI-001, SETUP-003
 
 **Description**: Implement configuration management commands.
 
@@ -360,10 +360,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - YAML/JSON output formatting
 
 ### 4.6 Utility Commands (Preview, Validate)
-**Task ID**: CLI-006  
-**Estimated Effort**: 8 hours  
-**Priority**: Medium  
-**Dependencies**: CLI-001, CORE-002  
+**Task ID**: CLI-006
+**Estimated Effort**: 8 hours
+**Priority**: Medium
+**Dependencies**: CLI-001, CORE-002
 
 **Description**: Implement utility commands for preview and validation.
 
@@ -384,10 +384,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 5: Error Handling and Logging
 
 ### 5.1 Error Handling Framework
-**Task ID**: ERROR-001  
-**Estimated Effort**: 10 hours  
-**Priority**: High  
-**Dependencies**: CORE-001  
+**Task ID**: ERROR-001
+**Estimated Effort**: 10 hours
+**Priority**: High
+**Dependencies**: CORE-001
 
 **Description**: Implement comprehensive error handling system.
 
@@ -406,10 +406,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - User-friendly error formatting
 
 ### 5.2 Logging and Monitoring System
-**Task ID**: ERROR-002  
-**Estimated Effort**: 6 hours  
-**Priority**: Medium  
-**Dependencies**: ERROR-001  
+**Task ID**: ERROR-002
+**Estimated Effort**: 6 hours
+**Priority**: Medium
+**Dependencies**: ERROR-001
 
 **Description**: Implement structured logging and monitoring.
 
@@ -428,10 +428,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Monitoring dashboard data
 
 ### 5.3 Progress Tracking and User Feedback
-**Task ID**: ERROR-003  
-**Estimated Effort**: 6 hours  
-**Priority**: Medium  
-**Dependencies**: CLI-001  
+**Task ID**: ERROR-003
+**Estimated Effort**: 6 hours
+**Priority**: Medium
+**Dependencies**: CLI-001
 
 **Description**: Implement comprehensive progress tracking and user feedback.
 
@@ -452,10 +452,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 6: Testing Implementation
 
 ### 6.1 Unit Test Suite
-**Task ID**: TEST-001  
-**Estimated Effort**: 20 hours  
-**Priority**: High  
-**Dependencies**: All CORE tasks  
+**Task ID**: TEST-001
+**Estimated Effort**: 20 hours
+**Priority**: High
+**Dependencies**: All CORE tasks
 
 **Description**: Implement comprehensive unit test suite with high coverage.
 
@@ -474,10 +474,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Mock implementations
 
 ### 6.2 Integration Test Suite
-**Task ID**: TEST-002  
-**Estimated Effort**: 16 hours  
-**Priority**: High  
-**Dependencies**: All CHROMA tasks, CLI-002  
+**Task ID**: TEST-002
+**Estimated Effort**: 16 hours
+**Priority**: High
+**Dependencies**: All CHROMA tasks, CLI-002
 
 **Description**: Implement integration tests for component interactions.
 
@@ -496,10 +496,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Error scenario test cases
 
 ### 6.3 End-to-End Test Suite
-**Task ID**: TEST-003  
-**Estimated Effort**: 12 hours  
-**Priority**: Medium  
-**Dependencies**: All CLI tasks  
+**Task ID**: TEST-003
+**Estimated Effort**: 12 hours
+**Priority**: Medium
+**Dependencies**: All CLI tasks
 
 **Description**: Implement end-to-end tests for complete user workflows.
 
@@ -518,10 +518,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Cross-platform test configurations
 
 ### 6.4 Performance and Load Testing
-**Task ID**: TEST-004  
-**Estimated Effort**: 8 hours  
-**Priority**: Medium  
-**Dependencies**: TEST-001  
+**Task ID**: TEST-004
+**Estimated Effort**: 8 hours
+**Priority**: Medium
+**Dependencies**: TEST-001
 
 **Description**: Implement performance testing and benchmarking.
 
@@ -542,10 +542,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 7: Documentation and Packaging
 
 ### 7.1 API Documentation
-**Task ID**: DOC-001  
-**Estimated Effort**: 8 hours  
-**Priority**: Medium  
-**Dependencies**: All CORE tasks  
+**Task ID**: DOC-001
+**Estimated Effort**: 8 hours
+**Priority**: Medium
+**Dependencies**: All CORE tasks
 
 **Description**: Generate comprehensive API documentation.
 
@@ -564,10 +564,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Architecture documentation
 
 ### 7.2 User Documentation
-**Task ID**: DOC-002  
-**Estimated Effort**: 12 hours  
-**Priority**: High  
-**Dependencies**: All CLI tasks  
+**Task ID**: DOC-002
+**Estimated Effort**: 12 hours
+**Priority**: High
+**Dependencies**: All CLI tasks
 
 **Description**: Create comprehensive user documentation and guides.
 
@@ -586,10 +586,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Troubleshooting guide
 
 ### 7.3 Package Distribution Setup
-**Task ID**: PKG-001  
-**Estimated Effort**: 6 hours  
-**Priority**: High  
-**Dependencies**: All implementation tasks  
+**Task ID**: PKG-001
+**Estimated Effort**: 6 hours
+**Priority**: High
+**Dependencies**: All implementation tasks
 
 **Description**: Setup package distribution and release automation.
 
@@ -608,10 +608,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Installation verification scripts
 
 ### 7.4 Security and Compliance
-**Task ID**: PKG-002  
-**Estimated Effort**: 4 hours  
-**Priority**: Medium  
-**Dependencies**: PKG-001  
+**Task ID**: PKG-002
+**Estimated Effort**: 4 hours
+**Priority**: Medium
+**Dependencies**: PKG-001
 
 **Description**: Implement security scanning and compliance checks.
 
@@ -631,10 +631,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 ## Phase 8: Deployment and Release
 
 ### 8.1 CI/CD Pipeline Completion
-**Task ID**: DEPLOY-001  
-**Estimated Effort**: 8 hours  
-**Priority**: High  
-**Dependencies**: TEST-003, PKG-001  
+**Task ID**: DEPLOY-001
+**Estimated Effort**: 8 hours
+**Priority**: High
+**Dependencies**: TEST-003, PKG-001
 
 **Description**: Complete CI/CD pipeline with comprehensive testing and deployment.
 
@@ -653,10 +653,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Documentation deployment automation
 
 ### 8.2 Release Preparation
-**Task ID**: DEPLOY-002  
-**Estimated Effort**: 6 hours  
-**Priority**: High  
-**Dependencies**: DEPLOY-001, DOC-002  
+**Task ID**: DEPLOY-002
+**Estimated Effort**: 6 hours
+**Priority**: High
+**Dependencies**: DEPLOY-001, DOC-002
 
 **Description**: Prepare for initial release with all required artifacts.
 
@@ -675,10 +675,10 @@ This document provides a comprehensive task breakdown for implementing the shard
 - Support and contribution guides
 
 ### 8.3 Beta Testing and Feedback
-**Task ID**: DEPLOY-003  
-**Estimated Effort**: 12 hours  
-**Priority**: Medium  
-**Dependencies**: DEPLOY-002  
+**Task ID**: DEPLOY-003
+**Estimated Effort**: 12 hours
+**Priority**: Medium
+**Dependencies**: DEPLOY-002
 
 **Description**: Conduct beta testing with early users and incorporate feedback.
 
@@ -698,7 +698,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 
 ## Summary
 
-**Total Estimated Effort**: ~290 hours (~7-8 weeks with 1 developer)  
-**Critical Path**: SETUP → CORE → CHROMA → CLI → TEST → DEPLOY  
-**Total Tasks**: 35 tasks across 8 phases  
+**Total Estimated Effort**: ~290 hours (~7-8 weeks with 1 developer)
+**Critical Path**: SETUP → CORE → CHROMA → CLI → TEST → DEPLOY
+**Total Tasks**: 35 tasks across 8 phases
 **Risk Areas**: ChromaDB integration, performance optimization, cross-platform compatibility

@@ -1,0 +1,397 @@
+name: End-to-End Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run E2E tests every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # Test CLI workflows with real ChromaDB
+  e2e-cli:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        chromadb-version: ["latest", "0.4.15"]
+
+    services:
+      chromadb:
+        image: chromadb/chroma:${{ matrix.chromadb-version }}
+        ports:
+          - 8000:8000
+        options: >-
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev --extra chromadb
+
+      - name: Wait for ChromaDB (Ubuntu/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v1/heartbeat; do sleep 2; done'
+
+      - name: Wait for ChromaDB (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          for ($i = 0; $i -lt 60; $i++) {
+            try {
+              Invoke-RestMethod -Uri "http://localhost:8000/api/v1/heartbeat" -Method Get
+              Write-Host "ChromaDB is ready!"
+              break
+            } catch {
+              Start-Sleep -Seconds 2
+            }
+          }
+
+      - name: Create test markdown files
+        run: |
+          mkdir -p test-docs
+
+          echo "# Test Document 1" > test-docs/doc1.md
+          echo "" >> test-docs/doc1.md
+          echo "This is a test document for the CLI." >> test-docs/doc1.md
+          echo "" >> test-docs/doc1.md
+          echo "## Section A" >> test-docs/doc1.md
+          echo "Some content in section A." >> test-docs/doc1.md
+          echo "" >> test-docs/doc1.md
+          echo "## Section B" >> test-docs/doc1.md
+          echo "Some content in section B." >> test-docs/doc1.md
+
+          echo "---" > test-docs/doc2.md
+          echo "title: Test Document 2" >> test-docs/doc2.md
+          echo "author: Test Author" >> test-docs/doc2.md
+          echo "tags: [test, markdown]" >> test-docs/doc2.md
+          echo "---" >> test-docs/doc2.md
+          echo "" >> test-docs/doc2.md
+          echo "# Another Test Document" >> test-docs/doc2.md
+          echo "" >> test-docs/doc2.md
+          echo "This document has frontmatter." >> test-docs/doc2.md
+
+      - name: Test CLI help commands
+        run: |
+          uv run shard-md --help
+          uv run shard-md process --help
+          uv run shard-md collections --help
+          uv run shard-md query --help
+          uv run shard-md config --help
+
+      - name: Test configuration commands
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          # Initialize configuration
+          uv run shard-md config init --force
+
+          # Show configuration
+          uv run shard-md config show
+
+      - name: Test collection management
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          # Create collection
+          uv run shard-md collections create test-collection --description "Test collection for E2E"
+
+          # List collections
+          uv run shard-md collections list
+
+          # Get collection info
+          uv run shard-md collections info test-collection
+
+      - name: Test document processing
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          # Process single document
+          uv run shard-md process --collection test-collection test-docs/doc1.md
+
+          # Process multiple documents
+          uv run shard-md process --collection test-collection --recursive test-docs/
+
+          # Dry run
+          uv run shard-md process --collection test-collection --dry-run test-docs/doc2.md
+
+      - name: Test document querying
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          # Search documents
+          uv run shard-md query search "test document" --collection test-collection --limit 5
+
+          # List documents
+          uv run shard-md query list-docs --collection test-collection
+
+      - name: Test error handling
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          # Test with non-existent collection
+          if uv run shard-md query search "test" --collection non-existent 2>&1 | grep -q "error\|Error"; then
+            echo "✅ Error handling works for non-existent collection"
+          else
+            echo "❌ Error handling failed for non-existent collection"
+            exit 1
+          fi
+
+          # Test with non-existent file
+          if uv run shard-md process --collection test-collection non-existent.md 2>&1 | grep -q "error\|Error"; then
+            echo "✅ Error handling works for non-existent file"
+          else
+            echo "❌ Error handling failed for non-existent file"
+            exit 1
+          fi
+
+      - name: Cleanup test collection
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          uv run shard-md collections delete test-collection || true
+
+  # Test package installation from different sources
+  e2e-installation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Build package
+        run: |
+          uv sync --dev
+          uv build
+
+      - name: Test wheel installation
+        run: |
+          # Create fresh environment
+          python -m venv test-wheel-env
+          source test-wheel-env/bin/activate
+
+          # Install from wheel
+          pip install dist/*.whl
+
+          # Test basic functionality
+          shard-md --help
+          shard-md --version
+
+          deactivate
+          rm -rf test-wheel-env
+
+      - name: Test source installation
+        run: |
+          # Create fresh environment
+          python -m venv test-source-env
+          source test-source-env/bin/activate
+
+          # Install from source
+          pip install dist/*.tar.gz
+
+          # Test basic functionality
+          shard-md --help
+          shard-md --version
+
+          deactivate
+          rm -rf test-source-env
+
+      - name: Test editable installation
+        run: |
+          # Create fresh environment
+          python -m venv test-editable-env
+          source test-editable-env/bin/activate
+
+          # Install in editable mode
+          pip install -e .
+
+          # Test basic functionality
+          shard-md --help
+          shard-md --version
+
+          deactivate
+          rm -rf test-editable-env
+
+  # Test with different ChromaDB configurations
+  e2e-chromadb-configs:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chromadb-config:
+          - image: chromadb/chroma:latest
+            auth: false
+          - image: chromadb/chroma:0.4.15
+            auth: false
+
+    services:
+      chromadb:
+        image: ${{ matrix.chromadb-config.image }}
+        ports:
+          - 8000:8000
+        options: >-
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev --extra chromadb
+
+      - name: Wait for ChromaDB
+        run: |
+          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v1/heartbeat; do sleep 2; done'
+
+      - name: Test ChromaDB connection
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          # Test connection and basic operations
+          uv run shard-md collections create e2e-config-test
+
+          echo "# Config Test" > config-test.md
+          echo "Testing ChromaDB configuration ${{ matrix.chromadb-config.image }}" >> config-test.md
+
+          uv run shard-md process --collection e2e-config-test config-test.md
+          uv run shard-md query search "ChromaDB" --collection e2e-config-test
+          uv run shard-md collections delete e2e-config-test
+
+  # Performance and load testing
+  e2e-performance:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    services:
+      chromadb:
+        image: chromadb/chroma:latest
+        ports:
+          - 8000:8000
+        options: >-
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev --extra chromadb
+
+      - name: Wait for ChromaDB
+        run: |
+          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v1/heartbeat; do sleep 2; done'
+
+      - name: Generate large test dataset
+        run: |
+          mkdir -p large-test-docs
+
+          for i in {1..50}; do
+            echo "---" > large-test-docs/doc$i.md
+            echo "title: Large Document $i" >> large-test-docs/doc$i.md
+            echo "category: performance-test" >> large-test-docs/doc$i.md
+            echo "---" >> large-test-docs/doc$i.md
+            echo "" >> large-test-docs/doc$i.md
+            echo "# Large Document $i" >> large-test-docs/doc$i.md
+            echo "" >> large-test-docs/doc$i.md
+
+            for j in {1..20}; do
+              echo "## Section $j" >> large-test-docs/doc$i.md
+              echo "" >> large-test-docs/doc$i.md
+              echo "This is section $j of document $i. It contains some sample text for performance testing." >> large-test-docs/doc$i.md
+              echo "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." >> large-test-docs/doc$i.md
+              echo "" >> large-test-docs/doc$i.md
+            done
+          done
+
+      - name: Performance test - Batch processing
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          uv run shard-md collections create performance-test
+
+          time uv run shard-md process --collection performance-test --recursive large-test-docs/
+
+          # Verify all documents were processed
+          DOC_COUNT=$(uv run shard-md query list-docs --collection performance-test | wc -l)
+          echo "Processed $DOC_COUNT document chunks"
+
+          if [ "$DOC_COUNT" -lt 100 ]; then
+            echo "❌ Performance test failed: Too few documents processed"
+            exit 1
+          fi
+
+      - name: Performance test - Search queries
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          # Test search performance
+          time uv run shard-md query search "Lorem ipsum" --collection performance-test --limit 10
+          time uv run shard-md query search "Section" --collection performance-test --limit 20
+          time uv run shard-md query search "Document" --collection performance-test --limit 5
+
+      - name: Cleanup performance test
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          uv run shard-md collections delete performance-test || true

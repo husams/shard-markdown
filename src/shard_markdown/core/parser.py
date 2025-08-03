@@ -1,305 +1,281 @@
-"""Markdown parsing with AST generation and frontmatter support."""
+"""Markdown document parser for AST generation."""
 
 import re
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Optional
 
 import frontmatter
 import markdown
-from markdown.extensions import codehilite, fenced_code, toc
 
 from .models import MarkdownAST, MarkdownElement
-from ..utils.errors import ProcessingError
-from ..utils.logging import get_logger
-
-logger = get_logger(__name__)
 
 
 class MarkdownParser:
     """Markdown document parser with AST generation."""
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         """Initialize parser with markdown processor."""
         self.md = markdown.Markdown(
-            extensions=[
-                'toc',
-                'codehilite', 
-                'fenced_code',
-                'tables',
-                'nl2br'
-            ],
+            extensions=["toc", "codehilite", "fenced_code", "tables", "nl2br"],
             extension_configs={
-                'codehilite': {'css_class': 'highlight'},
-                'toc': {'anchorlink': True}
-            }
+                "codehilite": {"css_class": "highlight"},
+                "toc": {"title": "Table of Contents"},
+            },
         )
-    
+
     def parse(self, content: str) -> MarkdownAST:
-        """Parse markdown content into structured AST.
-        
+        """Parse markdown content and return AST.
+
         Args:
             content: Raw markdown content
-            
+
         Returns:
-            MarkdownAST with structured elements
-            
+            Parsed markdown AST with hierarchical structure
+
         Raises:
-            ProcessingError: If parsing fails
+            ValueError: If content cannot be parsed
         """
         try:
-            # Extract frontmatter
-            doc_frontmatter, content_without_frontmatter = self.extract_frontmatter(content)
-            
-            # Parse elements
-            elements = self._parse_elements(content_without_frontmatter)
-            
-            # Extract document metadata
-            doc_metadata = self._extract_document_metadata(elements, doc_frontmatter)
-            
-            return MarkdownAST(
-                elements=elements,
-                frontmatter=doc_frontmatter,
-                metadata=doc_metadata
-            )
-            
-        except Exception as e:
-            raise ProcessingError(
-                f"Failed to parse markdown content: {str(e)}",
-                error_code=1304,
-                context={'content_length': len(content)},
-                cause=e
-            )
-    
-    def extract_frontmatter(self, content: str) -> Tuple[Dict[str, Any], str]:
-        """Extract YAML frontmatter from markdown content.
-        
-        Args:
-            content: Raw markdown content
-            
-        Returns:
-            Tuple of (frontmatter_dict, content_without_frontmatter)
-        """
-        try:
+            # Parse frontmatter if present
             post = frontmatter.loads(content)
-            return post.metadata, post.content
+            markdown_content = post.content
+            metadata = dict(post.metadata)
+
+            # Convert to HTML to extract structure
+            html = self.md.convert(markdown_content)
+
+            # Extract structural elements
+            elements = self._extract_elements(markdown_content)
+
+            # Build hierarchical structure
+            root = self._build_hierarchy(elements)
+
+            return MarkdownAST(
+                content=markdown_content,
+                metadata=metadata,
+                root=root,
+                html=html,
+                toc=getattr(self.md, "toc", ""),
+            )
+
         except Exception as e:
-            logger.warning(f"Failed to parse frontmatter: {e}")
-            return {}, content
-    
-    def _parse_elements(self, content: str) -> List[MarkdownElement]:
-        """Parse markdown content into structured elements.
-        
+            raise ValueError(f"Failed to parse markdown: {e}")
+
+    def _extract_elements(self, content: str) -> List[MarkdownElement]:  # noqa: C901
+        """Extract structural elements from markdown content.
+
         Args:
-            content: Markdown content without frontmatter
-            
+            content: Markdown content to parse
+
         Returns:
-            List of MarkdownElement objects
+            List of markdown elements in document order
         """
         elements = []
-        lines = content.split('\n')
-        i = 0
-        
-        while i < len(lines):
-            line = lines[i]
-            
-            # Skip empty lines
-            if not line.strip():
-                i += 1
+        lines = content.split("\n")
+        current_text = []
+        in_code_block = False
+        code_fence_pattern = re.compile(r"^```")
+
+        for line_num, line in enumerate(lines, 1):
+            # Handle code blocks
+            if code_fence_pattern.match(line):
+                if not in_code_block:
+                    # Starting code block - save any accumulated text
+                    if current_text:
+                        text_content = "\n".join(current_text).strip()
+                        if text_content:
+                            elements.append(
+                                MarkdownElement(
+                                    type="paragraph",
+                                    content=text_content,
+                                    level=0,
+                                    line_number=line_num - len(current_text),
+                                )
+                            )
+                        current_text = []
+                    in_code_block = True
+                    current_text.append(line)
+                else:
+                    # Ending code block
+                    current_text.append(line)
+                    code_content = "\n".join(current_text)
+                    elements.append(
+                        MarkdownElement(
+                            type="code_block",
+                            content=code_content,
+                            level=0,
+                            line_number=line_num - len(current_text) + 1,
+                        )
+                    )
+                    current_text = []
+                    in_code_block = False
                 continue
-            
-            # Check for headers
-            if line.startswith('#'):
-                element = self._parse_header(line)
-                elements.append(element)
-                i += 1
-            
-            # Check for code blocks
-            elif line.strip().startswith('```'):
-                element, consumed_lines = self._parse_code_block(lines[i:])
-                elements.append(element)
-                i += consumed_lines
-            
-            # Check for lists
-            elif re.match(r'^[\s]*[-*+]\s', line) or re.match(r'^[\s]*\d+\.\s', line):
-                element, consumed_lines = self._parse_list(lines[i:])
-                elements.append(element)
-                i += consumed_lines
-            
-            # Default to paragraph
-            else:
-                element, consumed_lines = self._parse_paragraph(lines[i:])
-                elements.append(element)
-                i += consumed_lines
-        
+
+            if in_code_block:
+                current_text.append(line)
+                continue
+
+            # Handle headers
+            header_match = re.match(r"^(#{1,6})\s+(.+)", line)
+            if header_match:
+                # Save any accumulated text before header
+                if current_text:
+                    text_content = "\n".join(current_text).strip()
+                    if text_content:
+                        elements.append(
+                            MarkdownElement(
+                                type="paragraph",
+                                content=text_content,
+                                level=0,
+                                line_number=line_num - len(current_text),
+                            )
+                        )
+                    current_text = []
+
+                # Create header element
+                level = len(header_match.group(1))
+                title = header_match.group(2)
+                elements.append(
+                    MarkdownElement(
+                        type="header",
+                        content=title,
+                        level=level,
+                        line_number=line_num,
+                    )
+                )
+                continue
+
+            # Handle lists
+            list_match = re.match(r"^(\s*)([-*+]|\d+\.)\s+(.+)", line)
+            if list_match:
+                indent = len(list_match.group(1))
+                marker = list_match.group(2)
+                content = list_match.group(3)
+                list_type = "ordered" if marker.endswith(".") else "unordered"
+
+                elements.append(
+                    MarkdownElement(
+                        type="list_item",
+                        content=content,
+                        level=indent // 2,  # Estimate nesting level
+                        line_number=line_num,
+                        metadata={"list_type": list_type, "marker": marker},
+                    )
+                )
+                continue
+
+            # Handle tables
+            if "|" in line and line.strip():
+                elements.append(
+                    MarkdownElement(
+                        type="table_row",
+                        content=line.strip(),
+                        level=0,
+                        line_number=line_num,
+                    )
+                )
+                continue
+
+            # Accumulate regular text
+            current_text.append(line)
+
+        # Add any remaining text
+        if current_text:
+            text_content = "\n".join(current_text).strip()
+            if text_content:
+                elements.append(
+                    MarkdownElement(
+                        type="paragraph",
+                        content=text_content,
+                        level=0,
+                        line_number=len(lines) - len(current_text) + 1,
+                    )
+                )
+
         return elements
-    
-    def _parse_header(self, line: str) -> MarkdownElement:
-        """Parse header line into MarkdownElement.
-        
+
+    def _build_hierarchy(self, elements: List[MarkdownElement]) -> MarkdownElement:
+        """Build hierarchical structure from flat element list.
+
         Args:
-            line: Header line starting with #
-            
+            elements: Flat list of markdown elements
+
         Returns:
-            MarkdownElement for header
+            Root element with nested children
         """
-        # Count heading level
-        level = 0
-        for char in line:
-            if char == '#':
-                level += 1
-            else:
-                break
-        
-        # Extract text
-        text = line[level:].strip()
-        
-        return MarkdownElement(
-            type="header",
-            text=text,
-            level=level,
-            metadata={'original_line': line}
+        if not elements:
+            return MarkdownElement(
+                type="document", content="", level=0, line_number=1, children=[]
+            )
+
+        # Create document root
+        root = MarkdownElement(
+            type="document", content="", level=0, line_number=1, children=[]
         )
-    
-    def _parse_code_block(self, lines: List[str]) -> Tuple[MarkdownElement, int]:
-        """Parse code block into MarkdownElement.
-        
-        Args:
-            lines: Lines starting with code block
-            
-        Returns:
-            Tuple of (MarkdownElement, number_of_lines_consumed)
-        """
-        first_line = lines[0].strip()
-        language = first_line[3:].strip() if len(first_line) > 3 else None
-        
-        code_lines = []
-        i = 1
-        
-        # Find closing ```
-        while i < len(lines):
-            if lines[i].strip() == '```':
-                break
-            code_lines.append(lines[i])
-            i += 1
-        
-        code_content = '\n'.join(code_lines)
-        
-        return MarkdownElement(
-            type="code_block",
-            text=code_content,
-            language=language,
-            metadata={'line_count': len(code_lines)}
-        ), i + 1
-    
-    def _parse_list(self, lines: List[str]) -> Tuple[MarkdownElement, int]:
-        """Parse list into MarkdownElement.
-        
-        Args:
-            lines: Lines starting with list
-            
-        Returns:
-            Tuple of (MarkdownElement, number_of_lines_consumed)
-        """
-        items = []
-        i = 0
-        
-        while i < len(lines):
-            line = lines[i]
-            
-            # Check if this is a list item
-            if re.match(r'^[\s]*[-*+]\s', line) or re.match(r'^[\s]*\d+\.\s', line):
-                # Extract item text
-                item_text = re.sub(r'^[\s]*[-*+\d\.]\s*', '', line)
-                items.append(item_text)
-                i += 1
-            elif line.strip() == '':
-                # Empty line continues the list
-                i += 1
+
+        # Stack to track current hierarchy path
+        header_stack: List[MarkdownElement] = [root]
+        current_section = root
+
+        for element in elements:
+            if element.type == "header":
+                # Find appropriate parent in header hierarchy
+                while len(header_stack) > 1 and header_stack[-1].level >= element.level:
+                    header_stack.pop()
+
+                # Add header to current parent
+                parent = header_stack[-1]
+                parent.children.append(element)
+
+                # Update header stack
+                header_stack.append(element)
+                current_section = element
+
             else:
-                # Non-list line ends the list
-                break
-        
-        list_type = "ordered" if re.match(r'^[\s]*\d+\.', lines[0]) else "unordered"
-        
-        return MarkdownElement(
-            type="list",
-            text='\n'.join(items),
-            items=items,
-            metadata={'list_type': list_type, 'item_count': len(items)}
-        ), i
-    
-    def _parse_paragraph(self, lines: List[str]) -> Tuple[MarkdownElement, int]:
-        """Parse paragraph into MarkdownElement.
-        
+                # Add non-header elements to current section
+                current_section.children.append(element)
+
+        return root
+
+    def _extract_metadata_from_headers(
+        self, root: MarkdownElement
+    ) -> Dict[str, Optional[str]]:
+        """Extract document metadata from header structure.
+
         Args:
-            lines: Lines starting with paragraph
-            
+            root: Root element of document
+
         Returns:
-            Tuple of (MarkdownElement, number_of_lines_consumed)
-        """
-        paragraph_lines = []
-        i = 0
-        
-        while i < len(lines):
-            line = lines[i]
-            
-            # Empty line ends paragraph
-            if not line.strip():
-                break
-            
-            # Special markdown elements end paragraph
-            if (line.startswith('#') or 
-                line.strip().startswith('```') or
-                re.match(r'^[\s]*[-*+]\s', line) or
-                re.match(r'^[\s]*\d+\.\s', line)):
-                break
-            
-            paragraph_lines.append(line)
-            i += 1
-        
-        paragraph_text = ' '.join(line.strip() for line in paragraph_lines)
-        
-        return MarkdownElement(
-            type="paragraph",
-            text=paragraph_text,
-            metadata={'line_count': len(paragraph_lines)}
-        ), i
-    
-    def _extract_document_metadata(self, elements: List[MarkdownElement], 
-                                 frontmatter: Dict[str, Any]) -> Dict[str, Any]:
-        """Extract document-level metadata.
-        
-        Args:
-            elements: Parsed markdown elements
-            frontmatter: Frontmatter metadata
-            
-        Returns:
-            Document metadata dictionary
+            Dictionary of extracted metadata
         """
         metadata = {}
-        
-        # Extract title (first header or from frontmatter)
-        title = frontmatter.get('title')
-        if not title:
-            for element in elements:
-                if element.type == "header" and element.level == 1:
-                    title = element.text
-                    break
-        
-        if title:
-            metadata['title'] = title
-        
-        # Extract other common frontmatter fields
-        for field in ['author', 'date', 'tags', 'description', 'category']:
-            if field in frontmatter:
-                metadata[field] = frontmatter[field]
-        
-        # Document statistics
-        metadata.update({
-            'element_count': len(elements),
-            'header_count': len([e for e in elements if e.type == "header"]),
-            'code_block_count': len([e for e in elements if e.type == "code_block"]),
-            'list_count': len([e for e in elements if e.type == "list"]),
-            'paragraph_count': len([e for e in elements if e.type == "paragraph"]),
-        })
-        
+
+        # Find first header as potential title
+        for child in root.children:
+            if child.type == "header" and child.level == 1:
+                metadata["title"] = child.content
+                break
+
+        # Count headers by level
+        header_counts = {}
+        for element in self._flatten_elements(root):
+            if element.type == "header":
+                level = element.level
+                header_counts[level] = header_counts.get(level, 0) + 1
+
+        metadata["header_counts"] = header_counts
+
         return metadata
+
+    def _flatten_elements(self, element: MarkdownElement) -> List[MarkdownElement]:
+        """Flatten hierarchical elements to a list.
+
+        Args:
+            element: Root element to flatten
+
+        Returns:
+            Flat list of all elements
+        """
+        result = [element]
+        for child in element.children:
+            result.extend(self._flatten_elements(child))
+        return result

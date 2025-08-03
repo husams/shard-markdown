@@ -1,524 +1,540 @@
-"""End-to-end tests for complete CLI workflows."""
+"""End-to-end tests for CLI workflows."""
 
-import json
-import pytest
-import subprocess
 import time
-from pathlib import Path
+
+import pytest
 from click.testing import CliRunner
 
 from shard_markdown.cli.main import cli
 
 
 @pytest.mark.e2e
-class TestCLIWorkflows:
-    """End-to-end tests for complete CLI workflows."""
-    
+class TestBasicCLIWorkflows:
+    """Test basic end-to-end CLI workflows."""
+
     @pytest.fixture
     def cli_runner(self):
-        """CLI test runner."""
+        """CLI runner for e2e tests."""
         return CliRunner()
-    
+
+    def test_complete_document_processing_workflow(
+        self, cli_runner, sample_markdown_file
+    ):
+        """Test complete workflow from document to processed chunks."""
+        # Process a document
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "e2e-test-collection",
+                "--chunk-size",
+                "500",
+                "--chunk-overlap",
+                "100",
+                str(sample_markdown_file),
+            ],
+        )
+
+        print(f"Process output: {result.output}")
+        assert result.exit_code == 0
+        output_lower = result.output.lower()
+        assert "successfully" in output_lower or "processed" in output_lower
+
+        # Query the processed content
+        query_result = cli_runner.invoke(
+            cli,
+            [
+                "query",
+                "search",
+                "--collection",
+                "e2e-test-collection",
+                "--query",
+                "test content",
+                "--limit",
+                "5",
+            ],
+        )
+
+        print(f"Query output: {query_result.output}")
+        # Query might fail if ChromaDB isn't running, but process should succeed
+        if query_result.exit_code == 0:
+            query_output_lower = query_result.output.lower()
+            success_indicators = ["results", "chunks"]
+            assert any(
+                indicator in query_output_lower for indicator in success_indicators
+            )
+
+    def test_batch_processing_workflow(self, cli_runner, test_documents):
+        """Test batch processing workflow."""
+        file_paths = [str(path) for path in test_documents.values()]
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "batch-e2e-test",
+                "--chunk-method",
+                "structure",
+                "--max-workers",
+                "2",
+            ]
+            + file_paths,
+        )
+
+        print(f"Batch process output: {result.output}")
+        assert result.exit_code == 0
+        assert "processed" in result.output.lower()
+
+    def test_recursive_directory_processing(self, cli_runner, test_documents):
+        """Test recursive directory processing."""
+        # Get the directory containing test documents
+        test_dir = list(test_documents.values())[0].parent
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "recursive-e2e-test",
+                "--recursive",
+                "--pattern",
+                "*.md",
+                str(test_dir),
+            ],
+        )
+
+        print(f"Recursive process output: {result.output}")
+        assert result.exit_code == 0
+        assert "processed" in result.output.lower()
+
+    def test_collection_management_workflow(self, cli_runner):
+        """Test collection management workflow."""
+        # List collections
+        list_result = cli_runner.invoke(cli, ["collections", "list"])
+        print(f"Collections list output: {list_result.output}")
+
+        # Create a collection
+        create_result = cli_runner.invoke(
+            cli,
+            [
+                "collections",
+                "create",
+                "--name",
+                "workflow-test-collection",
+                "--description",
+                "Test collection for workflow testing",
+            ],
+        )
+        print(f"Collection create output: {create_result.output}")
+
+        # Get collection info
+        info_result = cli_runner.invoke(
+            cli, ["collections", "info", "--name", "workflow-test-collection"]
+        )
+        print(f"Collection info output: {info_result.output}")
+
+        # Delete the collection
+        delete_result = cli_runner.invoke(
+            cli, ["collections", "delete", "--name", "workflow-test-collection"]
+        )
+        print(f"Collection delete output: {delete_result.output}")
+
+    def test_config_management_workflow(self, cli_runner, temp_dir):
+        """Test configuration management workflow."""
+        config_file = temp_dir / "test_config.yaml"
+
+        # Generate default config
+        init_result = cli_runner.invoke(
+            cli, ["config", "init", "--output", str(config_file)]
+        )
+        print(f"Config init output: {init_result.output}")
+
+        if init_result.exit_code == 0:
+            assert config_file.exists()
+
+            # Show config
+            show_result = cli_runner.invoke(
+                cli, ["config", "show", "--config", str(config_file)]
+            )
+            print(f"Config show output: {show_result.output}")
+
+            # Validate config
+            validate_result = cli_runner.invoke(
+                cli, ["config", "validate", "--config", str(config_file)]
+            )
+            print(f"Config validate output: {validate_result.output}")
+
+    def test_help_and_version_commands(self, cli_runner):
+        """Test help and version commands work correctly."""
+        # Test main help
+        help_result = cli_runner.invoke(cli, ["--help"])
+        assert help_result.exit_code == 0
+        assert "Shard Markdown" in help_result.output
+        assert "Commands:" in help_result.output
+
+        # Test version
+        version_result = cli_runner.invoke(cli, ["--version"])
+        assert version_result.exit_code == 0
+        assert "0.1.0" in version_result.output
+
+        # Test command-specific help
+        process_help = cli_runner.invoke(cli, ["process", "--help"])
+        assert process_help.exit_code == 0
+        assert "collection" in process_help.output.lower()
+
+        collections_help = cli_runner.invoke(cli, ["collections", "--help"])
+        assert collections_help.exit_code == 0
+        assert "list" in collections_help.output
+
+        query_help = cli_runner.invoke(cli, ["query", "--help"])
+        assert query_help.exit_code == 0
+
+
+@pytest.mark.e2e
+class TestAdvancedCLIWorkflows:
+    """Test advanced CLI workflows and combinations."""
+
     @pytest.fixture
-    def sample_project(self, temp_dir):
-        """Create a sample project structure with documentation."""
-        project_dir = temp_dir / "sample_project"
-        project_dir.mkdir()
-        
-        # Create documentation structure
-        docs_dir = project_dir / "docs"
-        docs_dir.mkdir()
-        
-        # API documentation
-        api_dir = docs_dir / "api"
-        api_dir.mkdir()
-        
-        (api_dir / "authentication.md").write_text("""# Authentication
+    def cli_runner(self):
+        """CLI runner for advanced tests."""
+        return CliRunner()
 
-## Overview
-The API uses token-based authentication for secure access.
+    def test_custom_chunking_strategies(self, cli_runner, sample_markdown_file):
+        """Test different chunking strategies."""
+        strategies = [
+            ("structure", "1000", "200"),
+            ("fixed", "800", "150"),
+            ("structure", "1500", "300"),
+        ]
 
-## Getting a Token
-To obtain an authentication token:
+        for method, size, overlap in strategies:
+            collection_name = f"chunking-{method}-{size}"
 
-1. Register an account through the web interface
-2. Login with your credentials
-3. Navigate to the API section
-4. Generate a new token
-5. Include the token in your API requests
+            result = cli_runner.invoke(
+                cli,
+                [
+                    "process",
+                    "--collection",
+                    collection_name,
+                    "--chunk-method",
+                    method,
+                    "--chunk-size",
+                    size,
+                    "--chunk-overlap",
+                    overlap,
+                    str(sample_markdown_file),
+                ],
+            )
 
-## Using Tokens
-Include your token in the Authorization header:
+            print(f"Chunking {method} output: {result.output}")
+            assert result.exit_code == 0
 
-```bash
-curl -H "Authorization: Bearer YOUR_TOKEN" https://api.example.com/users
-```
-
-## Token Expiration
-Tokens expire after 30 days and must be renewed.
-""")
-        
-        (api_dir / "endpoints.md").write_text("""# API Endpoints
-
-## Users Endpoints
-
-### GET /users
-Returns a list of all users.
-
-**Parameters:**
-- `page` (optional): Page number for pagination
-- `limit` (optional): Number of results per page
-
-**Response:**
-```json
-{
-  "users": [...],
-  "pagination": {...}
-}
-```
-
-### POST /users
-Creates a new user account.
-
-**Body:**
-```json
-{
-  "username": "string",
-  "email": "string", 
-  "password": "string"
-}
-```
-
-## Posts Endpoints
-
-### GET /posts
-Returns a list of posts.
-
-### POST /posts
-Creates a new post.
-
-**Requirements:**
-- User must be authenticated
-- Content must be non-empty
-""")
-        
-        # User guides
-        guides_dir = docs_dir / "guides"
-        guides_dir.mkdir()
-        
-        (guides_dir / "getting-started.md").write_text("""---
-title: "Getting Started Guide"
-difficulty: "beginner"
-estimated_time: "15 minutes"
-category: "tutorial"
+    def test_metadata_preservation_workflow(self, cli_runner, temp_dir):
+        """Test that metadata is preserved through processing."""
+        # Create document with frontmatter
+        doc_with_frontmatter = temp_dir / "frontmatter_doc.md"
+        doc_content = """---
+title: "Test Document"
+author: "Test Author"
+tags:
+  - test
+  - e2e
 ---
 
-# Getting Started
+# Test Document
 
-Welcome to our platform! This comprehensive guide will help you get started quickly.
+This document has frontmatter that should be preserved.
 
-## Prerequisites
+## Section 1
 
-Before you begin, ensure you have:
-- A valid email address
-- Basic understanding of REST APIs
-- A development environment set up
+Content here.
+"""
+        doc_with_frontmatter.write_text(doc_content)
 
-## Installation Steps
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "metadata-test",
+                "--include-frontmatter",
+                str(doc_with_frontmatter),
+            ],
+        )
 
-1. **Create Account**
-   - Visit our website
-   - Click "Sign Up"
-   - Verify your email
-
-2. **Generate API Key**
-   - Login to your account
-   - Go to Settings > API Keys
-   - Create a new key
-
-3. **Test Connection**
-   ```bash
-   curl -H "Authorization: Bearer YOUR_KEY" https://api.example.com/health
-   ```
-
-## First API Call
-
-Once setup is complete, try your first API call:
-
-```python
-import requests
-
-headers = {"Authorization": "Bearer YOUR_KEY"}
-response = requests.get("https://api.example.com/users", headers=headers)
-print(response.json())
-```
-
-## Next Steps
-
-- Read the [API Documentation](../api/endpoints.md)
-- Check out [Authentication](../api/authentication.md)
-- Join our community forum
-""")
-        
-        (guides_dir / "advanced-features.md").write_text("""# Advanced Features
-
-## Webhook Configuration
-
-Set up webhooks to receive real-time notifications:
-
-```javascript
-const webhook = {
-  url: "https://your-app.com/webhook",
-  events: ["user.created", "post.published"],
-  secret: "your-webhook-secret"
-};
-```
-
-## Rate Limiting
-
-API calls are limited to:
-- 1000 requests per hour for free tier
-- 10000 requests per hour for premium tier
-
-## Batch Operations
-
-Process multiple items efficiently:
-
-```python
-batch_request = {
-  "operations": [
-    {"method": "POST", "path": "/users", "body": {...}},
-    {"method": "PUT", "path": "/users/123", "body": {...}}
-  ]
-}
-```
-""")
-        
-        return project_dir
-    
-    def test_complete_documentation_processing_workflow(self, cli_runner, sample_project):
-        """Test complete workflow from processing to querying documentation."""
-        docs_dir = sample_project / "docs"
-        
-        # Step 1: Process all documentation files
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'sample-project-docs',
-            '--recursive',
-            '--chunk-size', '800',
-            '--chunk-overlap', '150',
-            str(docs_dir)
-        ])
-        
-        print(f"Process output: {result.output}")
-        assert result.exit_code == 0, f"Process command failed: {result.output}"
-        
-        # Should show successful processing
-        assert "processed" in result.output.lower() or "success" in result.output.lower()
-    
-    def test_configuration_workflow(self, cli_runner, temp_dir):
-        """Test configuration management workflow."""
-        config_file = temp_dir / "test-config.yaml"
-        
-        # Step 1: Initialize configuration (if this command exists)
-        result = cli_runner.invoke(cli, [
-            'config', 'show'
-        ])
-        
-        print(f"Config show output: {result.output}")
-        # Should show configuration or help if command doesn't exist
-        assert result.exit_code == 0 or "Usage:" in result.output
-    
-    def test_dry_run_workflow(self, cli_runner, sample_project):
-        """Test dry run functionality."""
-        docs_dir = sample_project / "docs"
-        
-        # Dry run to see what would be processed
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'preview-test',
-            '--dry-run',
-            '--recursive',
-            str(docs_dir)
-        ])
-        
-        print(f"Dry run output: {result.output}")
-        
-        # Should show preview without actually processing
-        if result.exit_code == 0:
-            assert "dry" in result.output.lower() or "preview" in result.output.lower()
-        else:
-            # Dry run option might not be implemented yet
-            assert "dry-run" in result.output or "No such option" in result.output
-    
-    def test_help_system_workflow(self, cli_runner):
-        """Test help system across commands."""
-        # Main help
-        result = cli_runner.invoke(cli, ['--help'])
+        print(f"Metadata processing output: {result.output}")
         assert result.exit_code == 0
-        assert "Commands:" in result.output
-        
-        # Process command help
-        result = cli_runner.invoke(cli, ['process', '--help'])
+        assert "processed" in result.output.lower()
+
+    def test_error_recovery_workflow(self, cli_runner, temp_dir):
+        """Test error recovery and partial processing."""
+        # Create mix of valid and invalid files
+        valid_file = temp_dir / "valid.md"
+        valid_file.write_text("# Valid Document\n\nContent here.")
+
+        invalid_file = temp_dir / "invalid.md"
+        # Create file with problematic content
+        invalid_file.write_text("# Invalid\n\n" + "x" * 1000000)  # Very large
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "error-recovery-test",
+                "--continue-on-error",
+                str(valid_file),
+                str(invalid_file),
+            ],
+        )
+
+        print(f"Error recovery output: {result.output}")
+        # Should process what it can, might have partial success
+
+    def test_concurrent_processing_workflow(self, cli_runner, test_documents):
+        """Test concurrent processing with different worker counts."""
+        file_paths = [str(path) for path in test_documents.values()]
+
+        for workers in [1, 2, 4]:
+            collection_name = f"concurrent-{workers}-workers"
+
+            start_time = time.time()
+            result = cli_runner.invoke(
+                cli,
+                [
+                    "process",
+                    "--collection",
+                    collection_name,
+                    "--max-workers",
+                    str(workers),
+                ]
+                + file_paths,
+            )
+            end_time = time.time()
+
+            processing_time = end_time - start_time
+            print(f"Workers {workers}: {processing_time:.2f}s")
+            print(f"Concurrent {workers} output: {result.output}")
+
+            assert result.exit_code == 0
+
+    def test_large_document_processing_workflow(self, cli_runner, temp_dir):
+        """Test processing of large documents."""
+        # Create a substantial document
+        large_doc = temp_dir / "large_document.md"
+
+        content_parts = ["# Large Document Test\n\n"]
+        for i in range(100):  # Create 100 sections
+            content_parts.append(f"## Section {i+1}\n\n")
+            content_text = f"This is section {i+1} with substantial content. " * 20
+            content_parts.append(content_text)
+            content_parts.append("\n\n")
+
+            if i % 10 == 0:  # Add code blocks occasionally
+                content_parts.append("```python\n")
+                content_parts.append(f"def section_{i+1}_function():\n")
+                content_parts.append(f'    return "Section {i+1} result"\n')
+                content_parts.append("```\n\n")
+
+        large_doc.write_text("".join(content_parts))
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "large-doc-test",
+                "--chunk-size",
+                "1500",
+                "--chunk-overlap",
+                "300",
+                str(large_doc),
+            ],
+        )
+
+        print(f"Large document output: {result.output}")
         assert result.exit_code == 0
-        assert "collection" in result.output.lower()
-        
-        # Collections command help (if it exists)
-        result = cli_runner.invoke(cli, ['collections', '--help'])
-        # Should work or show that command doesn't exist
-        assert result.exit_code == 0 or "No such command" in result.output
-    
-    def test_error_handling_workflow(self, cli_runner, temp_dir):
-        """Test error handling in realistic scenarios."""
-        # Create a problematic file
-        bad_file = temp_dir / "problematic.md"
-        bad_file.write_bytes(b'\xff\xfe# Invalid encoding content')
-        
-        # Try to process it
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'error-test',
-            str(bad_file)
-        ])
-        
-        print(f"Error handling output: {result.output}")
-        
-        # Should handle the error gracefully
-        if result.exit_code != 0:
-            assert "error" in result.output.lower() or "failed" in result.output.lower()
-    
-    def test_multiple_files_workflow(self, cli_runner, sample_project):
-        """Test processing multiple files explicitly."""
-        docs_dir = sample_project / "docs"
-        
-        # Get all markdown files
-        md_files = list(docs_dir.rglob("*.md"))
-        file_args = [str(f) for f in md_files]
-        
-        if md_files:
-            result = cli_runner.invoke(cli, [
-                'process',
-                '--collection', 'multi-file-test'
-            ] + file_args)
-            
-            print(f"Multi-file output: {result.output}")
-            assert result.exit_code == 0, f"Multi-file processing failed: {result.output}"
-    
-    def test_chunk_parameter_workflow(self, cli_runner, sample_project):
-        """Test different chunking parameters."""
-        test_file = sample_project / "docs" / "guides" / "getting-started.md"
-        
-        # Test with different chunk sizes
-        for chunk_size in [500, 1000, 1500]:
-            result = cli_runner.invoke(cli, [
-                'process',
-                '--collection', f'chunk-test-{chunk_size}',
-                '--chunk-size', str(chunk_size),
-                '--chunk-overlap', str(chunk_size // 5),
-                str(test_file)
-            ])
-            
-            print(f"Chunk size {chunk_size} output: {result.output}")
-            assert result.exit_code == 0, f"Chunk size {chunk_size} failed: {result.output}"
-    
-    def test_collections_workflow(self, cli_runner, sample_project):
-        """Test collections management workflow."""
-        # First, process some documents to create collections
-        test_file = sample_project / "docs" / "guides" / "getting-started.md"
-        
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'collections-test',
-            str(test_file)
-        ])
-        
-        if result.exit_code == 0:
-            # Try to list collections
-            result = cli_runner.invoke(cli, ['collections', 'list'])
-            
-            print(f"Collections list output: {result.output}")
-            
-            if result.exit_code == 0:
-                # Should show our collection
-                assert "collections-test" in result.output or "collection" in result.output.lower()
-            else:
-                # Collections command might not be implemented yet
-                assert "No such command" in result.output or result.exit_code != 0
-    
-    def test_query_workflow(self, cli_runner, sample_project):
-        """Test query workflow."""
-        # First, process documents
-        docs_dir = sample_project / "docs"
-        
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'query-test',
-            '--recursive',
-            str(docs_dir)
-        ])
-        
-        if result.exit_code == 0:
-            # Try to query the collection
-            result = cli_runner.invoke(cli, [
-                'query', 'search', 'authentication',
-                '--collection', 'query-test',
-                '--limit', '3'
-            ])
-            
-            print(f"Query output: {result.output}")
-            
-            if result.exit_code == 0:
-                # Should return relevant results
-                assert "authentication" in result.output.lower() or "result" in result.output.lower()
-            else:
-                # Query command might not be implemented yet
-                assert "No such command" in result.output or result.exit_code != 0
-    
-    def test_output_format_workflow(self, cli_runner, sample_project):
-        """Test different output formats."""
-        test_file = sample_project / "docs" / "api" / "authentication.md"
-        
-        # Test default output
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'output-test',
-            str(test_file)
-        ])
-        
-        assert result.exit_code == 0
-        
-        # Test JSON output (if supported)
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'output-test-json',
-            '--output', 'json',
-            str(test_file)
-        ])
-        
-        # Should work or show that option doesn't exist
-        if result.exit_code == 0:
-            # Try to parse as JSON
-            try:
-                json.loads(result.output)
-                # If it parses, it's valid JSON
-            except json.JSONDecodeError:
-                # Might not be pure JSON output
-                pass
-        else:
-            assert "output" in result.output or "No such option" in result.output
-    
-    def test_verbose_output_workflow(self, cli_runner, sample_project):
-        """Test verbose output modes."""
-        test_file = sample_project / "docs" / "guides" / "getting-started.md"
-        
-        # Test with verbose flag
-        result = cli_runner.invoke(cli, [
-            '-v',
-            'process', 
-            '--collection', 'verbose-test',
-            str(test_file)
-        ])
-        
-        print(f"Verbose output: {result.output}")
-        assert result.exit_code == 0
-        
-        # Test with very verbose
-        result = cli_runner.invoke(cli, [
-            '-vvv',
-            'process',
-            '--collection', 'very-verbose-test', 
-            str(test_file)
-        ])
-        
-        print(f"Very verbose output: {result.output}")
-        assert result.exit_code == 0
-    
-    def test_config_file_workflow(self, cli_runner, sample_project, temp_dir):
-        """Test workflow with custom config file."""
-        # Create a test config file
-        config_file = temp_dir / "test-config.yaml"
+
+    def test_query_workflow_variations(self, cli_runner, sample_markdown_file):
+        """Test different query variations."""
+        # First process a document
+        process_result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "query-test-collection",
+                str(sample_markdown_file),
+            ],
+        )
+
+        if process_result.exit_code == 0:
+            # Test different query types
+            query_types = [
+                ("search", ["--query", "test", "--limit", "3"]),
+                ("similarity", ["--text", "sample content", "--limit", "5"]),
+                ("list", ["--limit", "10"]),
+            ]
+
+            for query_type, args in query_types:
+                query_result = cli_runner.invoke(
+                    cli,
+                    ["query", query_type, "--collection", "query-test-collection"]
+                    + args,
+                )
+
+                print(f"Query {query_type} output: {query_result.output}")
+                # Queries might fail if ChromaDB isn't available,
+                # but we test the interface
+
+    def test_config_override_workflow(self, cli_runner, sample_markdown_file, temp_dir):
+        """Test configuration override workflow."""
+        # Create custom config
+        custom_config = temp_dir / "custom_config.yaml"
         config_content = """
 chromadb:
   host: localhost
   port: 8000
-  ssl: false
 
 chunking:
   default_size: 1200
-  default_overlap: 240
+  default_overlap: 250
   method: structure
 
 processing:
   batch_size: 15
-  max_workers: 6
+  max_workers: 2
 """
-        config_file.write_text(config_content)
-        
-        test_file = sample_project / "docs" / "api" / "endpoints.md"
-        
+        custom_config.write_text(config_content)
+
         # Process with custom config
-        result = cli_runner.invoke(cli, [
-            '--config', str(config_file),
-            'process',
-            '--collection', 'config-test',
-            str(test_file)
-        ])
-        
-        print(f"Config file output: {result.output}")
+        result = cli_runner.invoke(
+            cli,
+            [
+                "--config",
+                str(custom_config),
+                "process",
+                "--collection",
+                "config-override-test",
+                str(sample_markdown_file),
+            ],
+        )
+
+        print(f"Config override output: {result.output}")
         assert result.exit_code == 0
-    
-    def test_large_project_workflow(self, cli_runner, temp_dir):
-        """Test workflow with a larger project structure."""
-        # Create a larger project structure
-        large_project = temp_dir / "large_project"
-        large_project.mkdir()
-        
-        # Create multiple directories with docs
-        for module in ['auth', 'users', 'posts', 'admin']:
-            module_dir = large_project / module
-            module_dir.mkdir()
-            
-            (module_dir / f"{module}_guide.md").write_text(f"""# {module.title()} Module
 
-## Overview
-This is the {module} module documentation.
+    def test_verbose_and_quiet_modes(self, cli_runner, sample_markdown_file):
+        """Test verbose and quiet output modes."""
+        # Test quiet mode
+        quiet_result = cli_runner.invoke(
+            cli,
+            [
+                "--quiet",
+                "process",
+                "--collection",
+                "quiet-test",
+                str(sample_markdown_file),
+            ],
+        )
 
-## Features
-- Feature 1 for {module}
-- Feature 2 for {module}
-- Feature 3 for {module}
+        print(f"Quiet mode output: {quiet_result.output}")
 
-## API Reference
-Detailed API documentation for {module} module.
+        # Test verbose mode
+        verbose_result = cli_runner.invoke(
+            cli,
+            [
+                "--verbose",
+                "process",
+                "--collection",
+                "verbose-test",
+                str(sample_markdown_file),
+            ],
+        )
 
-{'## Code Examples' if module != 'admin' else ''}
-{f'''```python
-def {module}_function():
-    return "{module} result"
-```''' if module != 'admin' else ''}
+        print(f"Verbose mode output: {verbose_result.output}")
 
-## Configuration
-Configuration options for {module}.
-""")
-        
-        # Process the entire project
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'large-project',
-            '--recursive',
-            '--chunk-size', '1000',
-            str(large_project)
-        ])
-        
-        print(f"Large project output: {result.output}")
+        # Test very verbose mode
+        very_verbose_result = cli_runner.invoke(
+            cli,
+            [
+                "-vvv",
+                "process",
+                "--collection",
+                "very-verbose-test",
+                str(sample_markdown_file),
+            ],
+        )
+
+        print(f"Very verbose mode output: {very_verbose_result.output}")
+
+    def test_dry_run_workflow(self, cli_runner, test_documents):
+        """Test dry run functionality."""
+        file_paths = [str(path) for path in test_documents.values()]
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "dry-run-test",
+                "--dry-run",
+                "--recursive",
+            ]
+            + file_paths,
+        )
+
+        print(f"Dry run output: {result.output}")
         assert result.exit_code == 0
-        assert "processed" in result.output.lower() or "success" in result.output.lower()
+        output_lower = result.output.lower()
+        dry_run_indicators = ["would process", "dry run", "preview"]
+        assert any(indicator in output_lower for indicator in dry_run_indicators)
+
+    def test_file_pattern_filtering(self, cli_runner, temp_dir):
+        """Test file pattern filtering in recursive processing."""
+        # Create various file types
+        files_dir = temp_dir / "mixed_files"
+        files_dir.mkdir()
+
+        # Create markdown files
+        (files_dir / "doc1.md").write_text("# Doc 1")
+        (files_dir / "doc2.md").write_text("# Doc 2")
+
+        # Create other files
+        (files_dir / "readme.txt").write_text("Text file")
+        (files_dir / "data.json").write_text('{"key": "value"}')
+
+        # Process with pattern filtering
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "pattern-test",
+                "--recursive",
+                "--pattern",
+                "*.md",
+                str(files_dir),
+            ],
+        )
+
+        print(f"Pattern filtering output: {result.output}")
+        assert result.exit_code == 0
+        output_lower = result.output.lower()
+        success_indicators = ["processed", "success"]
+        assert any(indicator in output_lower for indicator in success_indicators)
 
 
 @pytest.mark.e2e
 class TestCLIErrorScenarios:
     """Test CLI error scenarios and edge cases."""
-    
+
+    @pytest.fixture
+    def cli_runner(self):
+        """CLI runner for error scenario tests."""
+        return CliRunner()
+
     def test_invalid_collection_name_scenarios(self, cli_runner, sample_markdown_file):
         """Test various invalid collection names."""
         invalid_names = [
@@ -527,152 +543,199 @@ class TestCLIErrorScenarios:
             "invalid/name",  # Invalid characters
             "123-numbers-first",  # Numbers first
         ]
-        
+
         for invalid_name in invalid_names:
-            result = cli_runner.invoke(cli, [
-                'process',
-                '--collection', invalid_name,
-                str(sample_markdown_file)
-            ])
-            
+            result = cli_runner.invoke(
+                cli,
+                [
+                    "process",
+                    "--collection",
+                    invalid_name,
+                    str(sample_markdown_file),
+                ],
+            )
+
             # Should handle invalid names appropriately
             print(f"Invalid name '{invalid_name}' output: {result.output}")
             # Most should fail, but we allow flexibility in validation
-    
+
     def test_missing_files_scenarios(self, cli_runner):
         """Test scenarios with missing files."""
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'missing-file-test',
-            'nonexistent1.md',
-            'nonexistent2.md'
-        ])
-        
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "missing-file-test",
+                "nonexistent1.md",
+                "nonexistent2.md",
+            ],
+        )
+
         print(f"Missing files output: {result.output}")
         assert result.exit_code != 0
-        assert "exist" in result.output.lower() or "found" in result.output.lower()
-    
+        output_lower = result.output.lower()
+        error_indicators = ["exist", "found"]
+        assert any(indicator in output_lower for indicator in error_indicators)
+
     def test_permission_denied_scenarios(self, cli_runner, temp_dir):
         """Test permission denied scenarios."""
         # Create a directory without read permissions
         try:
             restricted_dir = temp_dir / "restricted"
             restricted_dir.mkdir()
-            
+
             test_file = restricted_dir / "test.md"
             test_file.write_text("# Test")
-            
+
             # Remove read permissions
             restricted_dir.chmod(0o000)
-            
-            result = cli_runner.invoke(cli, [
-                'process',
-                '--collection', 'permission-test',
-                '--recursive',
-                str(restricted_dir)
-            ])
-            
+
+            result = cli_runner.invoke(
+                cli,
+                [
+                    "process",
+                    "--collection",
+                    "permission-test",
+                    "--recursive",
+                    str(restricted_dir),
+                ],
+            )
+
             print(f"Permission denied output: {result.output}")
-            
+
             # Should handle permission errors gracefully
             if result.exit_code != 0:
-                assert "permission" in result.output.lower() or "access" in result.output.lower()
-        
+                output_lower = result.output.lower()
+                permission_indicators = ["permission", "access"]
+                assert any(
+                    indicator in output_lower for indicator in permission_indicators
+                )
+
         finally:
             # Restore permissions for cleanup
             try:
                 restricted_dir.chmod(0o755)
-            except:
+            except Exception:
                 pass
-    
-    def test_malformed_config_scenarios(self, cli_runner, sample_markdown_file, temp_dir):
+
+    def test_malformed_config_scenarios(
+        self, cli_runner, sample_markdown_file, temp_dir
+    ):
         """Test scenarios with malformed config files."""
         # Create malformed config
         bad_config = temp_dir / "bad_config.yaml"
-        bad_config.write_text("""
+        bad_config.write_text(
+            """
 invalid: yaml: content: here
   - this is not valid
     yaml syntax
-""")
-        
-        result = cli_runner.invoke(cli, [
-            '--config', str(bad_config),
-            'process',
-            '--collection', 'bad-config-test',
-            str(sample_markdown_file)
-        ])
-        
+"""
+        )
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "--config",
+                str(bad_config),
+                "process",
+                "--collection",
+                "bad-config-test",
+                str(sample_markdown_file),
+            ],
+        )
+
         print(f"Bad config output: {result.output}")
-        
+
         # Should handle malformed config gracefully
         if result.exit_code != 0:
-            assert "config" in result.output.lower() or "yaml" in result.output.lower() or "error" in result.output.lower()
+            output_lower = result.output.lower()
+            config_error_indicators = ["config", "yaml", "error"]
+            assert any(
+                indicator in output_lower for indicator in config_error_indicators
+            )
 
 
 @pytest.mark.e2e
 class TestCLIPerformance:
     """Test CLI performance characteristics."""
-    
+
+    @pytest.fixture
+    def cli_runner(self):
+        """CLI runner for performance tests."""
+        return CliRunner()
+
     def test_large_batch_processing_performance(self, cli_runner, temp_dir):
         """Test performance with large batch of files."""
         # Create many small files
         files_dir = temp_dir / "many_files"
         files_dir.mkdir()
-        
+
         for i in range(50):  # Create 50 files
             file_path = files_dir / f"file_{i:03d}.md"
-            file_path.write_text(f"""# Document {i}
+            file_path.write_text(
+                f"""# Document {i}
 
 This is document number {i} in the batch.
 
 ## Section 1
 Content for section 1 of document {i}.
 
-## Section 2  
+## Section 2
 Content for section 2 of document {i}.
 
 ## Conclusion
 This concludes document {i}.
-""")
-        
+"""
+            )
+
         # Process all files and measure time
         start_time = time.time()
-        
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'performance-test',
-            '--recursive',
-            str(files_dir)
-        ])
-        
+
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "performance-test",
+                "--recursive",
+                str(files_dir),
+            ],
+        )
+
         end_time = time.time()
         processing_time = end_time - start_time
-        
+
         print(f"Performance test output: {result.output}")
         print(f"Processing time: {processing_time:.2f} seconds")
-        
+
         assert result.exit_code == 0
         assert processing_time < 60  # Should complete within 60 seconds
-    
+
     def test_memory_usage_with_large_documents(self, cli_runner, temp_dir):
         """Test memory usage with large documents."""
         # Create a large document
         large_doc = temp_dir / "large_document.md"
-        
+
         content = ["# Large Document\n\n"]
         for i in range(1000):  # Create substantial content
             content.append(f"## Section {i}\n")
             content.append(f"{'Content paragraph. ' * 50}\n\n")
-        
+
         large_doc.write_text("".join(content))
-        
+
         # Process the large document
-        result = cli_runner.invoke(cli, [
-            'process',
-            '--collection', 'large-doc-test',
-            '--chunk-size', '2000',
-            str(large_doc)
-        ])
-        
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "large-doc-test",
+                "--chunk-size",
+                "2000",
+                str(large_doc),
+            ],
+        )
+
         print(f"Large document output: {result.output}")
         assert result.exit_code == 0

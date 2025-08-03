@@ -1,0 +1,84 @@
+name: Question
+description: Ask a question about shard-markdown
+title: "[Question]: "
+labels: ["question", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your question! Please provide as much detail as possible to help us give you the best answer.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-submission checklist
+      description: Please check the following before submitting
+      options:
+        - label: I have searched existing issues and discussions for similar questions
+          required: true
+        - label: I have read the README and documentation
+          required: true
+        - label: This is a question, not a bug report or feature request
+          required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: What's your question?
+      description: Ask your question clearly and provide context
+      placeholder: I'm trying to... but I'm not sure how to...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Question category
+      description: What category does your question fall into?
+      options:
+        - Installation and setup
+        - CLI usage
+        - Configuration
+        - ChromaDB integration
+        - Chunking strategies
+        - Performance optimization
+        - Troubleshooting
+        - Best practices
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Provide context about what you're trying to achieve
+      placeholder: I'm working on... and I need to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What have you tried?
+      description: Describe what you've already attempted
+      placeholder: I tried... but...
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (if relevant)
+      description: Provide environment details if relevant to your question
+      placeholder: |
+        - OS: [e.g. Ubuntu 22.04]
+        - Python version: [e.g. 3.11.0]
+        - shard-markdown version: [e.g. 0.1.0]
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add any other context that might help us answer your question
+      placeholder: Any additional information...

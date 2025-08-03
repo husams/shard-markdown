@@ -8,7 +8,7 @@ When setting up new Python CLI projects:
 4. Create basic CLI framework with argument parsing
 5. Set up development tools (pytest, black, flake8, mypy)
 
-## CLI Structure Developer  
+## CLI Structure Developer
 When developing command interfaces:
 1. Design intuitive command hierarchy and subcommands
 2. Implement robust argument parsing with validation
@@ -19,7 +19,7 @@ When developing command interfaces:
 ## Code Developer
 When implementing core logic:
 1. Implement clean, maintainable code with type hints
-2. Add comprehensive docstrings 
+2. Add comprehensive docstrings
 3. Handle errors and edge cases appropriately
 4. Follow Python best practices and PEP 8
 5. Ensure code is testable and modular

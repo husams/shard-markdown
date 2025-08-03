@@ -1,8 +1,8 @@
 # Technical Specifications
 ## Shard-Markdown CLI Utility
 
-**Document Version:** 1.0  
-**Date:** August 2, 2025  
+**Document Version:** 1.0
+**Date:** August 2, 2025
 **Related Document:** Product Requirements Document v1.0
 
 ---
@@ -80,7 +80,7 @@ chunking:
   respect_boundaries: true
   min_chunk_size: 50
   max_chunk_size: 10000
-  
+
 database:
   batch_size: 1000
   connection_timeout: 30
@@ -116,7 +116,7 @@ def find_optimal_split_point(text: str, target_position: int, max_distance: int 
 def calculate_overlap(chunk_size: int, overlap_size: int, boundary_type: str) -> tuple[int, int]:
     """
     Calculate optimal overlap start and end positions based on content boundaries.
-    
+
     Returns:
         tuple: (overlap_start_chars, overlap_end_chars)
     """
@@ -146,11 +146,11 @@ class ChunkMetadata(BaseModel):
     overlap_start: int = Field(description="Characters overlapping with previous chunk", ge=0)
     overlap_end: int = Field(description="Characters overlapping with next chunk", ge=0)
     language: Optional[str] = Field(description="Language code if detected", default=None)
-    
+
     # Additional metadata for advanced features
     hash_digest: str = Field(description="SHA-256 hash of content for deduplication")
     processing_version: str = Field(description="Version of processing algorithm used")
-    
+
 class DocumentMetadata(BaseModel):
     document_id: UUID = Field(description="Unique identifier for the document")
     file_path: str = Field(description="Original file path")
@@ -169,7 +169,7 @@ class CollectionManager:
     def __init__(self, db_path: str, collection_name: str):
         self.client = chromadb.PersistentClient(path=db_path)
         self.collection_name = collection_name
-        
+
     def get_or_create_collection(self) -> Collection:
         """Get existing collection or create new one with proper metadata."""
         metadata = {
@@ -177,7 +177,7 @@ class CollectionManager:
             "version": "1.0",
             "description": "Markdown document chunks for semantic search"
         }
-        
+
         try:
             collection = self.client.get_collection(
                 name=self.collection_name,
@@ -189,9 +189,9 @@ class CollectionManager:
                 metadata=metadata,
                 embedding_function=self._get_embedding_function()
             )
-        
+
         return collection
-    
+
     def _get_embedding_function(self):
         """Return appropriate embedding function for the collection."""
         # Default to sentence-transformers if available, otherwise use basic
@@ -204,19 +204,19 @@ class DocumentStore:
     def __init__(self, collection: Collection, batch_size: int = 1000):
         self.collection = collection
         self.batch_size = batch_size
-        
+
     def store_chunks(self, chunks: List[ChunkMetadata]) -> None:
         """Store chunks in batches for optimal performance."""
         for i in range(0, len(chunks), self.batch_size):
             batch = chunks[i:i + self.batch_size]
             self._store_batch(batch)
-    
+
     def _store_batch(self, chunks: List[ChunkMetadata]) -> None:
         """Store a single batch of chunks."""
         documents = [chunk.content for chunk in chunks]
         metadatas = [chunk.dict(exclude={'content'}) for chunk in chunks]
         ids = [str(chunk.chunk_id) for chunk in chunks]
-        
+
         self.collection.add(
             documents=documents,
             metadatas=metadatas,
@@ -265,7 +265,7 @@ class ErrorRecovery:
                     raise
                 delay = base_delay * (2 ** attempt)
                 time.sleep(delay)
-    
+
     @staticmethod
     def handle_partial_failure(chunks: List[ChunkMetadata], failed_chunks: List[int]):
         """Handle scenarios where some chunks fail to store."""
@@ -281,12 +281,12 @@ class ErrorRecovery:
 class MemoryEfficientProcessor:
     def __init__(self, max_memory_mb: int = 512):
         self.max_memory_mb = max_memory_mb
-        
+
     def process_large_file(self, file_path: str) -> Iterator[ChunkMetadata]:
         """Process large files using streaming approach."""
         # Use generators and streaming to minimize memory usage
         # Monitor memory usage and adjust processing accordingly
-        
+
     def estimate_memory_usage(self, file_size: int, chunk_size: int) -> int:
         """Estimate memory requirements for processing."""
         # Calculate expected memory usage based on file size and configuration
@@ -297,15 +297,15 @@ class MemoryEfficientProcessor:
 class PerformanceMonitor:
     def __init__(self):
         self.metrics = {}
-        
+
     def measure_processing_time(self, file_path: str, operation: str):
         """Decorator to measure operation performance."""
         # Implementation for timing operations
-        
+
     def track_memory_usage(self):
         """Monitor memory usage during processing."""
         # Implementation for memory monitoring
-        
+
     def generate_performance_report(self) -> dict:
         """Generate performance summary report."""
         return {
@@ -332,13 +332,13 @@ class PerformanceMonitor:
 class IntegrationTests:
     def test_end_to_end_processing(self):
         """Test complete workflow from CLI to database storage."""
-        
+
     def test_large_file_processing(self):
         """Test processing of 50MB+ markdown files."""
-        
+
     def test_concurrent_processing(self):
         """Test multiple instances processing different files."""
-        
+
     def test_error_recovery(self):
         """Test recovery from various failure scenarios."""
 ```
@@ -363,7 +363,7 @@ class SecurityValidator:
         # Check for path traversal attacks
         # Validate file extensions
         # Check file permissions
-        
+
     @staticmethod
     def sanitize_content(content: str) -> str:
         """Sanitize content if required."""

@@ -11,7 +11,7 @@ graph TD
     %% Phase 1: Project Setup
     SETUP-001[Environment Setup] --> SETUP-002[Package Structure]
     SETUP-002 --> SETUP-003[Configuration Management]
-    
+
     %% Phase 2: Core Components
     SETUP-003 --> CORE-001[Markdown Parser]
     CORE-001 --> CORE-002[Structure-Aware Chunking]
@@ -19,13 +19,13 @@ graph TD
     CORE-001 --> CORE-004[Metadata Extraction]
     CORE-002 --> CORE-005[Document Processor]
     CORE-004 --> CORE-005
-    
+
     %% Phase 3: ChromaDB Integration
     SETUP-003 --> CHROMA-001[ChromaDB Client]
     CHROMA-001 --> CHROMA-002[Collection Management]
     CHROMA-002 --> CHROMA-003[Document Storage]
     CORE-005 --> CHROMA-003
-    
+
     %% Phase 4: CLI Interface
     SETUP-002 --> CLI-001[CLI Framework]
     CLI-001 --> CLI-002[Process Command]
@@ -33,30 +33,30 @@ graph TD
     CLI-001 --> CLI-004[Query Commands]
     CLI-001 --> CLI-005[Config Commands]
     CLI-001 --> CLI-006[Utility Commands]
-    
+
     CORE-005 --> CLI-002
     CHROMA-003 --> CLI-002
     CHROMA-002 --> CLI-003
     CHROMA-003 --> CLI-004
     SETUP-003 --> CLI-005
     CORE-002 --> CLI-006
-    
+
     %% Phase 5: Error Handling
     CORE-001 --> ERROR-001[Error Framework]
     ERROR-001 --> ERROR-002[Logging System]
     CLI-001 --> ERROR-003[Progress Tracking]
-    
+
     %% Phase 6: Testing
     CORE-005 --> TEST-001[Unit Tests]
     CHROMA-003 --> TEST-002[Integration Tests]
     CLI-002 --> TEST-002
     CLI-006 --> TEST-003[E2E Tests]
     TEST-001 --> TEST-004[Performance Tests]
-    
+
     %% Phase 7: Documentation
     CORE-005 --> DOC-001[API Documentation]
     CLI-006 --> DOC-002[User Documentation]
-    
+
     %% Phase 8: Deployment
     PKG-001[Package Distribution] --> DEPLOY-001[CI/CD Pipeline]
     TEST-003 --> DEPLOY-001
@@ -230,21 +230,21 @@ Add additional developers for:
 ## Risk Mitigation Through Dependencies
 
 ### ChromaDB Integration Risk
-**Risk**: ChromaDB API changes or connection issues  
-**Mitigation**: 
+**Risk**: ChromaDB API changes or connection issues
+**Mitigation**:
 - Start CHROMA-001 early to identify issues
 - Implement mock ChromaDB client for testing
 - Design abstraction layer for database operations
 
 ### Performance Risk
-**Risk**: Chunking algorithms may be too slow for large documents  
+**Risk**: Chunking algorithms may be too slow for large documents
 **Mitigation**:
 - Implement TEST-004 (performance tests) immediately after CORE-002
 - Profile memory usage during CORE-005 development
 - Parallel implementation of CORE-003 for algorithm alternatives
 
 ### CLI Usability Risk
-**Risk**: CLI interface may not meet user expectations  
+**Risk**: CLI interface may not meet user expectations
 **Mitigation**:
 - Implement CLI-006 (preview/validate) early for user feedback
 - Prioritize ERROR-003 (progress tracking) for better UX
@@ -277,7 +277,7 @@ Add additional developers for:
 
 ### Phase Completion Gates
 
-**Phase 1 Gate**: 
+**Phase 1 Gate**:
 - ✅ Package can be installed and imported
 - ✅ Basic CLI entry point works (`shard-md --version`)
 - ✅ Configuration loads from file and environment

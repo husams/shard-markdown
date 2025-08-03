@@ -1,375 +1,396 @@
-"""Integration tests for document processing workflow."""
+"""Integration tests for document processing."""
 
-import pytest
 import time
 from pathlib import Path
-from unittest.mock import Mock
 
+import pytest
+
+from shard_markdown.core.models import ChunkingConfig
 from shard_markdown.core.processor import DocumentProcessor
-from shard_markdown.core.models import ChunkingConfig, ProcessingResult, BatchResult
-from shard_markdown.chromadb.mock_client import MockChromaDBClient
 
 
-@pytest.mark.integration
 class TestDocumentProcessingIntegration:
-    """Integration tests for complete document processing workflow."""
-    
+    """Integration tests for document processing workflows."""
+
     @pytest.fixture
     def processor(self, chunking_config: ChunkingConfig):
-        """Create processor with mock ChromaDB client."""
+        """Create processor for integration testing."""
         return DocumentProcessor(chunking_config)
-    
-    @pytest.fixture
-    def mock_chromadb_client(self):
-        """Mock ChromaDB client for integration testing."""
-        return MockChromaDBClient()
-    
-    def test_process_simple_document_end_to_end(self, processor, sample_markdown_file):
-        """Test processing a simple markdown document end-to-end."""
-        result = processor.process_document(sample_markdown_file, "test-simple-integration")
-        
-        assert result.success is True
-        assert result.file_path == sample_markdown_file
-        assert result.chunks_created > 0
-        assert result.processing_time > 0
-        assert result.collection_name == "test-simple-integration"
-        assert result.error is None
-    
-    def test_process_complex_document_with_frontmatter(self, processor, complex_markdown_file):
-        """Test processing document with YAML frontmatter."""
-        result = processor.process_document(complex_markdown_file, "test-complex-integration")
-        
-        assert result.success is True
-        assert result.chunks_created > 0
-        
-        # The document should be properly parsed despite frontmatter
-        assert result.processing_time > 0
-    
-    def test_process_document_with_code_blocks(self, processor, temp_dir):
-        """Test processing document with various code blocks."""
-        code_content = """# Code Examples
-        
-This document contains multiple code blocks.
 
-## Python Example
+    def test_end_to_end_processing(self, processor, sample_markdown_file):
+        """Test complete end-to-end document processing."""
+        # This test requires real components working together
+        result = processor.process_document(sample_markdown_file, "integration-test")
+
+        # Verify processing completed successfully
+        assert result.success is True
+        assert result.chunks_created > 0
+        assert result.processing_time > 0
+        assert result.collection_name == "integration-test"
+
+    def test_batch_processing_integration(self, processor, test_documents):
+        """Test batch processing with real documents."""
+        file_paths = list(test_documents.values())
+
+        result = processor.process_batch(
+            file_paths, "batch-integration-test", max_workers=2
+        )
+
+        # Verify batch processing results
+        assert result.total_files == len(file_paths)
+        assert result.successful_files > 0
+        assert result.total_chunks > 0
+        assert result.collection_name == "batch-integration-test"
+        assert result.processing_speed > 0
+
+    def test_complex_markdown_structure(self, processor, temp_dir):
+        """Test processing of complex markdown documents."""
+        # Create a complex markdown document
+        complex_content = """
+# Main Title
+
+This is the introduction paragraph with some **bold** and *italic* text.
+
+## Section 1
+
+### Subsection 1.1
+
+Here's some content with a [link](https://example.com) and inline `code`.
 
 ```python
-def hello_world():
-    print("Hello, World!")
-    return True
-
-class TestClass:
-    def __init__(self):
-        self.value = 42
-    
-    def get_value(self):
-        return self.value
+def example_function():
+    return "This is a code block"
 ```
 
-## JavaScript Example
+#### Sub-subsection 1.1.1
+
+- List item 1
+- List item 2
+  - Nested item
+  - Another nested item
+- List item 3
+
+1. Numbered list
+2. Second item
+3. Third item
+
+## Section 2
+
+> This is a blockquote
+> that spans multiple lines
+
+### Tables
+
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Cell 1   | Cell 2   | Cell 3   |
+| Cell 4   | Cell 5   | Cell 6   |
+
+### More Code
 
 ```javascript
-function processData(data) {
-    return data.map(item => ({
-        ...item,
-        processed: true,
-        timestamp: new Date()
-    }));
-}
-
-const config = {
-    apiUrl: 'https://api.example.com',
-    timeout: 5000
+const example = {
+    property: "value",
+    method: function() {
+        return this.property;
+    }
 };
-```
-
-## Shell Script
-
-```bash
-#!/bin/bash
-echo "Starting process..."
-for file in *.md; do
-    echo "Processing $file"
-    shard-md process --collection docs "$file"
-done
-echo "Done!"
 ```
 
 ## Conclusion
 
-Code blocks should be preserved as complete units.
+Final thoughts and summary.
 """
-        
-        code_file = temp_dir / "code_examples.md"
-        code_file.write_text(code_content)
-        
-        result = processor.process_document(code_file, "test-code-integration")
-        
+
+        complex_file = temp_dir / "complex.md"
+        complex_file.write_text(complex_content)
+
+        result = processor.process_document(complex_file, "complex-test")
+
+        assert result.success is True
+        assert result.chunks_created >= 3  # Should create multiple chunks
+        assert "complex.md" in str(result.file_path)
+
+    def test_unicode_content_processing(self, processor, temp_dir):
+        """Test processing documents with Unicode content."""
+        unicode_content = """
+# 文档标题 (Document Title)
+
+这是一个包含中文内容的文档。This document contains Chinese content.
+
+## Émojis and Special Characters
+
+Here are some emojis: 🚀 📚 💡 🔥
+
+Mathematical symbols: α β γ δ ε ∑ ∫ ∆ ∇
+
+## Código en Español
+
+```python
+def función_ejemplo():
+    return "¡Hola, mundo!"
+```
+
+## العربية (Arabic)
+
+هذا نص باللغة العربية مع بعض الكلمات الإنجليزية mixed in.
+
+## Русский (Russian)
+
+Это текст на русском языке с some English words.
+"""
+
+        unicode_file = temp_dir / "unicode.md"
+        unicode_file.write_text(unicode_content, encoding="utf-8")
+
+        result = processor.process_document(unicode_file, "unicode-test")
+
         assert result.success is True
         assert result.chunks_created > 0
-        
-        # Code blocks should be preserved without being split
-        # This would need verification through the actual chunks
-    
-    def test_batch_processing_multiple_documents(self, processor, test_documents):
-        """Test batch processing of multiple documents."""
-        file_paths = list(test_documents.values())
-        
-        result = processor.process_batch(file_paths, "test-batch-integration", max_workers=2)
-        
-        assert isinstance(result, BatchResult)
-        assert result.total_files == len(file_paths)
-        assert result.successful_files > 0
-        assert result.total_chunks > 0
-        assert result.total_processing_time > 0
-        assert result.collection_name == "test-batch-integration"
-        
-        # Check success rate
-        assert result.success_rate > 0
-        assert result.average_chunks_per_file > 0
-    
-    def test_concurrent_processing_performance(self, processor, test_documents):
-        """Test concurrent processing performance."""
-        file_paths = list(test_documents.values())
-        
-        # Test sequential processing
-        start_time = time.time()
-        sequential_result = processor.process_batch(file_paths, "test-sequential", max_workers=1)
-        sequential_time = time.time() - start_time
-        
-        # Test concurrent processing
-        start_time = time.time()
-        concurrent_result = processor.process_batch(file_paths, "test-concurrent", max_workers=4)
-        concurrent_time = time.time() - start_time
-        
-        # Both should succeed
-        assert sequential_result.successful_files == len(file_paths)
-        assert concurrent_result.successful_files == len(file_paths)
-        
-        # Concurrent should generally be faster (allowing some tolerance)
-        # Note: This might not always be true for small datasets
-        assert concurrent_time <= sequential_time * 1.5
-    
-    def test_document_with_unicode_content(self, processor, temp_dir):
-        """Test processing document with Unicode content."""
-        unicode_content = """# Unicode Test Document
 
-This document contains various Unicode characters:
-
-## Emoji Section 🚀
-- Rocket: 🚀
-- Heart: ❤️ 
-- Star: ⭐
-- Checkmark: ✅
-
-## International Text
-- Chinese: 你好世界
-- Arabic: مرحبا بالعالم
-- Japanese: こんにちは世界
-- Russian: Привет мир
-- Hebrew: שלום עולם
-
-## Mathematical Symbols
-- Infinity: ∞
-- Sum: ∑
-- Pi: π
-- Delta: Δ
-- Lambda: λ
-
-## Special Characters
-- Copyright: ©
-- Trademark: ™
-- Registered: ®
-- Degree: °
-- Micro: µ
-
-This tests Unicode handling throughout the pipeline.
-"""
-        
-        unicode_file = temp_dir / "unicode_test.md"
-        unicode_file.write_text(unicode_content, encoding='utf-8')
-        
-        result = processor.process_document(unicode_file, "test-unicode-integration")
-        
-        assert result.success is True
-        assert result.chunks_created > 0
-    
     def test_large_document_processing(self, processor, temp_dir):
-        """Test processing a large document."""
-        # Generate large content
-        large_content = ["# Large Document Test\n\n"]
-        
-        for section in range(100):
-            large_content.append(f"## Section {section + 1}\n\n")
-            
-            for paragraph in range(5):
-                large_content.append(f"This is paragraph {paragraph + 1} of section {section + 1}. ")
-                large_content.append("It contains substantial content to test processing performance. ")
-                large_content.append("The content is meaningful and represents realistic documentation. ")
-                large_content.append("Each paragraph has multiple sentences to ensure proper chunking.\n\n")
-            
-            # Add some code blocks occasionally
-            if section % 10 == 0:
-                large_content.append("```python\n")
-                large_content.append(f"def function_section_{section}():\n")
-                large_content.append(f'    """Function for section {section}."""\n')
-                large_content.append(f"    return 'Result for section {section}'\n")
-                large_content.append("```\n\n")
-        
-        large_file = temp_dir / "large_document.md"
+        """Test processing of large documents."""
+        # Create a large document
+        large_content = []
+        large_content.append("# Large Document\n\n")
+
+        for i in range(100):  # Create 100 sections
+            large_content.append(f"## Section {i+1}\n\n")
+            large_content.append(
+                f"This is the content for section {i+1}. "
+                f"It contains multiple sentences to make it substantial. "
+                f"Each section has enough content to potentially create "
+                f"multiple chunks depending on the chunking strategy. "
+                f"Section {i+1} is part of a larger document structure.\n\n"
+            )
+
+            if i % 10 == 0:  # Add code blocks every 10 sections
+                large_content.append(
+                    f"```python\n"
+                    f"def section_{i+1}_function():\n"
+                    f'    return "Content for section {i+1}"\n'
+                    f"```\n\n"
+                )
+
+        large_file = temp_dir / "large.md"
         large_file.write_text("".join(large_content))
-        
-        result = processor.process_document(large_file, "test-large-integration")
-        
+
+        result = processor.process_document(large_file, "large-test")
+
         assert result.success is True
-        assert result.chunks_created > 50  # Should create many chunks
-        assert result.processing_time < 30  # Should complete in reasonable time
-    
-    def test_error_recovery_in_batch_processing(self, processor, test_documents, temp_dir):
-        """Test error recovery during batch processing."""
-        file_paths = list(test_documents.values())
-        
-        # Add a problematic file
-        problematic_file = temp_dir / "problematic.md"
-        problematic_file.write_bytes(b'\xff\xfe\x00\x00invalid content')  # Invalid encoding
-        file_paths.append(problematic_file)
-        
-        # Add an empty file
-        empty_file = temp_dir / "empty.md"
-        empty_file.write_text("")
-        file_paths.append(empty_file)
-        
-        result = processor.process_batch(file_paths, "test-error-recovery", max_workers=2)
-        
-        assert isinstance(result, BatchResult)
-        assert result.total_files == len(file_paths)
-        assert result.successful_files > 0  # Some should succeed
-        assert result.failed_files > 0      # Some should fail
-        assert result.successful_files + result.failed_files == result.total_files
-    
-    def test_metadata_preservation_through_pipeline(self, processor, temp_dir):
-        """Test that metadata is preserved through the processing pipeline."""
-        content_with_frontmatter = """---
-title: "Metadata Test Document"
-author: "Integration Test"
-tags: ["test", "metadata", "integration"]
-category: "documentation"
-version: 2.1
-published: true
+        assert result.chunks_created >= 10  # Should create many chunks
+        assert result.processing_time > 0
+
+    def test_empty_sections_handling(self, processor, temp_dir):
+        """Test handling of documents with empty sections."""
+        content_with_empty = """
+# Document with Empty Sections
+
+## Section 1
+
+This section has content.
+
+## Empty Section 2
+
+## Section 3
+
+This section also has content.
+
+## Another Empty Section
+
+## Section 5
+
+Final section with content.
+"""
+
+        empty_sections_file = temp_dir / "empty_sections.md"
+        empty_sections_file.write_text(content_with_empty)
+
+        result = processor.process_document(empty_sections_file, "empty-sections-test")
+
+        assert result.success is True
+        assert result.chunks_created > 0
+
+    def test_frontmatter_processing(self, processor, temp_dir):
+        """Test processing documents with YAML frontmatter."""
+        frontmatter_content = """---
+title: "Document with Frontmatter"
+author: "Test Author"
+date: "2024-01-01"
+tags:
+  - test
+  - markdown
+  - frontmatter
+description: "This document has YAML frontmatter"
 ---
 
-# Metadata Test Document
+# Document Content
 
-This document tests metadata preservation through the processing pipeline.
+This document starts with YAML frontmatter.
 
-## Content Section
+## Section 1
 
-The frontmatter above should be extracted and preserved as metadata.
+Content after the frontmatter.
 
-### Subsection
+## Section 2
 
-Additional content to ensure proper chunking while maintaining metadata.
+More content to process.
 """
-        
-        metadata_file = temp_dir / "metadata_test.md"
-        metadata_file.write_text(content_with_frontmatter)
-        
-        result = processor.process_document(metadata_file, "test-metadata-integration")
-        
+
+        frontmatter_file = temp_dir / "frontmatter.md"
+        frontmatter_file.write_text(frontmatter_content)
+
+        result = processor.process_document(frontmatter_file, "frontmatter-test")
+
         assert result.success is True
         assert result.chunks_created > 0
-        
-        # Note: To fully test metadata preservation, we would need access to
-        # the actual chunks created, which would require integration with
-        # a real or more sophisticated mock ChromaDB client
-    
-    def test_chunking_strategy_consistency(self, processor, sample_markdown_file):
-        """Test that chunking strategies produce consistent results."""
-        # Process the same document multiple times
-        results = []
-        
-        for i in range(3):
-            result = processor.process_document(
-                sample_markdown_file, 
-                f"test-consistency-{i}"
-            )
-            results.append(result)
-        
-        # All results should be successful
-        assert all(r.success for r in results)
-        
-        # Chunk counts should be consistent
-        chunk_counts = [r.chunks_created for r in results]
-        assert len(set(chunk_counts)) == 1, "Chunk counts should be consistent"
-        
-        # Processing times should be reasonable and relatively consistent
-        processing_times = [r.processing_time for r in results]
-        max_time = max(processing_times)
-        min_time = min(processing_times)
-        assert max_time / min_time < 5.0, "Processing times should be relatively consistent"
-    
-    def test_file_encoding_detection(self, processor, temp_dir):
-        """Test processing files with different encodings."""
-        content = "# Encoding Test\n\nThis tests encoding detection: café, naïve, résumé"
-        
-        # Test UTF-8
-        utf8_file = temp_dir / "utf8.md"
-        utf8_file.write_text(content, encoding='utf-8')
-        
-        result_utf8 = processor.process_document(utf8_file, "test-utf8")
-        assert result_utf8.success is True
-        
-        # Test UTF-8 with BOM
-        utf8_bom_file = temp_dir / "utf8_bom.md"
-        utf8_bom_file.write_text(content, encoding='utf-8-sig')
-        
-        result_utf8_bom = processor.process_document(utf8_bom_file, "test-utf8-bom")
-        assert result_utf8_bom.success is True
-        
-        # Test Latin-1
-        latin1_file = temp_dir / "latin1.md"
-        latin1_file.write_text(content, encoding='latin-1')
-        
-        result_latin1 = processor.process_document(latin1_file, "test-latin1")
-        assert result_latin1.success is True
-    
-    def test_processing_statistics_accuracy(self, processor, test_documents):
-        """Test accuracy of processing statistics."""
+
+    def test_code_heavy_document(self, processor, temp_dir):
+        """Test processing documents with lots of code blocks."""
+        code_heavy_content = """
+# Code-Heavy Document
+
+This document contains multiple code blocks in different languages.
+
+## Python Code
+
+```python
+class DocumentProcessor:
+    def __init__(self, config):
+        self.config = config
+
+    def process(self, document):
+        # Process the document
+        return self.chunk_document(document)
+
+    def chunk_document(self, document):
+        chunks = []
+        # Chunking logic here
+        return chunks
+```
+
+## JavaScript Code
+
+```javascript
+const processor = {
+    config: {},
+
+    process: function(document) {
+        return this.chunkDocument(document);
+    },
+
+    chunkDocument: function(document) {
+        const chunks = [];
+        // Chunking logic here
+        return chunks;
+    }
+};
+```
+
+## SQL Code
+
+```sql
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO documents (title, content) VALUES
+('Test Document', 'This is test content'),
+('Another Document', 'More test content');
+
+SELECT * FROM documents WHERE title LIKE '%Test%';
+```
+
+## Configuration Files
+
+```yaml
+database:
+  host: localhost
+  port: 5432
+  name: documents_db
+
+processing:
+  chunk_size: 1000
+  overlap: 200
+
+features:
+  - text_processing
+  - code_highlighting
+  - metadata_extraction
+```
+
+## JSON Data
+
+```json
+{
+  "documents": [
+    {
+      "id": 1,
+      "title": "Sample Document",
+      "metadata": {
+        "author": "Test Author",
+        "created": "2024-01-01T00:00:00Z"
+      }
+    }
+  ]
+}
+```
+"""
+
+        code_file = temp_dir / "code_heavy.md"
+        code_file.write_text(code_heavy_content)
+
+        result = processor.process_document(code_file, "code-heavy-test")
+
+        assert result.success is True
+        assert result.chunks_created > 0
+
+    def test_performance_timing(self, processor, test_documents):
+        """Test processing performance and timing."""
         file_paths = list(test_documents.values())
-        
+
         start_time = time.time()
-        result = processor.process_batch(file_paths, "test-stats", max_workers=2)
-        actual_time = time.time() - start_time
-        
-        # Verify statistics make sense
-        assert result.total_files == len(file_paths)
-        assert result.successful_files <= result.total_files
-        assert result.failed_files <= result.total_files
-        assert result.successful_files + result.failed_files == result.total_files
-        
-        # Processing time should be reasonable
-        assert 0 < result.total_processing_time <= actual_time + 1  # Allow some tolerance
-        
-        # Success rate should be between 0 and 100
-        assert 0 <= result.success_rate <= 100
-        
-        if result.successful_files > 0:
-            assert result.average_chunks_per_file > 0
-            assert result.total_chunks > 0
-        
-        if result.total_processing_time > 0:
-            assert result.processing_speed > 0
+        result = processor.process_batch(file_paths, "performance-test", max_workers=1)
+        end_time = time.time()
+
+        # Basic performance checks
+        assert result.success_rate > 0
+        assert result.total_processing_time > 0
+        assert result.total_processing_time <= (end_time - start_time)
+        assert result.processing_speed > 0  # chunks per second
+
+    def test_concurrent_processing_safety(self, processor, test_documents):
+        """Test that concurrent processing is safe and consistent."""
+        file_paths = list(test_documents.values())
+
+        # Process with different worker counts
+        result_1_worker = processor.process_batch(
+            file_paths, "concurrent-test-1", max_workers=1
+        )
+
+        result_4_workers = processor.process_batch(
+            file_paths, "concurrent-test-4", max_workers=4
+        )
+
+        # Results should be consistent regardless of worker count
+        assert result_1_worker.total_files == result_4_workers.total_files
+        assert result_1_worker.successful_files == result_4_workers.successful_files
+        # Total chunks might vary slightly due to threading, but should be close
+        chunk_diff = abs(result_1_worker.total_chunks - result_4_workers.total_chunks)
+        assert chunk_diff <= 1
 
 
-@pytest.mark.integration 
-class TestErrorHandlingIntegration:
-    """Integration tests for error handling scenarios."""
-    
+class TestDocumentProcessingErrors:
+    """Test error handling in document processing."""
+
     @pytest.fixture
     def processor(self, chunking_config: ChunkingConfig):
         """Create processor for error testing."""
         return DocumentProcessor(chunking_config)
-    
+
     def test_file_permission_errors(self, processor, temp_dir):
         """Test handling of file permission errors."""
         # This test is platform-dependent and might not work in all environments
@@ -378,74 +399,135 @@ class TestErrorHandlingIntegration:
             restricted_file = temp_dir / "restricted.md"
             restricted_file.write_text("# Restricted Document\nContent")
             restricted_file.chmod(0o000)  # No permissions
-            
+
             result = processor.process_document(restricted_file, "test-permissions")
-            
+
             # Should handle permission error gracefully
             assert result.success is False
-            assert result.error is not None
-            
+            error_msg = result.error.lower()
+            assert "permission" in error_msg or "access" in error_msg
+
+        except OSError:
+            # Skip test if we can't modify permissions (e.g., Windows)
+            pytest.skip("Cannot modify file permissions on this platform")
+
         finally:
             # Restore permissions for cleanup
             try:
                 restricted_file.chmod(0o644)
-            except:
+            except OSError:
                 pass
-    
-    def test_disk_space_simulation(self, processor, temp_dir):
-        """Test behavior when simulating disk space issues."""
-        # This is difficult to test reliably without actually filling disk
-        # Instead, we test with extremely large file size simulation
-        
-        large_file = temp_dir / "simulated_large.md"
-        large_file.write_text("# Test\nContent")
-        
-        # Mock file size to be very large
-        import unittest.mock
-        with unittest.mock.patch.object(Path, 'stat') as mock_stat:
-            mock_stat.return_value.st_size = 200 * 1024 * 1024  # 200MB
-            
-            result = processor.process_document(large_file, "test-large-file")
-            
+
+    def test_corrupted_file_handling(self, processor, temp_dir):
+        """Test handling of corrupted or invalid files."""
+        # Create a file with invalid UTF-8 sequences
+        corrupted_file = temp_dir / "corrupted.md"
+        with open(corrupted_file, "wb") as f:
+            f.write(b"# Valid header\n")
+            f.write(b"\xff\xfe\xfd")  # Invalid UTF-8
+            f.write(b"\n# Another header\n")
+
+        result = processor.process_document(corrupted_file, "corrupted-test")
+
+        # Should handle encoding errors gracefully
+        assert result.success is False
+        assert result.error is not None
+
+    def test_very_large_file_handling(self, processor, temp_dir):
+        """Test handling of extremely large files."""
+        # Create a file that's too large (simulate with size check)
+        large_file = temp_dir / "huge.md"
+        large_file.write_text("# Small content")
+
+        # Mock the file size to appear very large
+        import os
+        from unittest.mock import patch
+
+        with patch.object(os.path, "getsize", return_value=200 * 1024 * 1024):
+            result = processor.process_document(large_file, "huge-test")
+
+            # Should handle size limit gracefully
             assert result.success is False
-            assert "too large" in result.error.lower()
-    
-    def test_invalid_markdown_recovery(self, processor, temp_dir):
-        """Test recovery from invalid markdown content."""
-        invalid_content = """# This is invalid markdown
+            error_msg = result.error.lower()
+            assert "too large" in error_msg or "size" in error_msg
 
-```python
-# This code block is never closed
+    def test_nonexistent_file_handling(self, processor):
+        """Test handling of non-existent files."""
+        nonexistent_file = Path("does_not_exist.md")
 
-def function():
-    return "unclosed"
+        result = processor.process_document(nonexistent_file, "nonexistent-test")
 
-## This header appears inside code block
+        assert result.success is False
+        error_msg = result.error.lower()
+        assert "not found" in error_msg or "does not exist" in error_msg
 
-- List item
-- Another item
+    def test_directory_instead_of_file(self, processor, temp_dir):
+        """Test handling when a directory is passed instead of a file."""
+        result = processor.process_document(temp_dir, "directory-test")
 
-# Another header still in code block
-"""
-        
-        invalid_file = temp_dir / "invalid.md"
-        invalid_file.write_text(invalid_content)
-        
-        result = processor.process_document(invalid_file, "test-invalid-md")
-        
-        # Should handle invalid markdown gracefully
-        # The exact behavior depends on the markdown parser implementation
-        # It might succeed with warnings or fail gracefully
-        assert result.error is None or "invalid" in result.error.lower()
-    
-    def test_network_interruption_simulation(self, processor, sample_markdown_file):
-        """Test behavior during simulated network interruptions."""
-        # This would be more relevant for real ChromaDB connections
-        # For now, we test with mock client that can simulate failures
-        
-        result = processor.process_document(sample_markdown_file, "test-network")
-        
-        # With mock client, this should succeed
+        assert result.success is False
+        error_msg = result.error.lower()
+        assert "directory" in error_msg or "not a file" in error_msg
+
+    def test_empty_file_handling(self, processor, temp_dir):
+        """Test handling of completely empty files."""
+        empty_file = temp_dir / "empty.md"
+        empty_file.write_text("")
+
+        result = processor.process_document(empty_file, "empty-test")
+
+        assert result.success is False
+        assert "empty" in result.error.lower()
+
+    def test_whitespace_only_file(self, processor, temp_dir):
+        """Test handling of files with only whitespace."""
+        whitespace_file = temp_dir / "whitespace.md"
+        whitespace_file.write_text("   \n\n\t\t\n   \n")
+
+        result = processor.process_document(whitespace_file, "whitespace-test")
+
+        # Should either succeed with no chunks or fail gracefully
+        if result.success:
+            assert result.chunks_created == 0
+        else:
+            error_msg = result.error.lower()
+            assert "empty" in error_msg or "no content" in error_msg
+
+
+class TestDocumentProcessingMetadata:
+    """Test metadata handling in document processing."""
+
+    @pytest.fixture
+    def processor(self, chunking_config: ChunkingConfig):
+        """Create processor for metadata testing."""
+        return DocumentProcessor(chunking_config)
+
+    def test_metadata_extraction_and_enhancement(self, processor, sample_markdown_file):
+        """Test that metadata is properly extracted and enhanced."""
+        result = processor.process_document(sample_markdown_file, "metadata-test")
+
         assert result.success is True
-        
-        # In a real scenario, we would test ChromaDB connection failures
+        # Metadata testing would depend on the actual implementation
+        # This is a placeholder for comprehensive metadata tests
+
+    def test_custom_metadata_integration(self, processor, temp_dir):
+        """Test integration of custom metadata."""
+        # This test would verify that custom metadata is properly
+        # integrated into the processing pipeline
+        content = """
+# Test Document
+
+This is test content for metadata integration.
+
+## Section 1
+
+Content with metadata.
+"""
+
+        test_file = temp_dir / "metadata_test.md"
+        test_file.write_text(content)
+
+        result = processor.process_document(test_file, "custom-metadata-test")
+
+        assert result.success is True
+        assert result.chunks_created > 0

@@ -1,389 +1,366 @@
 """Pytest configuration and fixtures."""
 
-import json
 import tempfile
 from pathlib import Path
-from typing import Dict, Generator, List
 from unittest.mock import Mock
 
 import pytest
 from click.testing import CliRunner
 
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.core.models import ChunkingConfig, DocumentChunk, MarkdownAST, MarkdownElement
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
+from shard_markdown.config.settings import AppConfig, ChromaDBConfig
+from shard_markdown.core.models import ChunkingConfig, DocumentChunk, ProcessingResult
 
 
 @pytest.fixture
-def temp_dir() -> Generator[Path, None, None]:
-    """Create a temporary directory for tests."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        yield Path(temp_dir)
+def temp_dir():
+    """Create temporary directory for test files."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
 
 
 @pytest.fixture
-def cli_runner() -> CliRunner:
-    """Click CLI test runner."""
-    return CliRunner()
+def sample_markdown_file(temp_dir):
+    """Create sample markdown file for testing."""
+    content = """
+# Sample Document
 
-
-@pytest.fixture
-def sample_markdown_content() -> str:
-    """Sample markdown content for testing."""
-    return """# Main Title
-
-This is the introduction paragraph.
+This is a sample markdown document for testing purposes.
 
 ## Section 1
 
-This is a paragraph in section 1 with some content.
+Here's some content in section 1.
 
 ### Subsection 1.1
 
-More content here with **bold** and *italic* text.
-
-```python
-def hello_world():
-    print("Hello, World!")
-```
+More detailed content here.
 
 ## Section 2
 
-Another section with different content.
-
-- List item 1
-- List item 2
-- List item 3
-
-Final paragraph with some concluding thoughts.
-"""
-
-
-@pytest.fixture
-def complex_markdown_content() -> str:
-    """Complex markdown content with frontmatter for testing."""
-    return """---
-title: "Complex Document"
-author: "Test Author"
-tags: ["test", "complex", "markdown"]
-description: "A complex document for testing purposes"
----
-
-# Complex Document
-
-This document contains various markdown elements for comprehensive testing.
-
-## Introduction
-
-This is the introduction section with **bold** and *italic* text.
-
-### Features
-
-The document includes:
-
-1. Ordered lists
-2. Code blocks
-3. Tables
-4. Nested sections
-
-## Code Examples
-
-Here's a Python example:
+Different content in section 2.
 
 ```python
-def complex_function(param1: str, param2: int) -> bool:
-    \"\"\"A complex function with type hints.\"\"\"
-    if param2 > 0:
-        print(f"Processing: {param1}")
-        return True
-    return False
+def example_function():
+    return "Hello, World!"
 ```
-
-And some JavaScript:
-
-```javascript
-function processData(data) {
-    return data.map(item => ({
-        ...item,
-        processed: true
-    }));
-}
-```
-
-## Data Table
-
-| Feature | Support | Notes |
-|---------|---------|-------|
-| Headers | Yes | All levels |
-| Code | Yes | Multiple languages |
-| Lists | Yes | Ordered and unordered |
 
 ## Conclusion
 
-This concludes our complex document example.
+That's the end of our sample document.
 """
+
+    file_path = temp_dir / "sample.md"
+    file_path.write_text(content.strip())
+    return file_path
 
 
 @pytest.fixture
-def frontmatter_document() -> str:
-    """Document with YAML frontmatter."""
-    return """---
+def markdown_with_frontmatter(temp_dir):
+    """Create markdown file with YAML frontmatter."""
+    content = """---
 title: "Test Document"
 author: "Test Author"
 tags:
   - test
-  - documentation
+  - markdown
 date: "2024-01-01"
-version: 1.0
 ---
 
-# Test Document
+# Test Document with Frontmatter
 
-This document has frontmatter that should be parsed correctly.
+This document has YAML frontmatter.
 
-## Content
+## Content Section
 
 Regular markdown content follows the frontmatter.
 """
 
-
-@pytest.fixture
-def sample_markdown_file(temp_dir: Path, sample_markdown_content: str) -> Path:
-    """Create a sample markdown file for testing."""
-    file_path = temp_dir / "sample.md"
-    file_path.write_text(sample_markdown_content)
+    file_path = temp_dir / "frontmatter.md"
+    file_path.write_text(content.strip())
     return file_path
 
 
 @pytest.fixture
-def complex_markdown_file(temp_dir: Path, complex_markdown_content: str) -> Path:
-    """Create a complex markdown file for testing."""
+def complex_markdown_file(temp_dir):
+    """Create complex markdown file with various elements."""
+    content = """
+# Complex Document
+
+This document has multiple types of content.
+
+## Lists
+
+### Unordered List
+- Item 1
+- Item 2
+  - Nested item
+  - Another nested item
+- Item 3
+
+### Ordered List
+1. First item
+2. Second item
+3. Third item
+
+## Code Blocks
+
+### Python Code
+```python
+def calculate_sum(a, b):
+    \"\"\"Calculate sum of two numbers.\"\"\"
+    return a + b
+
+result = calculate_sum(5, 3)
+print(f"Result: {result}")
+```
+
+### JavaScript Code
+```javascript
+function greet(name) {
+    return `Hello, ${name}!`;
+}
+
+console.log(greet("World"));
+```
+
+## Tables
+
+| Name | Age | City |
+|------|-----|------|
+| Alice | 30 | New York |
+| Bob | 25 | London |
+| Charlie | 35 | Tokyo |
+
+## Blockquotes
+
+> This is a blockquote.
+> It can span multiple lines.
+>
+> And have multiple paragraphs.
+
+## Links and Images
+
+Here's a [link to example.com](https://example.com).
+
+![Sample Image](https://example.com/image.jpg)
+
+## Emphasis
+
+This text has **bold** and *italic* formatting.
+You can also use __bold__ and _italic_ alternatives.
+
+## Horizontal Rule
+
+---
+
+## Final Section
+
+This concludes our complex document.
+"""
+
     file_path = temp_dir / "complex.md"
-    file_path.write_text(complex_markdown_content)
+    file_path.write_text(content.strip())
     return file_path
 
 
 @pytest.fixture
-def test_documents(temp_dir: Path) -> Dict[str, Path]:
-    """Create multiple test documents for batch testing."""
+def test_documents(temp_dir):
+    """Create multiple test documents."""
     documents = {}
-    
-    # Simple document
-    simple_content = """# Simple Document
-This is a simple document with basic content.
-## Section 1
-Content for section 1.
+
+    # Document 1: Simple
+    simple_content = """
+# Simple Document
+
+Just a simple document with basic content.
+
+## One Section
+
+Some content here.
 """
     simple_path = temp_dir / "simple.md"
-    simple_path.write_text(simple_content)
-    documents['simple'] = simple_path
-    
-    # Document with code
-    code_content = """# Code Document
-This document contains code examples.
-```python
-def example():
-    return "Hello World"
+    simple_path.write_text(simple_content.strip())
+    documents["simple"] = simple_path
+
+    # Document 2: Technical
+    technical_content = """
+# Technical Documentation
+
+## Installation
+
+```bash
+pip install example-package
 ```
-## More Content
-Additional content after code.
+
+## Usage
+
+```python
+import example
+result = example.process()
+```
+
+## Configuration
+
+- Setting 1: Description
+- Setting 2: Description
 """
-    code_path = temp_dir / "code.md"
-    code_path.write_text(code_content)
-    documents['code'] = code_path
-    
-    # Large document
-    large_content = "# Large Document\n\n"
-    for i in range(50):
-        large_content += f"## Section {i}\n"
-        large_content += f"{'Content paragraph. ' * 20}\n\n"
-    
-    large_path = temp_dir / "large.md"
-    large_path.write_text(large_content)
-    documents['large'] = large_path
-    
+    technical_path = temp_dir / "technical.md"
+    technical_path.write_text(technical_content.strip())
+    documents["technical"] = technical_path
+
+    # Document 3: Blog post style
+    blog_content = """
+# My Blog Post
+
+Published on January 1, 2024
+
+## Introduction
+
+This is a blog post about something interesting.
+
+## Main Content
+
+Here's the main content of the blog post.
+
+### Subsection
+
+More detailed information.
+
+## Conclusion
+
+Thanks for reading!
+"""
+    blog_path = temp_dir / "blog.md"
+    blog_path.write_text(blog_content.strip())
+    documents["blog"] = blog_path
+
     return documents
 
 
 @pytest.fixture
-def sample_ast() -> MarkdownAST:
-    """Sample MarkdownAST for testing."""
-    elements = [
-        MarkdownElement(type="header", level=1, text="Main Title"),
-        MarkdownElement(type="paragraph", text="Introduction paragraph."),
-        MarkdownElement(type="header", level=2, text="Section 1"),
-        MarkdownElement(type="paragraph", text="Content for section 1."),
-        MarkdownElement(
-            type="code_block", 
-            language="python", 
-            text="def hello():\n    print('Hello')"
-        ),
-        MarkdownElement(type="header", level=2, text="Section 2"),
-        MarkdownElement(type="paragraph", text="Final content."),
-    ]
-    return MarkdownAST(elements=elements)
-
-
-@pytest.fixture
-def sample_chunks() -> List[DocumentChunk]:
-    """Sample document chunks for testing."""
-    return [
-        DocumentChunk(
-            id="chunk_001",
-            content="# Main Title\n\nIntroduction paragraph.",
-            metadata={
-                "chunk_index": 0,
-                "total_chunks": 3,
-                "source_file": "test.md",
-                "chunk_method": "structure"
-            },
-            start_position=0,
-            end_position=35
-        ),
-        DocumentChunk(
-            id="chunk_002", 
-            content="## Section 1\n\nContent for section 1.",
-            metadata={
-                "chunk_index": 1,
-                "total_chunks": 3,
-                "source_file": "test.md",
-                "chunk_method": "structure"
-            },
-            start_position=35,
-            end_position=70
-        ),
-        DocumentChunk(
-            id="chunk_003",
-            content="## Section 2\n\nFinal content.",
-            metadata={
-                "chunk_index": 2,
-                "total_chunks": 3,
-                "source_file": "test.md", 
-                "chunk_method": "structure"
-            },
-            start_position=70,
-            end_position=100
-        )
-    ]
-
-
-@pytest.fixture
-def default_config() -> AppConfig:
-    """Default application configuration for testing."""
-    return AppConfig()
-
-
-@pytest.fixture
-def test_config() -> AppConfig:
-    """Test-specific application configuration."""
-    return AppConfig(
-        chromadb=ChromaDBConfig(
-            host="localhost",
-            port=8000,
-            ssl=False,
-            timeout=30
-        )
+def chunking_config():
+    """Create default chunking configuration."""
+    return ChunkingConfig(
+        chunk_size=1000,
+        overlap=200,
+        method="structure",
+        respect_boundaries=True,
     )
 
 
 @pytest.fixture
-def chunking_config() -> ChunkingConfig:
-    """Default chunking configuration for testing."""
-    return ChunkingConfig(
-        chunk_size=500,
-        overlap=100,
-        method="structure"
+def app_config():
+    """Create test application configuration."""
+    return AppConfig(
+        chromadb=ChromaDBConfig(
+            host="localhost",
+            port=8000,
+        ),
+        chunking=ChunkingConfig(
+            chunk_size=1000,
+            overlap=200,
+            method="structure",
+        ),
     )
 
 
 @pytest.fixture
 def mock_chromadb_client():
-    """Mock ChromaDB client for testing."""
+    """Create mock ChromaDB client."""
     return MockChromaDBClient()
 
 
 @pytest.fixture
-def config_file(temp_dir: Path) -> Path:
-    """Create a test configuration file."""
-    config_data = {
-        "chromadb": {
-            "host": "localhost",
-            "port": 8000,
-            "ssl": False
-        },
-        "chunking": {
-            "default_size": 1000,
-            "default_overlap": 200,
-            "method": "structure"
-        },
-        "processing": {
-            "batch_size": 10,
-            "max_workers": 4
-        }
+def mock_processing_result():
+    """Create mock processing result."""
+    return ProcessingResult(
+        file_path=Path("test.md"),
+        success=True,
+        chunks_created=3,
+        processing_time=1.5,
+        collection_name="test-collection",
+    )
+
+
+@pytest.fixture
+def sample_chunks():
+    """Create sample document chunks."""
+    return [
+        DocumentChunk(
+            id="chunk_1",
+            content="# Header 1\n\nSome content here.",
+            metadata={"chunk_index": 0, "section": "Header 1"},
+            start_position=0,
+            end_position=30,
+        ),
+        DocumentChunk(
+            id="chunk_2",
+            content="## Header 2\n\nMore content.",
+            metadata={"chunk_index": 1, "section": "Header 2"},
+            start_position=31,
+            end_position=60,
+        ),
+        DocumentChunk(
+            id="chunk_3",
+            content="### Header 3\n\nFinal content.",
+            metadata={"chunk_index": 2, "section": "Header 3"},
+            start_position=61,
+            end_position=90,
+        ),
+    ]
+
+
+@pytest.fixture
+def cli_runner():
+    """Create CLI test runner."""
+    return CliRunner()
+
+
+@pytest.fixture
+def mock_collection_manager():
+    """Create mock collection manager."""
+    manager = Mock()
+    manager.collection_exists.return_value = False
+    manager.create_collection.return_value = True
+    manager.list_collections.return_value = []
+    manager.get_collection_info.return_value = {
+        "name": "test-collection",
+        "count": 0,
+        "metadata": {},
     }
-    
-    config_path = temp_dir / "test_config.yaml"
-    import yaml
-    with open(config_path, 'w') as f:
-        yaml.dump(config_data, f)
-    
-    return config_path
+    return manager
 
 
 @pytest.fixture
-def malformed_markdown(temp_dir: Path) -> Path:
-    """Create a malformed markdown file for error testing."""
-    content = """# Invalid Document
+def large_document_content():
+    """Create content for large document testing."""
+    sections = []
 
-This document has some issues.
+    sections.append("# Large Document Test\n\n")
+    sections.append("This is a large document created for testing purposes.\n\n")
 
-```python
-# This code block is not closed properly
+    for i in range(50):
+        sections.append(f"## Section {i + 1}\n\n")
+        sections.append(f"This is the content for section {i + 1}. " * 10 + "\n\n")
 
-def broken_function():
-    return "missing closing backticks"
+        if i % 5 == 0:
+            sections.append("```python\n")
+            sections.append(f"# Code example for section {i + 1}\n")
+            sections.append(f"def function_{i + 1}():\n")
+            sections.append(f'    return "Section {i + 1} result"\n')
+            sections.append("```\n\n")
 
-## Section without proper ending
-
-This paragraph is
-"""
-    file_path = temp_dir / "malformed.md"
-    file_path.write_text(content)
-    return file_path
-
-
-@pytest.fixture(autouse=True)
-def cleanup_test_collections():
-    """Clean up any test collections after each test."""
-    yield
-    # Cleanup code would go here if we had a real ChromaDB instance
-    pass
-
-
-# Performance test fixtures
-@pytest.fixture
-def large_document_content() -> str:
-    """Generate large document content for performance testing."""
-    content = ["# Performance Test Document\n\n"]
-    
-    for section in range(100):
-        content.append(f"## Section {section + 1}\n\n")
-        for para in range(10):
-            content.append(f"This is paragraph {para + 1} of section {section + 1}. ")
-            content.append("It contains meaningful content for testing performance. ")
-            content.append("The content is long enough to create realistic chunks.\n\n")
-    
-    return "".join(content)
+    return "".join(sections)
 
 
 @pytest.fixture
-def performance_documents(temp_dir: Path, large_document_content: str) -> List[Path]:
+def performance_documents(temp_dir, large_document_content):
     """Create multiple large documents for performance testing."""
     documents = []
-    
+
     for i in range(20):
         doc_path = temp_dir / f"perf_doc_{i:02d}.md"
         doc_path.write_text(large_document_content)
         documents.append(doc_path)
-    
+
     return documents

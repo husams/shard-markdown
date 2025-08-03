@@ -3,14 +3,14 @@
 from pathlib import Path
 
 # Default configuration file locations
-DEFAULT_CONFIG_LOCATIONS = [
+_DEFAULT_CONFIG_LOCATIONS = [
     Path.home() / ".shard-md" / "config.yaml",
     Path.cwd() / ".shard-md" / "config.yaml",
     Path.cwd() / "shard-md.yaml",
 ]
 
 # Default YAML configuration template
-DEFAULT_CONFIG_YAML = """# Shard Markdown Configuration
+_DEFAULT_CONFIG_YAML = """# Shard Markdown Configuration
 chromadb:
   host: localhost
   port: 8000
@@ -45,9 +45,9 @@ plugins: []
 """
 
 # Environment variable mappings
-ENV_VAR_MAPPINGS = {
+_ENV_VAR_MAPPINGS = {
     "CHROMA_HOST": "chromadb.host",
-    "CHROMA_PORT": "chromadb.port", 
+    "CHROMA_PORT": "chromadb.port",
     "CHROMA_SSL": "chromadb.ssl",
     "CHROMA_AUTH_TOKEN": "chromadb.auth_token",
     "SHARD_MD_CHUNK_SIZE": "chunking.default_size",
@@ -56,3 +56,8 @@ ENV_VAR_MAPPINGS = {
     "SHARD_MD_MAX_WORKERS": "processing.max_workers",
     "SHARD_MD_LOG_LEVEL": "logging.level",
 }
+
+# Export without underscores for imports
+DEFAULT_CONFIG_LOCATIONS = _DEFAULT_CONFIG_LOCATIONS
+DEFAULT_CONFIG_YAML = _DEFAULT_CONFIG_YAML
+ENV_VAR_MAPPINGS = _ENV_VAR_MAPPINGS
