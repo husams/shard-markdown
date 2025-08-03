@@ -76,7 +76,8 @@ class BaseChunker(ABC):
         for i in range(overlap_start, len(content)):
             if content[i] in ".!?":
                 next_char_idx = i + 1
-                if next_char_idx < len(content) and content[next_char_idx] in " \n":
+                if next_char_idx < len(content) and \
+                    content[next_char_idx] in " \n":
                     return content[next_char_idx:].lstrip()
 
         # Fallback to character-based overlap

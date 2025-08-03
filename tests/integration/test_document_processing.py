@@ -7,7 +7,7 @@ from unittest.mock import Mock
 import pytest
 
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
-from shard_markdown.core.models import BatchResult, ChunkingConfig, ProcessingResult
+from shard_markdown.core.models import ChunkingConfig, BatchResult
 from shard_markdown.core.processor import DocumentProcessor
 
 
@@ -25,7 +25,9 @@ class TestDocumentProcessingIntegration:
         """Mock ChromaDB client for integration testing."""
         return MockChromaDBClient()
 
-    def test_process_simple_document_end_to_end(self, processor, sample_markdown_file):
+    def test_process_simple_document_end_to_end(
+        self, processor, sample_markdown_file
+    ):
         """Test processing a simple markdown document end-to-end."""
         result = processor.process_document(
             sample_markdown_file, "test-simple-integration"
@@ -118,7 +120,9 @@ Code blocks should be preserved as complete units.
         # Code blocks should be preserved without being split
         # This would need verification through the actual chunks
 
-    def test_batch_processing_multiple_documents(self, processor, test_documents):
+    def test_batch_processing_multiple_documents(
+        self, processor, test_documents
+    ):
         """Test batch processing of multiple documents."""
         file_paths = list(test_documents.values())
 
@@ -137,7 +141,9 @@ Code blocks should be preserved as complete units.
         assert result.success_rate > 0
         assert result.average_chunks_per_file > 0
 
-    def test_concurrent_processing_performance(self, processor, test_documents):
+    def test_concurrent_processing_performance(
+        self, processor, test_documents
+    ):
         """Test concurrent processing performance."""
         file_paths = list(test_documents.values())
 
@@ -223,7 +229,8 @@ This tests Unicode handling throughout the pipeline.
                     "It contains substantial content to test processing performance. "
                 )
                 large_content.append(
-                    "The content is meaningful and represents realistic documentation. "
+                    "The content is meaningful and \
+                        represents realistic documentation. "
                 )
                 large_content.append(
                     "Each paragraph has multiple sentences to ensure proper chunking.\n\n"
@@ -310,7 +317,9 @@ Additional content to ensure proper chunking while maintaining metadata.
         # the actual chunks created, which would require integration with
         # a real or more sophisticated mock ChromaDB client
 
-    def test_chunking_strategy_consistency(self, processor, sample_markdown_file):
+    def test_chunking_strategy_consistency(
+        self, processor, sample_markdown_file
+    ):
         """Test that chunking strategies produce consistent results."""
         # Process the same document multiple times
         results = []
@@ -368,7 +377,9 @@ Additional content to ensure proper chunking while maintaining metadata.
         file_paths = list(test_documents.values())
 
         start_time = time.time()
-        result = processor.process_batch(file_paths, "test-stats", max_workers=2)
+        result = processor.process_batch(
+            file_paths, "test-stats", max_workers=2
+        )
         actual_time = time.time() - start_time
 
         # Verify statistics make sense
@@ -404,7 +415,8 @@ class TestErrorHandlingIntegration:
 
     def test_file_permission_errors(self, processor, temp_dir):
         """Test handling of file permission errors."""
-        # This test is platform-dependent and might not work in all environments
+        # This test is platform-dependent and \
+            might not work in all environments
         try:
             # Create a file and remove read permissions
             restricted_file = temp_dir / "restricted.md"
@@ -471,7 +483,9 @@ def function():
         # It might succeed with warnings or fail gracefully
         assert result.error is None or "invalid" in result.error.lower()
 
-    def test_network_interruption_simulation(self, processor, sample_markdown_file):
+    def test_network_interruption_simulation(
+        self, processor, sample_markdown_file
+    ):
         """Test behavior during simulated network interruptions."""
         # This would be more relevant for real ChromaDB connections
         # For now, we test with mock client that can simulate failures

@@ -3,7 +3,6 @@
 import json
 import subprocess
 import time
-from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
@@ -193,7 +192,7 @@ API calls are limited to:
 Process multiple items efficiently:
 
 ```python
-batch_request = {
+_batch_request = {
   "operations": [
     {"method": "POST", "path": "/users", "body": {...}},
     {"method": "PUT", "path": "/users/123", "body": {...}}
@@ -567,7 +566,10 @@ Configuration options for {module}.
 class TestCLIErrorScenarios:
     """Test CLI error scenarios and edge cases."""
 
-    def test_invalid_collection_name_scenarios(self, cli_runner, sample_markdown_file):
+def test_invalid_collection_name_scenarios(self,
+        cli_runner,
+        sample_markdown_file
+    ):
         """Test various invalid collection names."""
         invalid_names = [
             "",  # Empty

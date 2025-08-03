@@ -2,7 +2,6 @@
 
 import pytest
 
-from shard_markdown.core.models import MarkdownAST, MarkdownElement
 from shard_markdown.core.parser import MarkdownParser
 
 

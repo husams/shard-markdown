@@ -188,7 +188,7 @@ class TestFixedSizeChunker:
                         for word in current_end.split()[-3:]
                         if len(word) > 3
                     ):
-                        overlap_found = True
+                        _overlap_found = True
 
                 # This is a heuristic check - overlap might not always be detectable this way
                 # The main goal is to ensure the code runs without error

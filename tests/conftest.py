@@ -282,7 +282,12 @@ def default_config() -> AppConfig:
 def test_config() -> AppConfig:
     """Test-specific application configuration."""
     return AppConfig(
-        chromadb=ChromaDBConfig(host="localhost", port=8000, ssl=False, timeout=30)
+        chromadb=ChromaDBConfig(
+            host="localhost",
+            port=8000,
+            ssl=False,
+            timeout=30
+        )
     )
 
 

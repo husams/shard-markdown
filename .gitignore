@@ -155,3 +155,4 @@ chroma_data/
 
 # Claude files
 .claude/
+.plans/

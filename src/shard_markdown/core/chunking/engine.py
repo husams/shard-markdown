@@ -111,7 +111,8 @@ class ChunkingEngine:
 
         if oversized_chunks:
             raise ProcessingError(
-                f"Generated chunks exceed size limits at positions: {oversized_chunks}",
+                f"Generated chunks exceed size limits at positions: "
+                f"{oversized_chunks}",
                 error_code=1313,
                 context={
                     "oversized_chunk_indices": oversized_chunks,

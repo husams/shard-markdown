@@ -6,9 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from shard_markdown.core.models import BatchResult, ChunkingConfig, ProcessingResult
 from shard_markdown.core.processor import DocumentProcessor
-from shard_markdown.utils.errors import FileSystemError, ProcessingError
 
 
 class TestDocumentProcessor:
@@ -235,7 +233,10 @@ class TestDocumentProcessor:
         mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
 
         file_paths = list(test_documents.values())
-        result = processor.process_batch(file_paths, "test-collection", max_workers=2)
+result = processor.process_batch(file_paths,
+            "test-collection",
+            max_workers=2
+        )
 
         assert isinstance(result, BatchResult)
         assert result.total_files == len(file_paths)
@@ -270,7 +271,10 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {}
 
         file_paths = list(test_documents.values())[:2]  # Only test 2 files
-        result = processor.process_batch(file_paths, "test-collection", max_workers=1)
+result = processor.process_batch(file_paths,
+            "test-collection",
+            max_workers=1
+        )
 
         assert result.total_files == 2
         assert (
@@ -312,7 +316,10 @@ class TestDocumentProcessor:
         file_paths = list(test_documents.values())
 
         start_time = time.time()
-        result = processor.process_batch(file_paths, "test-collection", max_workers=4)
+result = processor.process_batch(file_paths,
+            "test-collection",
+            max_workers=4
+        )
         end_time = time.time()
 
         # With concurrency, should process faster than sequential

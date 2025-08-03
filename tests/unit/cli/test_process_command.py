@@ -1,7 +1,5 @@
 """Unit tests for process CLI command."""
 
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from click.testing import CliRunner
@@ -71,7 +69,10 @@ class TestProcessCommand:
         # Verify processor was called correctly
         mock_processor.process_document.assert_called_once()
 
-    def test_process_command_missing_collection(self, cli_runner, sample_markdown_file):
+def test_process_command_missing_collection(self,
+        cli_runner,
+        sample_markdown_file
+    ):
         """Test process command with missing collection parameter."""
         result = cli_runner.invoke(process, [str(sample_markdown_file)])
 
@@ -124,7 +125,7 @@ class TestProcessCommand:
         mock_processor_class = mock_processor.__class__
         call_args = mock_processor_class.call_args
         if call_args:
-            config = call_args[0][0]  # First argument should be config
+            _config = call_args[0][0]  # First argument should be config
             # Note: Actual verification would depend on implementation
 
     def test_process_command_dry_run(self, cli_runner, sample_markdown_file):
@@ -271,7 +272,10 @@ class TestProcessCommand:
                 or "failed" in result.output.lower()
             )
 
-    def test_process_command_validation_error(self, cli_runner, sample_markdown_file):
+def test_process_command_validation_error(self,
+        cli_runner,
+        sample_markdown_file
+    ):
         """Test handling of validation errors."""
         with patch(
             "shard_markdown.cli.commands.process.validate_collection_name"
@@ -392,7 +396,15 @@ class TestProcessCommand:
         assert "chunk-method" in result.output.lower()
 
     @pytest.mark.parametrize(
-        "chunk_size,overlap", [(500, 100), (1000, 200), (1500, 300), (2000, 400)]
+"chunk_size,overlap", [(500,
+            100),
+            (1000,
+            200),
+            (1500,
+            300),
+            (2000,
+            400
+        )]
     )
     def test_process_command_chunk_parameter_combinations(
         self,

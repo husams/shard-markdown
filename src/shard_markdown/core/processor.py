@@ -77,7 +77,8 @@ class DocumentProcessor:
             processing_time = time.time() - start_time
 
             logger.info(
-                f"Successfully processed {file_path}: {len(enhanced_chunks)} chunks in {processing_time:.2f}s"
+                f"Successfully processed {file_path}: \
+    {len(enhanced_chunks)} chunks in {processing_time:.2f}s"
             )
 
             return ProcessingResult(
@@ -126,7 +127,10 @@ class DocumentProcessor:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
             future_to_path = {
-                executor.submit(self.process_document, path, collection_name): path
+executor.submit(self.process_document,
+                    path,
+                    collection_name
+                ): path
                 for path in file_paths
             }
 
@@ -164,7 +168,8 @@ class DocumentProcessor:
         )
 
         logger.info(
-            f"Batch processing complete: {batch_result.successful_files}/{batch_result.total_files} files, "
+            f"Batch processing complete: \
+    {batch_result.successful_files}/{batch_result.total_files} files, "
             f"{total_chunks} chunks, {total_processing_time:.2f}s"
         )
 
@@ -210,7 +215,8 @@ class DocumentProcessor:
                 # Validate content is not empty
                 if not content.strip():
                     raise ProcessingError(
-                        f"File is empty or contains only whitespace: {file_path}",
+                        f"File is empty or \
+    contains only whitespace: {file_path}",
                         error_code=1301,
                         context={"file_path": str(file_path)},
                     )

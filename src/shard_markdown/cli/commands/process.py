@@ -31,7 +31,11 @@ console = Console()
 
 
 @click.command()
-@click.argument("input_paths", nargs=-1, required=True, type=click.Path(exists=True))
+@click.argument("input_paths",
+    nargs=-1,
+    required=True,
+    type=click.Path(exists=True)
+)
 @click.option(
     "--collection", "-c", required=True, help="Target ChromaDB collection name"
 )
@@ -55,7 +59,11 @@ console = Console()
     default="structure",
     help="Chunking method [default: structure]",
 )
-@click.option("--recursive", "-r", is_flag=True, help="Process directories recursively")
+@click.option("--recursive",
+    "-r",
+    is_flag=True,
+    help="Process directories recursively"
+)
 @click.option(
     "--create-collection", is_flag=True, help="Create collection if it doesn't exist"
 )
@@ -99,7 +107,8 @@ def process(
     """Process markdown files into ChromaDB collections.
 
     This command processes one or more markdown files, intelligently chunks them
-    based on document structure, and stores the results in a ChromaDB collection.
+    based on document structure, and \
+        stores the results in a ChromaDB collection.
 
     Examples:
 
@@ -222,10 +231,12 @@ def process(
                         _display_single_result(result, insert_result)
                     else:
                         console.print(
-                            f"[red]Failed to insert chunks: {insert_result.error}[/red]"
+                            f"[red]Failed to insert chunks: \
+    {insert_result.error}[/red]"
                         )
                 else:
-                    console.print(f"[red]Processing failed: {result.error}[/red]")
+                    console.print(f"[red]Processing failed: \
+    {result.error}[/red]")
 
             else:
                 # Batch processing
@@ -274,7 +285,11 @@ def process(
                     )
                     progress.update(insert_task, advance=1)
 
-                    _display_batch_results(batch_result, insert_result, verbose)
+                    _display_batch_results(
+                        batch_result,
+                        insert_result,
+                        verbose
+                    )
                 else:
                     console.print("[red]No chunks to insert[/red]")
 
@@ -332,7 +347,9 @@ def _display_single_result(processing_result, insert_result):
 
     console.print(table)
     console.print(
-        f"[green]✓ Successfully processed and stored {processing_result.chunks_created} chunks[/green]"
+        f"[green]✓ Successfully processed and \
+            \
+    stored {processing_result.chunks_created} chunks[/green]"
     )
 
 
@@ -369,7 +386,9 @@ def _display_batch_results(batch_result, insert_result, verbose: int):
 
     if insert_result.success:
         console.print(
-            f"[green]✓ Successfully processed {batch_result.successful_files} files and stored {insert_result.chunks_inserted} chunks[/green]"
+            f"[green]✓ Successfully processed {batch_result.successful_files} files and \
+                \
+    stored {insert_result.chunks_inserted} chunks[/green]"
         )
     else:
         console.print(

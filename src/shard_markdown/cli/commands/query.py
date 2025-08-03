@@ -10,7 +10,7 @@ from ...chromadb.factory import create_chromadb_client
 from ...utils.errors import ShardMarkdownError
 from ...utils.logging import get_logger
 
-logger = get_logger(__name__)
+_logger = get_logger(__name__)
 console = Console()
 
 
@@ -85,7 +85,8 @@ def search(
 
         # Perform search
         console.print(
-            f"[blue]Searching for: '{query_text}' in collection '{collection}'[/blue]"
+            f"[blue]Searching for: \
+    '{query_text}' in collection '{collection}'[/blue]"
         )
 
         try:
@@ -210,7 +211,10 @@ def get(ctx, document_id, collection, format, include_metadata):
         raise click.Abort()
 
 
-def _display_search_results_table(results, include_metadata, similarity_threshold):
+def _display_search_results_table(results,
+    include_metadata,
+    similarity_threshold
+):
     """Display search results in table format."""
 
     table = Table(title="Search Results")

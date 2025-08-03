@@ -11,7 +11,7 @@ from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
 from ...utils.logging import get_logger
 
-logger = get_logger(__name__)
+_logger = get_logger(__name__)
 console = Console()
 
 
@@ -66,7 +66,9 @@ def show(ctx, format, section):
 
         # Display based on format
         if format == "yaml":
-            console.print(yaml.dump(config_dict, default_flow_style=False, indent=2))
+            console.print(yaml.dump(config_dict,
+                default_flow_style=False,
+                indent=2))
         elif format == "json":
             console.print(json.dumps(config_dict, indent=2))
         elif format == "table":
@@ -185,7 +187,8 @@ def init(ctx, is_global, force, template):
         # Check if file already exists
         if config_path.exists() and not force:
             console.print(
-                f"[yellow]Configuration file already exists: {config_path}[/yellow]"
+                f"[yellow]Configuration file already exists: \
+    {config_path}[/yellow]"
             )
             console.print("Use --force to overwrite, or edit the existing file.")
             return

@@ -9,9 +9,7 @@ from ..utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-def create_chromadb_client(
-    config: ChromaDBConfig, use_mock: Optional[bool] = None
-):
+def create_chromadb_client(config: ChromaDBConfig, use_mock: Optional[bool] = None):
     """Create ChromaDB client with optional mock support.
 
     Args:
@@ -48,7 +46,6 @@ def create_chromadb_client(
 def _is_chromadb_available() -> bool:
     """Check if ChromaDB is available."""
     try:
-        import chromadb  # noqa: F401
 
         return True
     except ImportError:
@@ -74,14 +71,12 @@ def _test_chromadb_connectivity(config: ChromaDBConfig) -> bool:
 
         if result == 0:
             logger.debug(
-                f"ChromaDB server is accessible at "
-                f"{config.host}:{config.port}"
+                f"ChromaDB server is accessible at " f"{config.host}:{config.port}"
             )
             return True
         else:
             logger.debug(
-                f"ChromaDB server not accessible at "
-                f"{config.host}:{config.port}"
+                f"ChromaDB server not accessible at " f"{config.host}:{config.port}"
             )
             return False
 

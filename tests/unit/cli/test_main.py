@@ -3,7 +3,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from click.testing import CliRunner
 
 from shard_markdown.cli.main import cli, main
 
@@ -75,7 +74,11 @@ class TestCLIMain:
         assert result.exit_code == 0
 
     @patch("shard_markdown.cli.main.setup_logging")
-    def test_cli_log_file_option(self, mock_setup_logging, cli_runner, temp_dir):
+def test_cli_log_file_option(self,
+        mock_setup_logging,
+        cli_runner,
+        temp_dir
+    ):
         """Test custom log file option."""
         log_file = temp_dir / "test.log"
 
@@ -105,7 +108,11 @@ class TestCLIMain:
 
     @patch("shard_markdown.cli.main.load_config")
     @patch("shard_markdown.cli.main.setup_logging")
-    def test_cli_context_setup(self, mock_setup_logging, mock_load_config, cli_runner):
+def test_cli_context_setup(self,
+        mock_setup_logging,
+        mock_load_config,
+        cli_runner
+    ):
         """Test that CLI context is properly set up."""
         mock_config = Mock()
         mock_config.logging.file_path = None
@@ -259,7 +266,11 @@ class TestCLIErrorHandling:
 
     def test_nonexistent_config_file(self, cli_runner):
         """Test handling of non-existent config file."""
-        result = cli_runner.invoke(cli, ["--config", "nonexistent.yaml", "--help"])
+result = cli_runner.invoke(cli,
+            ["--config",
+            "nonexistent.yaml",
+            "--help"]
+        )
 
         # Should handle gracefully or show appropriate error
         assert (
@@ -271,7 +282,10 @@ class TestCLIIntegration:
     """Test CLI integration aspects."""
 
     @patch("shard_markdown.cli.main.load_config")
-    def test_cli_with_real_config_structure(self, mock_load_config, cli_runner):
+def test_cli_with_real_config_structure(self,
+        mock_load_config,
+        cli_runner
+    ):
         """Test CLI with realistic config structure."""
         # Create a realistic mock config
         mock_config = Mock()

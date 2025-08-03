@@ -55,8 +55,7 @@ class CollectionManager:
 
         try:
             collection = self.client.create_collection(
-                name, collection_metadata
-            )
+                name, collection_metadata)
             logger.info(
                 f"Created collection '{name}' with metadata: "
                 f"{collection_metadata}"
@@ -269,7 +268,8 @@ class CollectionManager:
 
         # Check for invalid characters (basic validation)
         invalid_chars = set(name) - set(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
+            "abcdefghijklmnopqrstuvwxyz"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
         )
         if invalid_chars:
             raise ChromaDBError(
