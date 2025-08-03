@@ -1,7 +1,6 @@
 """Config command for configuration management."""
 
 import json
-from pathlib import Path
 
 import click
 import yaml
@@ -10,7 +9,6 @@ from rich.table import Table
 
 from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
-from ...utils.errors import ShardMarkdownError
 from ...utils.logging import get_logger
 
 logger = get_logger(__name__)

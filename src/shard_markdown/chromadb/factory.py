@@ -26,17 +26,15 @@ def create_chromadb_client(
     if use_mock is None:
         # Use mock if SHARD_MD_USE_MOCK_CHROMADB is set or if ChromaDB is not
         # available
+        mock_env_var = os.getenv("SHARD_MD_USE_MOCK_CHROMADB", "")
         use_mock = (
-            os.getenv("SHARD_MD_USE_MOCK_CHROMADB", "").lower()
-            in ("true", "1", "yes")
+            mock_env_var.lower() in ("true", "1", "yes")
             or not _is_chromadb_available()
             or not _test_chromadb_connectivity(config)
         )
 
     if use_mock or not _is_chromadb_available():
-        logger.info(
-            "Using mock ChromaDB client for development/testing"
-        )
+        logger.info("Using mock ChromaDB client for development/testing")
         from .mock_client import MockChromaDBClient
 
         return MockChromaDBClient(config)

@@ -3,7 +3,7 @@
 from typing import List
 
 from ...utils.logging import get_logger
-from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
+from ..models import DocumentChunk, MarkdownAST
 from .base import BaseChunker
 
 logger = get_logger(__name__)

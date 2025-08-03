@@ -154,9 +154,9 @@ def process(
                 try:
                     chroma_client.get_collection(collection)
                     collection_exists = True
-                except:
+                except Exception:
                     collection_exists = False
-        except:
+        except Exception:
             collection_exists = False
 
         if clear_collection and collection_exists:
@@ -166,7 +166,7 @@ def process(
                     console.print(f"[yellow]Cleared collection '{collection}'[/yellow]")
                 except AttributeError:
                     console.print(
-                        f"[yellow]Collection clearing not implemented in mock client[/yellow]"
+                        "[yellow]Collection clearing not implemented in mock client[/yellow]"
                     )
 
         # Get or create collection

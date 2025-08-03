@@ -55,8 +55,12 @@ dev = [
     "black>=23.9.0",
     "isort>=5.12.0",
     "flake8>=6.1.0",
+    "flake8-docstrings>=1.7.0",
+    "flake8-bugbear>=23.9.0",
     "mypy>=1.6.0",
     "pre-commit>=3.4.0",
+    "safety>=2.3.0",
+    "bandit[toml]>=1.7.0",
 ]
 
 [project.scripts]
@@ -152,4 +156,12 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
+]
+
+[dependency-groups]
+dev = [
+    "bandit[toml]>=1.8.6",
+    "flake8-bugbear>=24.12.12",
+    "flake8-docstrings>=1.7.0",
+    "safety>=3.6.0",
 ]

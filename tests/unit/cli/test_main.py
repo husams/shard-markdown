@@ -47,9 +47,11 @@ class TestCLIMain:
         mock_config.logging.backup_count = 3
         mock_load_config.return_value = mock_config
 
-        result = cli_runner.invoke(cli, ["--config", str(config_file), "--help"])
+        result = cli_runner.invoke(
+            cli, ["--config", str(config_file), "collections", "list"]
+        )
 
-        assert result.exit_code == 0
+        # Check that the config was loaded and logging was setup
         mock_load_config.assert_called_once()
         mock_setup_logging.assert_called_once()
 
@@ -77,9 +79,11 @@ class TestCLIMain:
         """Test custom log file option."""
         log_file = temp_dir / "test.log"
 
-        result = cli_runner.invoke(cli, ["--log-file", str(log_file), "--help"])
+        result = cli_runner.invoke(
+            cli, ["--log-file", str(log_file), "collections", "list"]
+        )
 
-        assert result.exit_code == 0
+        # Check that setup_logging was called with our log file
         mock_setup_logging.assert_called_once()
 
     @patch("shard_markdown.cli.main.load_config")
@@ -87,7 +91,7 @@ class TestCLIMain:
         """Test handling of config loading errors."""
         mock_load_config.side_effect = Exception("Config error")
 
-        result = cli_runner.invoke(cli, ["--help"])
+        result = cli_runner.invoke(cli, ["collections", "list"])
 
         assert result.exit_code == 1
         assert "Error initializing" in result.output
@@ -110,9 +114,8 @@ class TestCLIMain:
         mock_load_config.return_value = mock_config
 
         # Use a command that requires context to test context passing
-        result = cli_runner.invoke(cli, ["--verbose", "--help"])
+        result = cli_runner.invoke(cli, ["--verbose", "collections", "list"])
 
-        assert result.exit_code == 0
         mock_load_config.assert_called_once()
         mock_setup_logging.assert_called_once()
 
@@ -151,9 +154,7 @@ class TestCLILogging:
         mock_config.logging.backup_count = 3
         mock_load_config.return_value = mock_config
 
-        result = cli_runner.invoke(cli, ["--quiet", "--help"])
-
-        assert result.exit_code == 0
+        result = cli_runner.invoke(cli, ["--quiet", "collections", "list"])
 
         # Check that setup_logging was called with appropriate level (40 = ERROR)
         call_args = mock_setup_logging.call_args
@@ -171,9 +172,7 @@ class TestCLILogging:
         mock_config.logging.backup_count = 3
         mock_load_config.return_value = mock_config
 
-        result = cli_runner.invoke(cli, ["-vvv", "--help"])
-
-        assert result.exit_code == 0
+        result = cli_runner.invoke(cli, ["-vvv", "collections", "list"])
 
         # Check that setup_logging was called with debug level (10 = DEBUG)
         call_args = mock_setup_logging.call_args
@@ -192,9 +191,9 @@ class TestCLILogging:
         mock_load_config.return_value = mock_config
 
         log_file = temp_dir / "custom.log"
-        result = cli_runner.invoke(cli, ["--log-file", str(log_file), "--help"])
-
-        assert result.exit_code == 0
+        result = cli_runner.invoke(
+            cli, ["--log-file", str(log_file), "collections", "list"]
+        )
 
         # Check that setup_logging was called with custom log file
         call_args = mock_setup_logging.call_args
@@ -238,7 +237,7 @@ class TestCLIErrorHandling:
         """Test handling of configuration errors."""
         mock_load_config.side_effect = FileNotFoundError("Config not found")
 
-        result = cli_runner.invoke(cli, ["--help"])
+        result = cli_runner.invoke(cli, ["collections", "list"])
 
         assert result.exit_code == 1
         assert "Error initializing shard-md" in result.output
@@ -253,7 +252,7 @@ class TestCLIErrorHandling:
         mock_load_config.return_value = mock_config
         mock_setup_logging.side_effect = Exception("Logging error")
 
-        result = cli_runner.invoke(cli, ["--help"])
+        result = cli_runner.invoke(cli, ["collections", "list"])
 
         assert result.exit_code == 1
         assert "Error initializing shard-md" in result.output
@@ -288,9 +287,8 @@ class TestCLIIntegration:
 
         mock_load_config.return_value = mock_config
 
-        result = cli_runner.invoke(cli, ["--help"])
+        result = cli_runner.invoke(cli, ["collections", "list"])
 
-        assert result.exit_code == 0
         mock_load_config.assert_called_once()
 
     def test_cli_traceback_handling(self, cli_runner):

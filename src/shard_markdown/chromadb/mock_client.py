@@ -20,9 +20,7 @@ class MockCollection:
         self.documents = {}
         self._count = 0
 
-    def add(
-        self, ids: List[str], documents: List[str], metadatas: List[Dict]
-    ):
+    def add(self, ids: List[str], documents: List[str], metadatas: List[Dict]):
         """Add documents to mock collection."""
         for id_, doc, meta in zip(ids, documents, metadatas):
             self.documents[id_] = {
@@ -59,12 +57,8 @@ class MockCollection:
         else:
             return {
                 "ids": list(self.documents.keys()),
-                "documents": [
-                    doc["document"] for doc in self.documents.values()
-                ],
-                "metadatas": [
-                    doc["metadata"] for doc in self.documents.values()
-                ],
+                "documents": [doc["document"] for doc in self.documents.values()],
+                "metadatas": [doc["metadata"] for doc in self.documents.values()],
             }
 
     def query(self, query_texts: List[str], n_results: int = 10):
@@ -168,8 +162,7 @@ class MockChromaDBClient:
 
             processing_time = time.time() - start_time
             logger.info(
-                f"Mock bulk insert: {len(chunks)} chunks in "
-                f"{processing_time:.2f}s"
+                f"Mock bulk insert: {len(chunks)} chunks in " f"{processing_time:.2f}s"
             )
 
             return InsertResult(
@@ -206,8 +199,7 @@ class MockChromaDBClient:
                     self.collections[name] = collection
 
                 logger.debug(
-                    f"Loaded {len(self.collections)} mock collections "
-                    "from storage"
+                    f"Loaded {len(self.collections)} mock collections " "from storage"
                 )
 
             except Exception as e:

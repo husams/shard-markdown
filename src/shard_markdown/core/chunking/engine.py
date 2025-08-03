@@ -5,7 +5,6 @@ from typing import List
 from ...utils.errors import ProcessingError
 from ...utils.logging import get_logger
 from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
-from .base import BaseChunker
 from .fixed import FixedSizeChunker
 from .structure import StructureAwareChunker
 

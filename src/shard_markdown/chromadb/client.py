@@ -54,8 +54,7 @@ class ChromaDBClient:
             self._connection_validated = True
 
             logger.info(
-                f"Connected to ChromaDB at "
-                f"{self.config.host}:{self.config.port}"
+                f"Connected to ChromaDB at " f"{self.config.host}:{self.config.port}"
             )
             return True
 
@@ -239,8 +238,7 @@ class ChromaDBClient:
                     collection_info.append(info)
                 except Exception as e:
                     logger.warning(
-                        f"Failed to get info for collection "
-                        f"{collection.name}: {e}"
+                        f"Failed to get info for collection " f"{collection.name}: {e}"
                     )
                     collection_info.append(
                         {
@@ -320,8 +318,7 @@ class ChromaDBClient:
 
         except socket.gaierror as e:
             raise NetworkError(
-                f"DNS resolution failed for ChromaDB host: "
-                f"{self.config.host}",
+                f"DNS resolution failed for ChromaDB host: " f"{self.config.host}",
                 error_code=1602,
                 context={"host": self.config.host},
                 cause=e,
