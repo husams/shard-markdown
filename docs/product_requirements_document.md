@@ -466,7 +466,7 @@ The Shard-Markdown CLI utility is a Python-based command-line tool designed to p
 
 **Acceptance Criteria:**
 - PyPI package distribution
-- pip installable package
+- uv installable package (recommended) and pip compatible
 - Conda package support (optional)
 - Docker container option (optional)
 

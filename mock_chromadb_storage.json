@@ -1,0 +1,304 @@
+{
+  "test-docs": {
+    "metadata": {},
+    "documents": {
+      "17c51e3f91ea6d3d_0000": {
+        "document": "# Test Document\n\nThis is a test markdown document for the shard-markdown CLI tool.\n\n## Introduction\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n## Features\n\nThe shard-markdown tool provides the following features:\n\n- Intelligent chunking based on document structure\n- ChromaDB integration for vector storage\n- Multiple chunking strategies\n- Metadata preservation and enhancement\n- Batch processing capabilities\n\n### Code Example\n\nHere's a simple Python example:\n\n```python\ndef hello_world():\n    print(\"Hello, World!\")\n    return \"success\"\n```\n\n## Conclusion\n\nThis document demonstrates the structure-aware chunking capabilities of the shard-markdown tool. The tool respects markdown structure and creates meaningful chunks that preserve context.\n\n### Final Notes",
+        "metadata": {
+          "file_path": "/Users/husam/workspace/tools/shard-markdown/test_document.md",
+          "file_name": "test_document.md",
+          "file_stem": "test_document",
+          "file_suffix": ".md",
+          "file_size": 1088,
+          "file_modified": "2025-08-03T05:02:48.029866",
+          "file_created": "2025-08-03T05:02:48.035920",
+          "file_hash": "14a74d14c72b07520aede86cb1e7076fcbb5725cd612467f7158cf6ab5b9e3ea",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/Users/husam/workspace/tools/shard-markdown",
+          "relative_path": "test_document.md",
+          "title": "Test Document",
+          "total_elements": 14,
+          "header_count": 6,
+          "paragraph_count": 5,
+          "code_block_count": 1,
+          "list_count": 2,
+          "header_levels": [
+            1,
+            2,
+            3
+          ],
+          "max_header_level": 3,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Introduction"
+            },
+            {
+              "level": 2,
+              "text": "Features"
+            },
+            {
+              "level": 3,
+              "text": "Code Example"
+            },
+            {
+              "level": 2,
+              "text": "Conclusion"
+            },
+            {
+              "level": 3,
+              "text": "Final Notes"
+            }
+          ],
+          "code_languages": [
+            "python"
+          ],
+          "word_count": 136,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Conclusion > Final Notes",
+          "chunk_index": 0,
+          "total_chunks": 2,
+          "is_first_chunk": true,
+          "is_last_chunk": false,
+          "chunk_position_percent": 0.0,
+          "context_depth": 3,
+          "processed_at": "2025-08-03T04:06:13.603170",
+          "processor_version": "0.1.0"
+        },
+        "id": "17c51e3f91ea6d3d_0000"
+      },
+      "17c51e3f91ea6d3d_0001": {
+        "document": "The tool respects markdown structure and creates meaningful chunks that preserve context.\n\n### Final Notes\n\n- The tool supports YAML frontmatter\n- Custom metadata can be added\n- Progress tracking is built-in\n- Error handling is comprehensive",
+        "metadata": {
+          "file_path": "/Users/husam/workspace/tools/shard-markdown/test_document.md",
+          "file_name": "test_document.md",
+          "file_stem": "test_document",
+          "file_suffix": ".md",
+          "file_size": 1088,
+          "file_modified": "2025-08-03T05:02:48.029866",
+          "file_created": "2025-08-03T05:02:48.035920",
+          "file_hash": "14a74d14c72b07520aede86cb1e7076fcbb5725cd612467f7158cf6ab5b9e3ea",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/Users/husam/workspace/tools/shard-markdown",
+          "relative_path": "test_document.md",
+          "title": "Test Document",
+          "total_elements": 14,
+          "header_count": 6,
+          "paragraph_count": 5,
+          "code_block_count": 1,
+          "list_count": 2,
+          "header_levels": [
+            1,
+            2,
+            3
+          ],
+          "max_header_level": 3,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Introduction"
+            },
+            {
+              "level": 2,
+              "text": "Features"
+            },
+            {
+              "level": 3,
+              "text": "Code Example"
+            },
+            {
+              "level": 2,
+              "text": "Conclusion"
+            },
+            {
+              "level": 3,
+              "text": "Final Notes"
+            }
+          ],
+          "code_languages": [
+            "python"
+          ],
+          "word_count": 136,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Conclusion > Final Notes",
+          "chunk_index": 1,
+          "total_chunks": 2,
+          "is_first_chunk": false,
+          "is_last_chunk": true,
+          "chunk_position_percent": 100.0,
+          "context_depth": 3,
+          "processed_at": "2025-08-03T04:06:13.603177",
+          "processor_version": "0.1.0"
+        },
+        "id": "17c51e3f91ea6d3d_0001"
+      }
+    }
+  },
+  "demo": {
+    "metadata": {},
+    "documents": {
+      "17c51e3f91ea6d3d_0000": {
+        "document": "# Test Document\n\nThis is a test markdown document for the shard-markdown CLI tool.\n\n## Introduction\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.\n\n## Features\n\nThe shard-markdown tool provides the following features:\n\n- Intelligent chunking based on document structure\n- ChromaDB integration for vector storage\n- Multiple chunking strategies\n- Metadata preservation and enhancement\n- Batch processing capabilities\n\n### Code Example\n\nHere's a simple Python example:\n\n```python\ndef hello_world():\n    print(\"Hello, World!\")\n    return \"success\"\n```\n\n## Conclusion\n\nThis document demonstrates the structure-aware chunking capabilities of the shard-markdown tool. The tool respects markdown structure and creates meaningful chunks that preserve context.\n\n### Final Notes",
+        "metadata": {
+          "file_path": "/Users/husam/workspace/tools/shard-markdown/test_document.md",
+          "file_name": "test_document.md",
+          "file_stem": "test_document",
+          "file_suffix": ".md",
+          "file_size": 1088,
+          "file_modified": "2025-08-03T05:02:48.029866",
+          "file_created": "2025-08-03T05:02:48.035920",
+          "file_hash": "14a74d14c72b07520aede86cb1e7076fcbb5725cd612467f7158cf6ab5b9e3ea",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/Users/husam/workspace/tools/shard-markdown",
+          "relative_path": "test_document.md",
+          "title": "Test Document",
+          "total_elements": 14,
+          "header_count": 6,
+          "paragraph_count": 5,
+          "code_block_count": 1,
+          "list_count": 2,
+          "header_levels": [
+            1,
+            2,
+            3
+          ],
+          "max_header_level": 3,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Introduction"
+            },
+            {
+              "level": 2,
+              "text": "Features"
+            },
+            {
+              "level": 3,
+              "text": "Code Example"
+            },
+            {
+              "level": 2,
+              "text": "Conclusion"
+            },
+            {
+              "level": 3,
+              "text": "Final Notes"
+            }
+          ],
+          "code_languages": [
+            "python"
+          ],
+          "word_count": 136,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Conclusion > Final Notes",
+          "chunk_index": 0,
+          "total_chunks": 2,
+          "is_first_chunk": true,
+          "is_last_chunk": false,
+          "chunk_position_percent": 0.0,
+          "context_depth": 3,
+          "processed_at": "2025-08-03T04:08:11.044128",
+          "processor_version": "0.1.0"
+        },
+        "id": "17c51e3f91ea6d3d_0000"
+      },
+      "17c51e3f91ea6d3d_0001": {
+        "document": "The tool respects markdown structure and creates meaningful chunks that preserve context.\n\n### Final Notes\n\n- The tool supports YAML frontmatter\n- Custom metadata can be added\n- Progress tracking is built-in\n- Error handling is comprehensive",
+        "metadata": {
+          "file_path": "/Users/husam/workspace/tools/shard-markdown/test_document.md",
+          "file_name": "test_document.md",
+          "file_stem": "test_document",
+          "file_suffix": ".md",
+          "file_size": 1088,
+          "file_modified": "2025-08-03T05:02:48.029866",
+          "file_created": "2025-08-03T05:02:48.035920",
+          "file_hash": "14a74d14c72b07520aede86cb1e7076fcbb5725cd612467f7158cf6ab5b9e3ea",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/Users/husam/workspace/tools/shard-markdown",
+          "relative_path": "test_document.md",
+          "title": "Test Document",
+          "total_elements": 14,
+          "header_count": 6,
+          "paragraph_count": 5,
+          "code_block_count": 1,
+          "list_count": 2,
+          "header_levels": [
+            1,
+            2,
+            3
+          ],
+          "max_header_level": 3,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Introduction"
+            },
+            {
+              "level": 2,
+              "text": "Features"
+            },
+            {
+              "level": 3,
+              "text": "Code Example"
+            },
+            {
+              "level": 2,
+              "text": "Conclusion"
+            },
+            {
+              "level": 3,
+              "text": "Final Notes"
+            }
+          ],
+          "code_languages": [
+            "python"
+          ],
+          "word_count": 136,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Conclusion > Final Notes",
+          "chunk_index": 1,
+          "total_chunks": 2,
+          "is_first_chunk": false,
+          "is_last_chunk": true,
+          "chunk_position_percent": 100.0,
+          "context_depth": 3,
+          "processed_at": "2025-08-03T04:08:11.044134",
+          "processor_version": "0.1.0"
+        },
+        "id": "17c51e3f91ea6d3d_0001"
+      }
+    }
+  }
+}

@@ -401,8 +401,8 @@ shard-markdown/
 ```
 
 ### 7.2 Installation Methods
-1. **PyPI Installation:** `pip install shard-markdown`
-2. **Development Installation:** `pip install -e .`
+1. **PyPI Installation:** `uv add shard-markdown`
+2. **Development Installation:** `uv pip install -e .`
 3. **Docker Container:** `docker run shard-markdown:latest`
 4. **Conda Package:** `conda install -c conda-forge shard-markdown`
 
