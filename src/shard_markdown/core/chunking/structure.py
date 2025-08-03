@@ -3,7 +3,6 @@
 from typing import List
 
 from ..models import MarkdownAST, DocumentChunk
-
 from ...utils.logging import get_logger
 from .base import BaseChunker
 
@@ -35,7 +34,8 @@ class StructureAwareChunker(BaseChunker):
 
             # Never split code blocks
             if element.type == "code_block":
-                # If adding this code block would exceed size, create current chunk first
+                # If adding this code block would exceed size, create current
+                # chunk first
                 if (
                     len(current_chunk) + len(element_text) > self.config.chunk_size
                     and current_chunk.strip()

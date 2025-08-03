@@ -206,7 +206,9 @@ Final section with content.
         empty_sections_file = temp_dir / "empty_sections.md"
         empty_sections_file.write_text(content_with_empty)
 
-        result = processor.process_document(empty_sections_file, "empty-sections-test")
+        result = processor.process_document(
+            empty_sections_file, "empty-sections-test"
+        )
 
         assert result.success is True
         assert result.chunks_created > 0
@@ -258,11 +260,11 @@ This document contains multiple code blocks in different languages.
 class DocumentProcessor:
     def __init__(self, config):
         self.config = config
-    
+
     def process(self, document):
         # Process the document
         return self.chunk_document(document)
-    
+
     def chunk_document(self, document):
         chunks = []
         # Chunking logic here
@@ -274,11 +276,11 @@ class DocumentProcessor:
 ```javascript
 const processor = {
     config: {},
-    
+
     process: function(document) {
         return this.chunkDocument(document);
     },
-    
+
     chunkDocument: function(document) {
         const chunks = [];
         // Chunking logic here
@@ -311,11 +313,11 @@ database:
   host: localhost
   port: 5432
   name: documents_db
-  
+
 processing:
   chunk_size: 1000
   overlap: 200
-  
+
 features:
   - text_processing
   - code_highlighting
@@ -381,7 +383,10 @@ features:
         assert result_1_worker.total_files == result_4_workers.total_files
         assert result_1_worker.successful_files == result_4_workers.successful_files
         # Total chunks might vary slightly due to threading, but should be close
-        assert abs(result_1_worker.total_chunks - result_4_workers.total_chunks) <= 1
+        chunk_diff = abs(
+            result_1_worker.total_chunks - result_4_workers.total_chunks
+        )
+        assert chunk_diff <= 1
 
 
 class TestDocumentProcessingErrors:
@@ -401,11 +406,14 @@ class TestDocumentProcessingErrors:
             restricted_file.write_text("# Restricted Document\nContent")
             restricted_file.chmod(0o000)  # No permissions
 
-            result = processor.process_document(restricted_file, "test-permissions")
+            result = processor.process_document(
+                restricted_file, "test-permissions"
+            )
 
             # Should handle permission error gracefully
             assert result.success is False
-            assert "permission" in result.error.lower() or "access" in result.error.lower()
+            error_msg = result.error.lower()
+            assert "permission" in error_msg or "access" in error_msg
 
         except OSError:
             # Skip test if we can't modify permissions (e.g., Windows)
@@ -443,12 +451,13 @@ class TestDocumentProcessingErrors:
         import os
         from unittest.mock import patch
 
-        with patch.object(os.path, "getsize", return_value=200 * 1024 * 1024):  # 200MB
+        with patch.object(os.path, "getsize", return_value=200 * 1024 * 1024):
             result = processor.process_document(large_file, "huge-test")
 
             # Should handle size limit gracefully
             assert result.success is False
-            assert "too large" in result.error.lower() or "size" in result.error.lower()
+            error_msg = result.error.lower()
+            assert "too large" in error_msg or "size" in error_msg
 
     def test_nonexistent_file_handling(self, processor):
         """Test handling of non-existent files."""
@@ -457,19 +466,16 @@ class TestDocumentProcessingErrors:
         result = processor.process_document(nonexistent_file, "nonexistent-test")
 
         assert result.success is False
-        assert (
-            "not found" in result.error.lower()
-            or "does not exist" in result.error.lower()
-        )
+        error_msg = result.error.lower()
+        assert "not found" in error_msg or "does not exist" in error_msg
 
     def test_directory_instead_of_file(self, processor, temp_dir):
         """Test handling when a directory is passed instead of a file."""
         result = processor.process_document(temp_dir, "directory-test")
 
         assert result.success is False
-        assert (
-            "directory" in result.error.lower() or "not a file" in result.error.lower()
-        )
+        error_msg = result.error.lower()
+        assert "directory" in error_msg or "not a file" in error_msg
 
     def test_empty_file_handling(self, processor, temp_dir):
         """Test handling of completely empty files."""
@@ -492,7 +498,8 @@ class TestDocumentProcessingErrors:
         if result.success:
             assert result.chunks_created == 0
         else:
-            assert "empty" in result.error.lower() or "no content" in result.error.lower()
+            error_msg = result.error.lower()
+            assert "empty" in error_msg or "no content" in error_msg
 
 
 class TestDocumentProcessingMetadata:
@@ -503,7 +510,9 @@ class TestDocumentProcessingMetadata:
         """Create processor for metadata testing."""
         return DocumentProcessor(chunking_config)
 
-    def test_metadata_extraction_and_enhancement(self, processor, sample_markdown_file):
+    def test_metadata_extraction_and_enhancement(
+        self, processor, sample_markdown_file
+    ):
         """Test that metadata is properly extracted and enhanced."""
         result = processor.process_document(sample_markdown_file, "metadata-test")
 

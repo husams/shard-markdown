@@ -18,7 +18,6 @@ console = Console()
 @click.group()
 def config():
     """Manage shard-markdown configuration.
-
     This command group provides operations for viewing, editing, and managing
     the shard-markdown configuration file.
     """
@@ -36,7 +35,6 @@ def config():
 @click.pass_context
 def show(ctx, format, section):
     """Show current configuration.
-
     Examples:
 
       # Show full configuration
@@ -58,15 +56,21 @@ def show(ctx, format, section):
         # Filter to specific section if requested
         if section:
             if section not in config_dict:
-                console.print(f"[red]Configuration section '{section}' not found[/red]")
+                console.print(
+                    f"[red]Configuration section '{section}' not found[/red]"
+                )
                 available_sections = list(config_dict.keys())
-                console.print(f"Available sections: {', '.join(available_sections)}")
+                console.print(
+                    f"Available sections: {', '.join(available_sections)}"
+                )
                 return
             config_dict = {section: config_dict[section]}
 
         # Display based on format
         if format == "yaml":
-            console.print(yaml.dump(config_dict, default_flow_style=False, indent=2))
+            console.print(
+                yaml.dump(config_dict, default_flow_style=False, indent=2)
+            )
         elif format == "json":
             console.print(json.dumps(config_dict, indent=2))
         elif format == "table":
@@ -83,15 +87,20 @@ def show(ctx, format, section):
 @click.argument("key")
 @click.argument("value")
 @click.option(
-    "--global", "is_global", is_flag=True, help="Set global configuration (user-level)"
+    "--global",
+    "is_global",
+    is_flag=True,
+    help="Set global configuration (user-level)",
 )
 @click.option(
-    "--local", "is_local", is_flag=True, help="Set local configuration (project-level)"
+    "--local",
+    "is_local",
+    is_flag=True,
+    help="Set local configuration (project-level)",
 )
 @click.pass_context
-def set(ctx, key, value, is_global, is_local):
+def set(ctx, key, value, is_global, is_local):  # noqa: C901
     """Set a configuration value.
-
     Key should be in dot notation (e.g., chromadb.host, chunking.default_size).
 
     Examples:
@@ -110,9 +119,9 @@ def set(ctx, key, value, is_global, is_local):
     try:
         # Determine configuration file path
         if is_global:
-            config_path = DEFAULT_CONFIG_LOCATIONS[0]  # ~/.shard-md/config.yaml
+            config_path = DEFAULT_CONFIG_LOCATIONS[0]
         elif is_local:
-            config_path = DEFAULT_CONFIG_LOCATIONS[1]  # ./.shard-md/config.yaml
+            config_path = DEFAULT_CONFIG_LOCATIONS[1]
         else:
             # Use the first existing config file, or global if none exist
             config_path = None
@@ -121,7 +130,7 @@ def set(ctx, key, value, is_global, is_local):
                     config_path = location
                     break
             if not config_path:
-                config_path = DEFAULT_CONFIG_LOCATIONS[0]  # Default to global
+                config_path = DEFAULT_CONFIG_LOCATIONS[0]
 
         # Load current configuration
         current_config = ctx.obj["config"]
@@ -154,14 +163,16 @@ def set(ctx, key, value, is_global, is_local):
 
 @config.command()
 @click.option(
-    "--global", "is_global", is_flag=True, help="Initialize global configuration"
+    "--global",
+    "is_global",
+    is_flag=True,
+    help="Initialize global configuration",
 )
 @click.option("--force", is_flag=True, help="Overwrite existing configuration")
 @click.option("--template", help="Use configuration template (future feature)")
 @click.pass_context
 def init(ctx, is_global, force, template):
     """Initialize configuration file with defaults.
-
     Examples:
 
       # Initialize local configuration
@@ -178,25 +189,30 @@ def init(ctx, is_global, force, template):
     try:
         # Determine configuration file path
         if is_global:
-            config_path = DEFAULT_CONFIG_LOCATIONS[0]  # ~/.shard-md/config.yaml
+            config_path = DEFAULT_CONFIG_LOCATIONS[0]
         else:
-            config_path = DEFAULT_CONFIG_LOCATIONS[1]  # ./.shard-md/config.yaml
+            config_path = DEFAULT_CONFIG_LOCATIONS[1]
 
         # Check if file already exists
         if config_path.exists() and not force:
             console.print(
-                f"[yellow]Configuration file already exists: \
-    {config_path}[/yellow]"
+                f"[yellow]Configuration file already exists: "
+                f"{config_path}[/yellow]"
             )
-            console.print("Use --force to overwrite, or edit the existing file.")
+            console.print(
+                "Use --force to overwrite, or edit the existing file."
+            )
             return
 
         # Create default configuration
         create_default_config(config_path, force=force)
 
-        console.print(f"[green]✓ Initialized configuration file: {config_path}[/green]")
         console.print(
-            "\nYou can now edit the file or use 'shard-md config set' to modify values."
+            f"[green]✓ Initialized configuration file: {config_path}[/green]"
+        )
+        console.print(
+            "You can now edit the file or use 'shard-md config set' "
+            "to modify values."
         )
 
     except Exception as e:
@@ -210,7 +226,6 @@ def init(ctx, is_global, force, template):
 @click.pass_context
 def path(ctx):
     """Show configuration file locations.
-
     This shows the order of configuration file locations that shard-md checks.
     """
     console.print(
@@ -220,13 +235,16 @@ def path(ctx):
     for i, location in enumerate(DEFAULT_CONFIG_LOCATIONS, 1):
         exists = "✓" if location.exists() else "✗"
         status = (
-            "[green]exists[/green]" if location.exists() else "[dim]not found[/dim]"
+            "[green]exists[/green]"
+            if location.exists()
+            else "[dim]not found[/dim]"
         )
         console.print(f"  {i}. {exists} {location} ({status})")
 
     console.print("\n[dim]The first existing file will be used.[/dim]")
     console.print(
-        "[dim]Use 'shard-md config init' to create a new configuration file.[/dim]"
+        "[dim]Use 'shard-md config init' to create a new configuration "
+        "file.[/dim]"
     )
 
 

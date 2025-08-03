@@ -17,7 +17,6 @@ console = Console()
 @click.group()
 def query():
     """Query and search documents in collections.
-
     This command group provides functionality to search for documents
     in ChromaDB collections using similarity search and retrieve
     specific documents by ID.
@@ -63,11 +62,16 @@ def query():
     help="Output format [default: table]",
 )
 @click.pass_context
-def search(
-    ctx, query_text, collection, limit, similarity_threshold, include_metadata, format
+def search(  # noqa: C901
+    ctx,
+    query_text,
+    collection,
+    limit,
+    similarity_threshold,
+    include_metadata,
+    format,
 ):
     """Search for documents using similarity search."""
-
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
 
@@ -85,12 +89,14 @@ def search(
 
         # Perform search
         console.print(
-            f"[blue]Searching for: \
-    '{query_text}' in collection '{collection}'[/blue]"
+            f"[blue]Searching for: '{query_text}' in collection "
+            f"'{collection}'[/blue]"
         )
 
         try:
-            results = collection_obj.query(query_texts=[query_text], n_results=limit)
+            results = collection_obj.query(
+                query_texts=[query_text], n_results=limit
+            )
         except Exception as e:
             raise click.ClickException(f"Search failed: {str(e)}")
 
@@ -105,16 +111,22 @@ def search(
                 results, include_metadata, similarity_threshold
             )
         elif format == "json":
-            formatted_results = _format_search_results(results, include_metadata)
+            formatted_results = _format_search_results(
+                results, include_metadata
+            )
             console.print(json.dumps(formatted_results, indent=2))
         elif format == "yaml":
             import yaml
 
-            formatted_results = _format_search_results(results, include_metadata)
-            console.print(yaml.dump(formatted_results, default_flow_style=False))
+            formatted_results = _format_search_results(
+                results, include_metadata
+            )
+            console.print(
+                yaml.dump(formatted_results, default_flow_style=False)
+            )
 
         count = len(results["ids"][0])
-        console.print(f"\n[green]Found {count} document(s)[/green]")
+        console.print(f"[green]Found {count} document(s)[/green]")
 
     except ShardMarkdownError as e:
         console.print(f"[red]Error:[/red] {e.message}")
@@ -146,9 +158,8 @@ def search(
     help="Include metadata in results [default: true]",
 )
 @click.pass_context
-def get(ctx, document_id, collection, format, include_metadata):
+def get(ctx, document_id, collection, format, include_metadata):  # noqa: C901
     """Get a specific document by ID."""
-
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
 
@@ -166,37 +177,50 @@ def get(ctx, document_id, collection, format, include_metadata):
 
         # Get document
         console.print(
-            f"[blue]Retrieving document '{document_id}' from collection '{collection}'[/blue]"
+            f"[blue]Retrieving document '{document_id}' from collection "
+            f"'{collection}'[/blue]"
         )
 
         try:
             results = collection_obj.get(
                 ids=[document_id],
                 include=(
-                    ["documents", "metadatas"] if include_metadata else ["documents"]
+                    ["documents", "metadatas"]
+                    if include_metadata
+                    else ["documents"]
                 ),
             )
         except Exception as e:
-            raise click.ClickException(f"Failed to retrieve document: {str(e)}")
+            raise click.ClickException(
+                f"Failed to retrieve document: {str(e)}"
+            )
 
         # Check if document exists
         if not results["ids"]:
-            console.print(f"[yellow]Document '{document_id}' not found[/yellow]")
+            console.print(
+                f"[yellow]Document '{document_id}' not found[/yellow]"
+            )
             return
 
         # Display result
         if format == "table":
             _display_document_table(results, include_metadata)
         elif format == "json":
-            formatted_result = _format_document_result(results, include_metadata)
+            formatted_result = _format_document_result(
+                results, include_metadata
+            )
             console.print(json.dumps(formatted_result, indent=2))
         elif format == "yaml":
             import yaml
 
-            formatted_result = _format_document_result(results, include_metadata)
-            console.print(yaml.dump(formatted_result, default_flow_style=False))
+            formatted_result = _format_document_result(
+                results, include_metadata
+            )
+            console.print(
+                yaml.dump(formatted_result, default_flow_style=False)
+            )
 
-        console.print(f"\n[green]✓ Document retrieved successfully[/green]")
+        console.print("[green]✓ Document retrieved successfully[/green]")
 
     except ShardMarkdownError as e:
         console.print(f"[red]Error:[/red] {e.message}")
@@ -211,9 +235,10 @@ def get(ctx, document_id, collection, format, include_metadata):
         raise click.Abort()
 
 
-def _display_search_results_table(results, include_metadata, similarity_threshold):
+def _display_search_results_table(
+    results, include_metadata, similarity_threshold
+):
     """Display search results in table format."""
-
     table = Table(title="Search Results")
     table.add_column("Rank", style="cyan", width=6)
     table.add_column("ID", style="white")
@@ -226,9 +251,13 @@ def _display_search_results_table(results, include_metadata, similarity_threshol
     ids = results["ids"][0]
     documents = results["documents"][0]
     distances = results["distances"][0]
-    metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
+    metadatas = (
+        results.get("metadatas", [[]])[0] if include_metadata else []
+    )
 
-    for i, (doc_id, doc, distance) in enumerate(zip(ids, documents, distances)):
+    for i, (doc_id, doc, distance) in enumerate(
+        zip(ids, documents, distances)
+    ):
         # Skip if below similarity threshold
         similarity = 1 - distance  # Convert distance to similarity
         if similarity < similarity_threshold:
@@ -244,14 +273,16 @@ def _display_search_results_table(results, include_metadata, similarity_threshol
             metadata = metadatas[i] if metadatas else {}
             if metadata:
                 # Show key metadata fields
-                key_fields = ["source_file", "chunk_index", "structural_context"]
-                metadata_str = ", ".join(
-                    [
-                        f"{k}: {v}"
-                        for k, v in metadata.items()
-                        if k in key_fields and v is not None
-                    ]
-                )
+                key_fields = [
+                    "source_file",
+                    "chunk_index",
+                    "structural_context",
+                ]
+                metadata_str = ", ".join([
+                    f"{k}: {v}"
+                    for k, v in metadata.items()
+                    if k in key_fields and v is not None
+                ])
                 if len(metadata_str) > 50:
                     metadata_str = metadata_str[:47] + "..."
                 row.append(metadata_str or "")
@@ -265,10 +296,11 @@ def _display_search_results_table(results, include_metadata, similarity_threshol
 
 def _display_document_table(results, include_metadata):
     """Display document in table format."""
-
     doc_id = results["ids"][0]
     document = results["documents"][0]
-    metadata = results.get("metadatas", [{}])[0] if include_metadata else {}
+    metadata = (
+        results.get("metadatas", [{}])[0] if include_metadata else {}
+    )
 
     table = Table(title=f"Document: {doc_id}")
     table.add_column("Property", style="cyan")
@@ -284,20 +316,23 @@ def _display_document_table(results, include_metadata):
     console.print(table)
 
     # Display content in a separate section
-    console.print(f"\n[blue]Content:[/blue]")
+    console.print("[blue]Content:[/blue]")
     console.print(f"[white]{document}[/white]")
 
 
 def _format_search_results(results, include_metadata):
     """Format search results for JSON/YAML output."""
-
     ids = results["ids"][0]
     documents = results["documents"][0]
     distances = results["distances"][0]
-    metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
+    metadatas = (
+        results.get("metadatas", [[]])[0] if include_metadata else []
+    )
 
     formatted = []
-    for i, (doc_id, doc, distance) in enumerate(zip(ids, documents, distances)):
+    for i, (doc_id, doc, distance) in enumerate(
+        zip(ids, documents, distances)
+    ):
         result = {
             "id": doc_id,
             "content": doc,
@@ -315,10 +350,14 @@ def _format_search_results(results, include_metadata):
 
 def _format_document_result(results, include_metadata):
     """Format document result for JSON/YAML output."""
-
     result = {"id": results["ids"][0], "content": results["documents"][0]}
 
-    if include_metadata and results.get("metadatas") and results["metadatas"][0]:
+    metadata_exists = (
+        include_metadata
+        and results.get("metadatas")
+        and results["metadatas"][0]
+    )
+    if metadata_exists:
         result["metadata"] = results["metadatas"][0]
 
     return result

@@ -15,6 +15,12 @@ class MockCollection:
     """Mock ChromaDB collection for testing."""
 
     def __init__(self, name: str, metadata: Optional[Dict] = None):
+        """Initialize mock collection.
+
+        Args:
+            name: Collection name
+            metadata: Optional metadata
+        """
         self.name = name
         self.metadata = metadata or {}
         self.documents = {}
@@ -57,8 +63,12 @@ class MockCollection:
         else:
             return {
                 "ids": list(self.documents.keys()),
-                "documents": [doc["document"] for doc in self.documents.values()],
-                "metadatas": [doc["metadata"] for doc in self.documents.values()],
+                "documents": [
+                    doc["document"] for doc in self.documents.values()
+                ],
+                "metadatas": [
+                    doc["metadata"] for doc in self.documents.values()
+                ],
             }
 
     def query(self, query_texts: List[str], n_results: int = 10):
@@ -77,7 +87,11 @@ class MockChromaDBClient:
     """Mock ChromaDB client for testing and development."""
 
     def __init__(self, config=None):
-        """Initialize mock client."""
+        """Initialize mock client.
+
+        Args:
+            config: Configuration object (optional for mock)
+        """
         self.config = config
         self.collections = {}
         self._connection_validated = False
@@ -162,8 +176,7 @@ class MockChromaDBClient:
 
             processing_time = time.time() - start_time
             logger.info(
-                f"Mock bulk insert: \
-    {len(chunks)} chunks in "
+                f"Mock bulk insert: {len(chunks)} chunks in "
                 f"{processing_time:.2f}s"
             )
 
@@ -201,7 +214,8 @@ class MockChromaDBClient:
                     self.collections[name] = collection
 
                 logger.debug(
-                    f"Loaded {len(self.collections)} mock collections " "from storage"
+                    f"Loaded {len(self.collections)} mock collections "
+                    "from storage"
                 )
 
             except Exception as e:

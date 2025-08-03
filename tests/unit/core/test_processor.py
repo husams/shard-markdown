@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from shard_markdown.core.models import BatchResult, ChunkingConfig
 from shard_markdown.core.processor import DocumentProcessor
 
 
@@ -32,7 +33,9 @@ class TestDocumentProcessor:
     @pytest.fixture
     def mock_metadata_extractor(self):
         """Mock MetadataExtractor."""
-        with patch("shard_markdown.core.processor.MetadataExtractor") as mock:
+        with patch(
+            "shard_markdown.core.processor.MetadataExtractor"
+        ) as mock:
             yield mock.return_value
 
     def test_processor_initialization(self, chunking_config):
@@ -63,9 +66,13 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+        mock_metadata_extractor.enhance_chunk_metadata.return_value = {
+            "enhanced": True
+        }
 
-        result = processor.process_document(sample_markdown_file, "test-collection")
+        result = processor.process_document(
+            sample_markdown_file, "test-collection"
+        )
 
         assert result.success is True
         assert result.file_path == sample_markdown_file
@@ -83,7 +90,9 @@ class TestDocumentProcessor:
         """Test processing with non-existent file."""
         non_existent_file = Path("nonexistent.md")
 
-        result = processor.process_document(non_existent_file, "test-collection")
+        result = processor.process_document(
+            non_existent_file, "test-collection"
+        )
 
         assert result.success is False
         assert result.error is not None
@@ -111,7 +120,9 @@ class TestDocumentProcessor:
         with patch.object(Path, "stat") as mock_stat:
             mock_stat.return_value.st_size = 150 * 1024 * 1024  # 150MB
 
-            result = processor.process_document(large_file, "test-collection")
+            result = processor.process_document(
+                large_file, "test-collection"
+            )
 
             assert result.success is False
             assert "too large" in result.error.lower()
@@ -131,7 +142,9 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_file_metadata.return_value = {}
         mock_metadata_extractor.extract_document_metadata.return_value = {}
 
-        result = processor.process_document(sample_markdown_file, "test-collection")
+        result = processor.process_document(
+            sample_markdown_file, "test-collection"
+        )
 
         assert result.success is False
         assert "no chunks generated" in result.error.lower()
@@ -143,7 +156,9 @@ class TestDocumentProcessor:
         """Test handling of parsing errors."""
         mock_parser.parse.side_effect = Exception("Parsing failed")
 
-        result = processor.process_document(sample_markdown_file, "test-collection")
+        result = processor.process_document(
+            sample_markdown_file, "test-collection"
+        )
 
         assert result.success is False
         assert "parsing failed" in result.error.lower()
@@ -158,7 +173,10 @@ class TestDocumentProcessor:
 
         # Should handle encoding gracefully
         assert result.success is False
-        assert "decode" in result.error.lower() or "encoding" in result.error.lower()
+        assert (
+            "decode" in result.error.lower()
+            or "encoding" in result.error.lower()
+        )
 
     def test_read_file_multiple_encodings(self, processor, temp_dir):
         """Test reading file with different encodings."""
@@ -188,7 +206,11 @@ class TestDocumentProcessor:
         assert len(chunk_id_1.split("_")[0]) == 16  # Hash part
 
     def test_enhance_chunks(
-        self, processor, sample_chunks, sample_markdown_file, mock_metadata_extractor
+        self,
+        processor,
+        sample_chunks,
+        sample_markdown_file,
+        mock_metadata_extractor
     ):
         """Test chunk enhancement with metadata."""
         mock_metadata_extractor.enhance_chunk_metadata.return_value = {
@@ -230,12 +252,13 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+        mock_metadata_extractor.enhance_chunk_metadata.return_value = {
+            "enhanced": True
+        }
 
         file_paths = list(test_documents.values())
-        result = processor.process_batch(file_paths,
-            "test-collection",
-            max_workers=2
+        result = processor.process_batch(
+            file_paths, "test-collection", max_workers=2
         )
 
         assert isinstance(result, BatchResult)
@@ -271,9 +294,8 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {}
 
         file_paths = list(test_documents.values())[:2]  # Only test 2 files
-        result = processor.process_batch(file_paths,
-            "test-collection",
-            max_workers=1
+        result = processor.process_batch(
+            file_paths, "test-collection", max_workers=1
         )
 
         assert result.total_files == 2
@@ -311,14 +333,15 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+        mock_metadata_extractor.enhance_chunk_metadata.return_value = {
+            "enhanced": True
+        }
 
         file_paths = list(test_documents.values())
 
         start_time = time.time()
-        result = processor.process_batch(file_paths,
-            "test-collection",
-            max_workers=4
+        result = processor.process_batch(
+            file_paths, "test-collection", max_workers=4
         )
         end_time = time.time()
 
@@ -349,7 +372,9 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+        mock_metadata_extractor.enhance_chunk_metadata.return_value = {
+            "enhanced": True
+        }
 
         file_paths = list(test_documents.values())
         result = processor.process_batch(
@@ -379,7 +404,9 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_file_metadata.return_value = {}
         mock_metadata_extractor.extract_document_metadata.return_value = {}
 
-        result = processor.process_document(sample_markdown_file, "test-collection")
+        result = processor.process_document(
+            sample_markdown_file, "test-collection"
+        )
 
         assert result.processing_time >= 0.01  # Should include the delay
         assert result.processing_time < 1.0  # But not too long

@@ -31,7 +31,9 @@ console = Console()
 
 
 @click.command()
-@click.argument("input_paths", nargs=-1, required=True, type=click.Path(exists=True))
+@click.argument(
+    "input_paths", nargs=-1, required=True, type=click.Path(exists=True)
+)
 @click.option(
     "--collection", "-c", required=True, help="Target ChromaDB collection name"
 )
@@ -55,9 +57,13 @@ console = Console()
     default="structure",
     help="Chunking method [default: structure]",
 )
-@click.option("--recursive", "-r", is_flag=True, help="Process directories recursively")
 @click.option(
-    "--create-collection", is_flag=True, help="Create collection if it doesn't exist"
+    "--recursive", "-r", is_flag=True, help="Process directories recursively"
+)
+@click.option(
+    "--create-collection",
+    is_flag=True,
+    help="Create collection if it doesn't exist",
 )
 @click.option(
     "--clear-collection",
@@ -65,7 +71,9 @@ console = Console()
     help="Clear existing collection before processing",
 )
 @click.option(
-    "--dry-run", is_flag=True, help="Show what would be processed without executing"
+    "--dry-run",
+    is_flag=True,
+    help="Show what would be processed without executing",
 )
 @click.option(
     "--max-workers",
@@ -78,10 +86,12 @@ console = Console()
     help="Additional metadata for new collections (JSON format)",
 )
 @click.option(
-    "--use-mock", is_flag=True, help="Force use of mock ChromaDB client for testing"
+    "--use-mock",
+    is_flag=True,
+    help="Force use of mock ChromaDB client for testing",
 )
 @click.pass_context
-def process(
+def process(  # noqa: C901
     ctx,
     input_paths,
     collection,
@@ -97,10 +107,9 @@ def process(
     use_mock,
 ):
     """Process markdown files into ChromaDB collections.
-
-    This command processes one or more markdown files, intelligently chunks them
-    based on document structure, and \
-        stores the results in a ChromaDB collection.
+    This command processes one or more markdown files, intelligently chunks
+    them based on document structure, and stores the results in a ChromaDB
+    collection.
 
     Examples:
 
@@ -141,7 +150,9 @@ def process(
         )
 
         # Initialize ChromaDB client (with automatic mock fallback)
-        chroma_client = create_chromadb_client(config.chromadb, use_mock=use_mock)
+        chroma_client = create_chromadb_client(
+            config.chromadb, use_mock=use_mock
+        )
         if not chroma_client.connect():
             raise click.ClickException("Failed to connect to ChromaDB")
 
@@ -161,13 +172,18 @@ def process(
             collection_exists = False
 
         if clear_collection and collection_exists:
-            if click.confirm(f"Clear all documents from collection '{collection}'?"):
+            if click.confirm(
+                f"Clear all documents from collection '{collection}'?"
+            ):
                 try:
                     collection_manager.clear_collection(collection)
-                    console.print(f"[yellow]Cleared collection '{collection}'[/yellow]")
+                    console.print(
+                        f"[yellow]Cleared collection '{collection}'[/yellow]"
+                    )
                 except AttributeError:
                     console.print(
-                        "[yellow]Collection clearing not implemented in mock client[/yellow]"
+                        "[yellow]Collection clearing not implemented "
+                        "in mock client[/yellow]"
                     )
 
         # Get or create collection
@@ -195,7 +211,9 @@ def process(
                 # Single file processing
                 task = progress.add_task("Processing document...", total=1)
 
-                result = processor.process_document(validated_paths[0], collection)
+                result = processor.process_document(
+                    validated_paths[0], collection
+                )
                 progress.update(task, advance=1)
 
                 if result.success:
@@ -217,19 +235,20 @@ def process(
                         validated_paths[0],
                     )
 
-                    insert_result = chroma_client.bulk_insert(collection_obj, chunks)
+                    insert_result = chroma_client.bulk_insert(
+                        collection_obj, chunks
+                    )
 
                     if insert_result.success:
                         _display_single_result(result, insert_result)
                     else:
                         console.print(
-                            f"[red]Failed to insert chunks: \
-    {insert_result.error}[/red]"
+                            f"[red]Failed to insert chunks: "
+                            f"{insert_result.error}[/red]"
                         )
                 else:
                     console.print(
-                        f"[red]Processing failed: \
-    {result.error}[/red]"
+                        f"[red]Processing failed: {result.error}[/red]"
                     )
 
             else:
@@ -243,30 +262,31 @@ def process(
                 for result in batch_result.results:
                     if result.success:
                         try:
-                            # Re-process to get chunks (this is not optimal, should be refactored)
+                            # Re-process to get chunks (this is not optimal,
+                            # should be refactored)
                             content = processor._read_file(result.file_path)
                             ast = processor.parser.parse(content)
                             chunks = processor.chunker.chunk_document(ast)
 
                             file_metadata = (
-                                processor.metadata_extractor.extract_file_metadata(
-                                    result.file_path
-                                )
+                                processor.metadata_extractor
+                                .extract_file_metadata(result.file_path)
                             )
                             doc_metadata = (
-                                processor.metadata_extractor.extract_document_metadata(
-                                    ast
-                                )
+                                processor.metadata_extractor
+                                .extract_document_metadata(ast)
                             )
 
                             enhanced_chunks = processor._enhance_chunks(
-                                chunks, file_metadata, doc_metadata, result.file_path
+                                chunks, file_metadata, doc_metadata,
+                                result.file_path
                             )
                             all_chunks.extend(enhanced_chunks)
 
                         except Exception as e:
                             logger.error(
-                                f"Failed to get chunks for {result.file_path}: {e}"
+                                f"Failed to get chunks for "
+                                f"{result.file_path}: {e}"
                             )
 
                 if all_chunks:
@@ -279,7 +299,9 @@ def process(
                     )
                     progress.update(insert_task, advance=1)
 
-                    _display_batch_results(batch_result, insert_result, verbose)
+                    _display_batch_results(
+                        batch_result, insert_result, verbose
+                    )
                 else:
                     console.print("[red]No chunks to insert[/red]")
 
@@ -302,7 +324,6 @@ def _show_dry_run_preview(
     paths: List[Path], collection: str, chunk_size: int, chunk_overlap: int
 ):
     """Display dry run preview of what would be processed."""
-
     table = Table(title="Dry Run Preview")
     table.add_column("Setting", style="cyan")
     table.add_column("Value", style="white")
@@ -314,7 +335,7 @@ def _show_dry_run_preview(
 
     console.print(table)
 
-    console.print(f"\n[blue]Files to be processed:[/blue]")
+    console.print("[blue]Files to be processed:[/blue]")
     for i, path in enumerate(paths[:10]):  # Show first 10 files
         console.print(f"  {i+1:2d}. {path}")
 
@@ -324,28 +345,27 @@ def _show_dry_run_preview(
 
 def _display_single_result(processing_result, insert_result):
     """Display results for single file processing."""
-
     table = Table(title="Processing Results")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="white")
 
     table.add_row("File", str(processing_result.file_path.name))
     table.add_row("Chunks Created", str(processing_result.chunks_created))
-    table.add_row("Processing Time", f"{processing_result.processing_time:.2f}s")
+    table.add_row(
+        "Processing Time", f"{processing_result.processing_time:.2f}s"
+    )
     table.add_row("Chunks Inserted", str(insert_result.chunks_inserted))
     table.add_row("Insertion Time", f"{insert_result.processing_time:.2f}s")
 
     console.print(table)
     console.print(
-        f"[green]✓ Successfully processed and \
-            \
-    stored {processing_result.chunks_created} chunks[/green]"
+        f"[green]✓ Successfully processed and stored "
+        f"{processing_result.chunks_created} chunks[/green]"
     )
 
 
 def _display_batch_results(batch_result, insert_result, verbose: int):
     """Display results for batch processing."""
-
     # Summary table
     table = Table(title="Batch Processing Results")
     table.add_column("Metric", style="cyan")
@@ -356,31 +376,44 @@ def _display_batch_results(batch_result, insert_result, verbose: int):
     table.add_row("Failed", str(batch_result.failed_files))
     table.add_row("Success Rate", f"{batch_result.success_rate:.1f}%")
     table.add_row("Total Chunks", str(batch_result.total_chunks))
-    table.add_row("Avg Chunks/File", f"{batch_result.average_chunks_per_file:.1f}")
-    table.add_row("Processing Time", f"{batch_result.total_processing_time:.2f}s")
-    table.add_row("Processing Speed", f"{batch_result.processing_speed:.1f} files/s")
+    table.add_row(
+        "Avg Chunks/File", f"{batch_result.average_chunks_per_file:.1f}"
+    )
+    table.add_row(
+        "Processing Time", f"{batch_result.total_processing_time:.2f}s"
+    )
+    table.add_row(
+        "Processing Speed", f"{batch_result.processing_speed:.1f} files/s"
+    )
 
     if insert_result.success:
         table.add_row("Chunks Inserted", str(insert_result.chunks_inserted))
-        table.add_row("Insertion Time", f"{insert_result.processing_time:.2f}s")
-        table.add_row("Insertion Rate", f"{insert_result.insertion_rate:.1f} chunks/s")
+        table.add_row(
+            "Insertion Time", f"{insert_result.processing_time:.2f}s"
+        )
+        table.add_row(
+            "Insertion Rate", f"{insert_result.insertion_rate:.1f} chunks/s"
+        )
 
     console.print(table)
 
     # Show failed files if any
     if batch_result.failed_files > 0 and verbose > 0:
-        console.print(f"\n[red]Failed files ({batch_result.failed_files}):[/red]")
+        console.print(
+            f"[red]Failed files ({batch_result.failed_files}):[/red]"
+        )
         for result in batch_result.results:
             if not result.success:
                 console.print(f"  • {result.file_path.name}: {result.error}")
 
     if insert_result.success:
         console.print(
-            f"[green]✓ Successfully processed {batch_result.successful_files} files and \
-                \
-    stored {insert_result.chunks_inserted} chunks[/green]"
+            f"[green]✓ Successfully processed "
+            f"{batch_result.successful_files} files and stored "
+            f"{insert_result.chunks_inserted} chunks[/green]"
         )
     else:
         console.print(
-            f"[red]✗ Processing completed but insertion failed: {insert_result.error}[/red]"
+            f"[red]✗ Processing completed but insertion failed: "
+            f"{insert_result.error}[/red]"
         )

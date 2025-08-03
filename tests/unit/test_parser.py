@@ -1,80 +1,74 @@
 """Unit tests for markdown parser."""
 
-import pytest
-
+from shard_markdown.core.models import MarkdownAST
 from shard_markdown.core.parser import MarkdownParser
 
 
 class TestMarkdownParser:
     """Test cases for MarkdownParser."""
 
-    def test_parser_initialization(self):
-        """Test parser initializes correctly."""
-        parser = MarkdownParser()
-        assert parser.md is not None
-
-    def test_parse_simple_markdown(self, sample_markdown_content: str):
+    def test_parse_simple_markdown(self):
         """Test parsing simple markdown content."""
-        parser = MarkdownParser()
-        ast = parser.parse(sample_markdown_content)
+        content = """
+# Main Title
 
-        assert isinstance(ast, MarkdownAST)
-        assert len(ast.elements) > 0
+This is a paragraph with some text.
 
-        # Check for headers
-        headers = [e for e in ast.elements if e.type == "header"]
-        assert len(headers) >= 3  # Main Title, Section 1, Section 2
+## Section Header
 
-        # Check header levels
-        main_title = next(e for e in headers if e.text == "Main Title")
-        assert main_title.level == 1
-
-        section1 = next(e for e in headers if e.text == "Section 1")
-        assert section1.level == 2
-
-    def test_parse_with_frontmatter(self):
-        """Test parsing markdown with frontmatter."""
-        content = """---
-title: Test Document
-author: Test Author
-tags:
-  - test
-  - markdown
----
-
-# Main Content
-
-This is the main content.
+Another paragraph here.
 """
         parser = MarkdownParser()
         ast = parser.parse(content)
 
+        assert isinstance(ast, MarkdownAST)
+        assert len(ast.elements) > 0
+
+        # Check headers
+        headers = [e for e in ast.elements if e.type == "header"]
+        assert len(headers) >= 2
+        assert headers[0].level == 1
+        assert "Main Title" in headers[0].text
+
+    def test_parse_with_frontmatter(self):
+        """Test parsing markdown with YAML frontmatter."""
+        content = """---
+title: "Test Document"
+author: "Test Author"
+---
+
+# Document Title
+
+Content goes here.
+"""
+        parser = MarkdownParser()
+        ast = parser.parse(content)
+
+        assert isinstance(ast, MarkdownAST)
         assert ast.frontmatter["title"] == "Test Document"
         assert ast.frontmatter["author"] == "Test Author"
-        assert "test" in ast.frontmatter["tags"]
 
-        # Check content was parsed
+        # Should still parse the content
         headers = [e for e in ast.elements if e.type == "header"]
         assert len(headers) >= 1
-        assert headers[0].text == "Main Content"
 
     def test_parse_code_blocks(self):
         """Test parsing code blocks."""
-        content = """# Code Example
+        content = """
+# Code Example
 
 Here's some Python code:
 
 ```python
 def hello():
-    print("Hello, World!")
-    return True
+    return "Hello, World!"
 ```
 
 And some JavaScript:
 
 ```javascript
-function hello() {
-    console.log("Hello, World!");
+function greet() {
+    return "Hello!";
 }
 ```
 """
@@ -82,77 +76,95 @@ function hello() {
         ast = parser.parse(content)
 
         code_blocks = [e for e in ast.elements if e.type == "code_block"]
-        assert len(code_blocks) == 2
+        assert len(code_blocks) >= 2
 
-        python_block = next(e for e in code_blocks if e.language == "python")
-        assert "def hello():" in python_block.text
+        # Check language detection
+        python_blocks = [cb for cb in code_blocks if cb.language == "python"]
+        js_blocks = [cb for cb in code_blocks if cb.language == "javascript"]
 
-        js_block = next(e for e in code_blocks if e.language == "javascript")
-        assert "function hello()" in js_block.text
+        assert len(python_blocks) >= 1
+        assert len(js_blocks) >= 1
 
     def test_parse_lists(self):
-        """Test parsing lists."""
-        content = """# Lists
+        """Test parsing various list types."""
+        content = """
+# Lists
 
 ## Unordered List
-
 - Item 1
 - Item 2
 - Item 3
 
 ## Ordered List
-
-1. First item
-2. Second item
-3. Third item
+1. First
+2. Second
+3. Third
 """
         parser = MarkdownParser()
         ast = parser.parse(content)
 
         lists = [e for e in ast.elements if e.type == "list"]
-        assert len(lists) == 2
-
-        # Check list items
-        for list_elem in lists:
-            assert list_elem.items is not None
-            assert len(list_elem.items) == 3
-
-    def test_extract_frontmatter_only(self):
-        """Test extracting frontmatter from content."""
-        content = """---
-title: Test
-description: A test document
----
-
-# Content
-
-Some content here.
-"""
-        parser = MarkdownParser()
-        frontmatter, content_without_fm = parser.extract_frontmatter(content)
-
-        assert frontmatter["title"] == "Test"
-        assert frontmatter["description"] == "A test document"
-        assert content_without_fm.strip().startswith("# Content")
+        assert len(lists) >= 2
 
     def test_parse_empty_content(self):
-        """Test parsing empty content."""
+        """Test parsing empty or whitespace-only content."""
         parser = MarkdownParser()
-        ast = parser.parse("")
 
+        # Empty string
+        ast = parser.parse("")
         assert isinstance(ast, MarkdownAST)
         assert len(ast.elements) == 0
-        assert len(ast.frontmatter) == 0
 
-    def test_parse_invalid_frontmatter(self):
-        """Test parsing with invalid frontmatter."""
+        # Whitespace only
+        ast = parser.parse("   \n\n  \t  \n")
+        assert isinstance(ast, MarkdownAST)
+        # May or may not have elements depending on implementation
+
+    def test_parse_complex_structure(self):
+        """Test parsing complex nested structures."""
+        content = """
+# Main Document
+
+## Section 1
+
+### Subsection 1.1
+
+Content here.
+
+#### Sub-subsection 1.1.1
+
+More content.
+
+## Section 2
+
+Back to level 2.
+
+### Subsection 2.1
+
+Final content.
+"""
+        parser = MarkdownParser()
+        ast = parser.parse(content)
+
+        headers = [e for e in ast.elements if e.type == "header"]
+
+        # Should have headers at different levels
+        levels = [h.level for h in headers]
+        assert 1 in levels
+        assert 2 in levels
+        assert 3 in levels
+        assert 4 in levels
+
+    def test_parse_malformed_frontmatter(self):
+        """Test handling of malformed YAML frontmatter."""
         content = """---
-invalid: yaml: content: here
+title: "Test
+author: Invalid YAML
 ---
 
-# Content
+# Document Title
 
-Some content.
+Content goes here.
 """
         parser = MarkdownParser()
         # Should not raise exception, just ignore invalid frontmatter

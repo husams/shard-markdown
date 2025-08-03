@@ -2,8 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-import pytest
-
 from shard_markdown.cli.main import cli, main
 
 
@@ -49,6 +47,7 @@ class TestCLIMain:
         result = cli_runner.invoke(
             cli, ["--config", str(config_file), "collections", "list"]
         )
+        assert result is not None
 
         # Check that the config was loaded and logging was setup
         mock_load_config.assert_called_once()
@@ -74,17 +73,16 @@ class TestCLIMain:
         assert result.exit_code == 0
 
     @patch("shard_markdown.cli.main.setup_logging")
-    def test_cli_log_file_option(self,
-            mock_setup_logging,
-            cli_runner,
-            temp_dir
-        ):
+    def test_cli_log_file_option(
+        self, mock_setup_logging, cli_runner, temp_dir
+    ):
         """Test custom log file option."""
         log_file = temp_dir / "test.log"
 
         result = cli_runner.invoke(
             cli, ["--log-file", str(log_file), "collections", "list"]
         )
+        assert result is not None
 
         # Check that setup_logging was called with our log file
         mock_setup_logging.assert_called_once()
@@ -108,11 +106,9 @@ class TestCLIMain:
 
     @patch("shard_markdown.cli.main.load_config")
     @patch("shard_markdown.cli.main.setup_logging")
-    def test_cli_context_setup(self,
-            mock_setup_logging,
-            mock_load_config,
-            cli_runner
-        ):
+    def test_cli_context_setup(
+        self, mock_setup_logging, mock_load_config, cli_runner
+    ):
         """Test that CLI context is properly set up."""
         mock_config = Mock()
         mock_config.logging.file_path = None
@@ -122,6 +118,7 @@ class TestCLIMain:
 
         # Use a command that requires context to test context passing
         result = cli_runner.invoke(cli, ["--verbose", "collections", "list"])
+        assert result is not None
 
         mock_load_config.assert_called_once()
         mock_setup_logging.assert_called_once()
@@ -162,6 +159,7 @@ class TestCLILogging:
         mock_load_config.return_value = mock_config
 
         result = cli_runner.invoke(cli, ["--quiet", "collections", "list"])
+        assert result is not None
 
         # Check that setup_logging was called with appropriate level (40 = ERROR)
         call_args = mock_setup_logging.call_args
@@ -180,6 +178,7 @@ class TestCLILogging:
         mock_load_config.return_value = mock_config
 
         result = cli_runner.invoke(cli, ["-vvv", "collections", "list"])
+        assert result is not None
 
         # Check that setup_logging was called with debug level (10 = DEBUG)
         call_args = mock_setup_logging.call_args
@@ -201,6 +200,7 @@ class TestCLILogging:
         result = cli_runner.invoke(
             cli, ["--log-file", str(log_file), "collections", "list"]
         )
+        assert result is not None
 
         # Check that setup_logging was called with custom log file
         call_args = mock_setup_logging.call_args
@@ -266,11 +266,9 @@ class TestCLIErrorHandling:
 
     def test_nonexistent_config_file(self, cli_runner):
         """Test handling of non-existent config file."""
-        result = cli_runner.invoke(cli,
-                ["--config",
-                "nonexistent.yaml",
-                "--help"]
-            )
+        result = cli_runner.invoke(
+            cli, ["--config", "nonexistent.yaml", "--help"]
+        )
 
         # Should handle gracefully or show appropriate error
         assert (
@@ -282,10 +280,9 @@ class TestCLIIntegration:
     """Test CLI integration aspects."""
 
     @patch("shard_markdown.cli.main.load_config")
-    def test_cli_with_real_config_structure(self,
-            mock_load_config,
-            cli_runner
-        ):
+    def test_cli_with_real_config_structure(
+        self, mock_load_config, cli_runner
+    ):
         """Test CLI with realistic config structure."""
         # Create a realistic mock config
         mock_config = Mock()
@@ -302,6 +299,7 @@ class TestCLIIntegration:
         mock_load_config.return_value = mock_config
 
         result = cli_runner.invoke(cli, ["collections", "list"])
+        assert result is not None
 
         mock_load_config.assert_called_once()
 

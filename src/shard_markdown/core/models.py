@@ -10,9 +10,13 @@ from pydantic import BaseModel, Field
 class MarkdownElement(BaseModel):
     """Represents a single markdown element in the AST."""
 
-    type: str = Field(description="Element type (header, paragraph, code_block, etc.)")
+    type: str = Field(
+        description="Element type (header, paragraph, code_block, etc.)"
+    )
     text: str = Field(description="Text content of the element")
-    level: Optional[int] = Field(default=None, description="Header level (for headers)")
+    level: Optional[int] = Field(
+        default=None, description="Header level (for headers)"
+    )
     language: Optional[str] = Field(
         default=None, description="Language (for code blocks)"
     )
@@ -51,7 +55,9 @@ class DocumentChunk(BaseModel):
 
     id: Optional[str] = Field(default=None, description="Unique chunk identifier")
     content: str = Field(description="Chunk text content")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Chunk metadata")
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict, description="Chunk metadata"
+    )
     start_position: int = Field(
         default=0, description="Start position in original document"
     )
@@ -97,9 +103,13 @@ class ProcessingResult(BaseModel):
 class BatchResult(BaseModel):
     """Result of processing multiple documents in batch."""
 
-    results: List[ProcessingResult] = Field(description="Individual processing results")
+    results: List[ProcessingResult] = Field(
+        description="Individual processing results"
+    )
     total_files: int = Field(description="Total number of files processed")
-    successful_files: int = Field(description="Number of successfully processed files")
+    successful_files: int = Field(
+        description="Number of successfully processed files"
+    )
     failed_files: int = Field(description="Number of failed files")
     total_chunks: int = Field(description="Total chunks created")
     total_processing_time: float = Field(description="Total processing time")
@@ -147,8 +157,12 @@ class InsertResult(BaseModel):
     """Result of inserting chunks into ChromaDB."""
 
     success: bool = Field(description="Whether insertion succeeded")
-    chunks_inserted: int = Field(default=0, description="Number of chunks inserted")
-    processing_time: float = Field(default=0.0, description="Insertion time in seconds")
+    chunks_inserted: int = Field(
+        default=0, description="Number of chunks inserted"
+    )
+    processing_time: float = Field(
+        default=0.0, description="Insertion time in seconds"
+    )
     error: Optional[str] = Field(default=None, description="Error message if failed")
     collection_name: str = Field(description="Target collection name")
 

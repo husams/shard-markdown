@@ -18,7 +18,6 @@ console = Console()
 @click.group()
 def collections():
     """Manage ChromaDB collections.
-
     This command group provides functionality to create, list, delete,
     and manage ChromaDB collections for storing document chunks.
 
@@ -54,9 +53,8 @@ def collections():
 )
 @click.option("--filter", help="Filter collections by name pattern")
 @click.pass_context
-def list(ctx, format, show_metadata, filter):
+def list(ctx, format, show_metadata, filter):  # noqa: C901
     """List all ChromaDB collections."""
-
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
 
@@ -73,7 +71,9 @@ def list(ctx, format, show_metadata, filter):
         # Apply filter if specified
         if filter:
             collections_info = [
-                col for col in collections_info if filter.lower() in col["name"].lower()
+                col
+                for col in collections_info
+                if filter.lower() in col["name"].lower()
             ]
 
         # Display results
@@ -84,13 +84,15 @@ def list(ctx, format, show_metadata, filter):
         elif format == "yaml":
             import yaml
 
-            console.print(yaml.dump(collections_info, default_flow_style=False))
+            console.print(
+                yaml.dump(collections_info, default_flow_style=False)
+            )
 
         if not collections_info:
             console.print("[yellow]No collections found[/yellow]")
         else:
             console.print(
-                f"\n[green]Found {len(collections_info)} collection(s)[/green]"
+                f"[green]Found {len(collections_info)} collection(s)[/green]"
             )
 
     except ShardMarkdownError as e:
@@ -110,11 +112,12 @@ def list(ctx, format, show_metadata, filter):
 @click.argument("name")
 @click.option("--description", help="Collection description")
 @click.option("--metadata", help="Additional metadata as JSON string")
-@click.option("--force", is_flag=True, help="Force creation even if collection exists")
+@click.option(
+    "--force", is_flag=True, help="Force creation even if collection exists"
+)
 @click.pass_context
-def create(ctx, name, description, metadata, force):
+def create(ctx, name, description, metadata, force):  # noqa: C901
     """Create a new ChromaDB collection."""
-
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
 
@@ -142,11 +145,8 @@ def create(ctx, name, description, metadata, force):
             )
 
         if force and collection_manager.collection_exists(name):
-            if click.confirm(
-                f"Delete existing collection '{name}' and \
-                \
-    recreate?"
-            ):
+            confirm_msg = f"Delete existing collection '{name}' and recreate?"
+            if click.confirm(confirm_msg):
                 collection_manager.delete_collection(name)
             else:
                 raise click.Abort()
@@ -160,10 +160,8 @@ def create(ctx, name, description, metadata, force):
         if description:
             console.print(f"Description: {description}")
         if collection_metadata:
-            console.print(
-                f"Metadata: \
-    {json.dumps(collection_metadata, indent=2)}"
-            )
+            metadata_json = json.dumps(collection_metadata, indent=2)
+            console.print(f"Metadata: {metadata_json}")
 
     except ShardMarkdownError as e:
         console.print(f"[red]Error:[/red] {e.message}")
@@ -180,12 +178,13 @@ def create(ctx, name, description, metadata, force):
 
 @collections.command()
 @click.argument("name")
-@click.option("--force", "-f", is_flag=True, help="Force deletion without confirmation")
+@click.option(
+    "--force", "-f", is_flag=True, help="Force deletion without confirmation"
+)
 @click.option("--backup", is_flag=True, help="Create backup before deletion")
 @click.pass_context
-def delete(ctx, name, force, backup):
+def delete(ctx, name, force, backup):  # noqa: C901
     """Delete a ChromaDB collection."""
-
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
 
@@ -203,15 +202,16 @@ def delete(ctx, name, force, backup):
 
         # Get collection info for backup
         if backup:
-            console.print("[yellow]Backup functionality not yet implemented[/yellow]")
+            console.print(
+                "[yellow]Backup functionality not yet implemented[/yellow]"
+            )
 
         # Confirm deletion
         if not force:
-            if not click.confirm(
-                f"Delete collection '{name}' and \
-                \
-    all its documents?"
-            ):
+            confirm_msg = (
+                f"Delete collection '{name}' and all its documents?"
+            )
+            if not click.confirm(confirm_msg):
                 raise click.Abort()
 
         # Delete collection
@@ -243,13 +243,11 @@ def delete(ctx, name, force, backup):
 @click.option(
     "--show-documents",
     is_flag=True,
-    help="Include document count and \
-        sample documents",
+    help="Include document count and sample documents",
 )
 @click.pass_context
-def info(ctx, name, format, show_documents):
+def info(ctx, name, format, show_documents):  # noqa: C901
     """Show detailed information about a collection."""
-
     config = ctx.obj["config"]
     verbose = ctx.obj.get("verbose", 0)
 
@@ -293,7 +291,6 @@ def info(ctx, name, format, show_documents):
 
 def _display_collections_table(collections_info, show_metadata):
     """Display collections in table format."""
-
     table = Table(title="ChromaDB Collections")
     table.add_column("Name", style="cyan")
     table.add_column("Count", style="white")
@@ -321,7 +318,6 @@ def _display_collections_table(collections_info, show_metadata):
 
 def _display_collection_info_table(info_data, show_documents):
     """Display collection info in table format."""
-
     table = Table(title=f"Collection: {info_data['name']}")
     table.add_column("Property", style="cyan")
     table.add_column("Value", style="white")
@@ -337,7 +333,6 @@ def _display_collection_info_table(info_data, show_documents):
     console.print(table)
 
     if show_documents and info_data.get("count", 0) > 0:
-        console.print(
-            f"\n[blue]Collection contains {info_data['count']} documents[/blue]"
-        )
+        count = info_data["count"]
+        console.print(f"[blue]Collection contains {count} documents[/blue]")
         # Could add sample document display here

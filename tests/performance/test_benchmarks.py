@@ -24,10 +24,9 @@ class TestProcessingBenchmarks:
         """Standard configuration for benchmarking."""
         return ChunkingConfig(chunk_size=1000, overlap=200, method="structure")
 
-    def test_single_document_processing_benchmark(self,
-            temp_dir,
-            benchmark_config
-        ):
+    def test_single_document_processing_benchmark(
+        self, temp_dir, benchmark_config
+    ):
         """Benchmark processing of a single document."""
         processor = DocumentProcessor(benchmark_config)
 
@@ -60,7 +59,7 @@ class TestProcessingBenchmarks:
         std_dev = statistics.stdev(times) if len(times) > 1 else 0
         avg_chunks = statistics.mean(chunks_created)
 
-        print(f"\nSingle Document Benchmark Results:")
+        print("\nSingle Document Benchmark Results:")
         print(f"Average processing time: {avg_time:.3f}s ± {std_dev:.3f}s")
         print(f"Average chunks created: {avg_chunks:.1f}")
         print(f"Processing rate: {avg_chunks / avg_time:.1f} chunks/second")
@@ -106,7 +105,7 @@ class TestProcessingBenchmarks:
                 "throughput": len(documents) / processing_time,
             }
 
-        print(f"\nBatch Processing Benchmark Results:")
+        print("\nBatch Processing Benchmark Results:")
         for workers, result in results.items():
             print(f"Workers: {workers}")
             print(f"  Processing time: {result['time']:.3f}s")
@@ -121,16 +120,14 @@ class TestProcessingBenchmarks:
         ), "Concurrency should improve performance"
 
     @pytest.mark.parametrize(
-        "chunk_size,overlap", [(500,
-                100),
-                (1000,
-                200),
-                (1500,
-                300),
-                (2000,
-                400
-            )]
-        )
+        "chunk_size,overlap",
+        [
+            (500, 100),
+            (1000, 200),
+            (1500, 300),
+            (2000, 400),
+        ],
+    )
     def test_chunking_performance_by_size(self, temp_dir, chunk_size, overlap):
         """Benchmark performance with different chunk sizes."""
         config = ChunkingConfig(
@@ -155,10 +152,10 @@ class TestProcessingBenchmarks:
         print(f"\nChunk Size {chunk_size} (overlap {overlap}) Results:")
         print(f"  Processing time: {processing_time:.3f}s")
         print(f"  Chunks created: {result.chunks_created}")
-        print(
-            f"  Avg chunk processing time: {processing_time / result.chunks_created * 1000:.1f}ms"
-        )
-        print(f"  Characters per chunk: {len(doc_content) / result.chunks_created:.0f}")
+        chunk_process_time = processing_time / result.chunks_created * 1000
+        print(f"  Avg chunk processing time: {chunk_process_time:.1f}ms")
+        chars_per_chunk = len(doc_content) / result.chunks_created
+        print(f"  Characters per chunk: {chars_per_chunk:.0f}")
 
         assert result.success, f"Processing failed: {result.error}"
         assert processing_time < 10.0, f"Processing too slow: {processing_time:.3f}s"
@@ -216,13 +213,12 @@ class TestProcessingBenchmarks:
             max_memory_increase = max(memory_samples)
             avg_memory_increase = statistics.mean(memory_samples)
 
-            print(f"\nMemory Usage Benchmark Results:")
+            print("\nMemory Usage Benchmark Results:")
             print(f"  Baseline memory: {baseline_memory:.1f} MB")
             print(f"  Max memory increase: {max_memory_increase:.1f} MB")
             print(f"  Average memory increase: {avg_memory_increase:.1f} MB")
-            print(
-                f"  Memory per chunk: {max_memory_increase / result.chunks_created:.2f} MB"
-            )
+            memory_per_chunk = max_memory_increase / result.chunks_created
+            print(f"  Memory per chunk: {memory_per_chunk:.2f} MB")
             print(f"  Document size: {len(large_content) / 1024:.1f} KB")
             print(f"  Processing time: {processing_time:.3f}s")
 
@@ -264,7 +260,7 @@ class TestProcessingBenchmarks:
 
             assert result.success, f"Processing failed for size {size}: {result.error}"
 
-        print(f"\nScalability Benchmark Results:")
+        print("\nScalability Benchmark Results:")
         for result in results:
             print(f"  Sections: {result['sections']}")
             print(f"    Document size: {result['document_size']} chars")
@@ -280,14 +276,13 @@ class TestProcessingBenchmarks:
         time_ratio = times[-1] / times[0]
         size_ratio = sizes[-1] / sizes[0]
 
-        assert (
-            time_ratio < size_ratio * 1.5
-        ), f"Processing time scaling poorly: {time_ratio:.2f}x time for {size_ratio:.2f}x size"
+        scaling_msg = (
+            "Processing time scaling poorly: "
+            f"{time_ratio:.2f}x time for {size_ratio:.2f}x size"
+        )
+        assert time_ratio < size_ratio * 1.5, scaling_msg
 
-    def test_concurrent_processing_scalability(self,
-            temp_dir,
-            benchmark_config
-        ):
+    def test_concurrent_processing_scalability(self, temp_dir, benchmark_config):
         """Test scalability of concurrent processing."""
         processor = DocumentProcessor(benchmark_config)
 
@@ -327,7 +322,7 @@ class TestProcessingBenchmarks:
                 documents
             ), f"Not all files processed with {workers} workers"
 
-        print(f"\nConcurrent Processing Scalability Results:")
+        print("\nConcurrent Processing Scalability Results:")
         for result in scalability_results:
             print(f"  Workers: {result['workers']}")
             print(f"    Processing time: {result['processing_time']:.3f}s")
@@ -355,10 +350,9 @@ class TestProcessingBenchmarks:
         doc_path.write_text(doc_content)
 
         for method in methods:
-            config = ChunkingConfig(chunk_size=1000,
-                    overlap=200,
-                    method=method
-                )
+            config = ChunkingConfig(
+                chunk_size=1000, overlap=200, method=method
+            )
             processor = DocumentProcessor(config)
 
             # Run multiple times for statistical accuracy
@@ -367,7 +361,9 @@ class TestProcessingBenchmarks:
 
             for run in range(3):
                 start_time = time.perf_counter()
-                result = processor.process_document(doc_path, f"method-{method}-{run}")
+                result = processor.process_document(
+                    doc_path, f"method-{method}-{run}"
+                )
                 end_time = time.perf_counter()
 
                 assert (
@@ -386,12 +382,12 @@ class TestProcessingBenchmarks:
                 ),
             }
 
-        print(f"\nChunking Method Performance Comparison:")
+        print("\nChunking Method Performance Comparison:")
         for method, result in results.items():
             print(f"  {method.title()} Method:")
-            print(
-                f"    Average time: {result['avg_time']:.3f}s ± {result['std_time']:.3f}s"
-            )
+            avg_time = result["avg_time"]
+            std_time = result["std_time"]
+            print(f"    Average time: {avg_time:.3f}s ± {std_time:.3f}s")
             print(f"    Average chunks: {result['avg_chunks']:.1f}")
             print(f"    Throughput: {result['throughput']:.1f} chunks/second")
 
@@ -431,7 +427,7 @@ class TestProcessingBenchmarks:
                 content.append(f"def section_{section}_function():\n")
                 content.append(f'    """Function for section {section}."""\n')
                 content.append(f"    result = process_section_{section}()\n")
-                content.append(f"    return result\n")
+                content.append("    return result\n")
                 content.append("```\n\n")
 
         return "".join(content)
@@ -471,7 +467,7 @@ class TestMemoryEfficiency:
             memory_increase = current_memory - baseline_memory
             memory_readings.append(memory_increase)
 
-        print(f"\nMemory Leak Detection Results:")
+        print("\nMemory Leak Detection Results:")
         print(f"  Baseline memory: {baseline_memory:.1f} MB")
         print(f"  Memory after 20 iterations: {memory_readings[-1]:.1f} MB increase")
         print(f"  Average memory increase: {statistics.mean(memory_readings):.1f} MB")
@@ -514,7 +510,7 @@ class TestMemoryEfficiency:
         peak_memory = process.memory_info().rss / 1024 / 1024
         memory_increase = peak_memory - baseline_memory
 
-        print(f"\nLarge File Memory Efficiency Results:")
+        print("\nLarge File Memory Efficiency Results:")
         print(f"  File size: {file_size:.1f} MB")
         print(f"  Memory increase: {memory_increase:.1f} MB")
         print(f"  Memory ratio: {memory_increase / file_size:.2f}x file size")
@@ -523,6 +519,8 @@ class TestMemoryEfficiency:
         assert result.success, f"Large file processing failed: {result.error}"
 
         # Memory usage should be reasonable relative to file size
-        assert (
-            memory_increase < file_size * 3
-        ), f"Memory usage too high: {memory_increase:.1f} MB for {file_size:.1f} MB file"
+        memory_msg = (
+            "Memory usage too high: "
+            f"{memory_increase:.1f} MB for {file_size:.1f} MB file"
+        )
+        assert memory_increase < file_size * 3, memory_msg

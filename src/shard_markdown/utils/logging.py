@@ -15,7 +15,7 @@ def setup_logging(
     max_file_size: int = 10485760,  # 10MB
     backup_count: int = 5,
 ) -> None:
-    """Setup logging configuration.
+    """Configure logging for the application.
 
     Args:
         level: Logging level
@@ -84,11 +84,18 @@ class LogContext:
     """Context manager for adding context to log messages."""
 
     def __init__(self, logger: logging.Logger, **context):
+        """Initialize the LogContext.
+
+        Args:
+            logger: Logger instance to add context to
+            **context: Context key-value pairs to add to log records
+        """
         self.logger = logger
         self.context = context
         self.old_factory = None
 
     def __enter__(self):
+        """Enter the context manager and set up log record factory."""
         self.old_factory = logging.getLogRecordFactory()
 
         def record_factory(*args, **kwargs):
@@ -101,4 +108,5 @@ class LogContext:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit the context manager and restore original log record factory."""
         logging.setLogRecordFactory(self.old_factory)

@@ -54,7 +54,9 @@ class DocumentProcessor:
             ast = self.parser.parse(content)
 
             # Extract metadata
-            file_metadata = self.metadata_extractor.extract_file_metadata(file_path)
+            file_metadata = self.metadata_extractor.extract_file_metadata(
+                file_path
+            )
             doc_metadata = self.metadata_extractor.extract_document_metadata(ast)
 
             # Chunk document
@@ -77,8 +79,8 @@ class DocumentProcessor:
             processing_time = time.time() - start_time
 
             logger.info(
-                f"Successfully processed {file_path}: \
-    {len(enhanced_chunks)} chunks in {processing_time:.2f}s"
+                f"Successfully processed {file_path}: "
+                f"{len(enhanced_chunks)} chunks in {processing_time:.2f}s"
             )
 
             return ProcessingResult(
@@ -118,7 +120,8 @@ class DocumentProcessor:
         start_time = time.time()
 
         logger.info(
-            f"Starting batch processing of {len(file_paths)} files with {max_workers} workers"
+            f"Starting batch processing of {len(file_paths)} files "
+            f"with {max_workers} workers"
         )
 
         results = []
@@ -165,8 +168,8 @@ class DocumentProcessor:
         )
 
         logger.info(
-            f"Batch processing complete: \
-    {batch_result.successful_files}/{batch_result.total_files} files, "
+            f"Batch processing complete: "
+            f"{batch_result.successful_files}/{batch_result.total_files} files, "
             f"{total_chunks} chunks, {total_processing_time:.2f}s"
         )
 
@@ -212,8 +215,7 @@ class DocumentProcessor:
                 # Validate content is not empty
                 if not content.strip():
                     raise ProcessingError(
-                        f"File is empty or \
-    contains only whitespace: {file_path}",
+                        f"File is empty or contains only whitespace: {file_path}",
                         error_code=1301,
                         context={"file_path": str(file_path)},
                     )
@@ -223,7 +225,8 @@ class DocumentProcessor:
             except UnicodeDecodeError:
                 if encoding == encodings[-1]:  # Last encoding failed
                     raise FileSystemError(
-                        f"Cannot decode file with any supported encoding: {file_path}",
+                        f"Cannot decode file with any supported encoding: "
+                        f"{file_path}",
                         error_code=1203,
                         context={
                             "file_path": str(file_path),

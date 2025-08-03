@@ -78,7 +78,7 @@ class TestChunkingEngine:
         chunking_config.method = "invalid_method"
         engine = ChunkingEngine(chunking_config)
 
-        with pytest.raises(Exception):  # Should raise ProcessingError
+        with pytest.raises(ValueError, match="invalid"):  # Should raise ProcessingError
             engine.chunk_document(ast)
 
 
@@ -138,7 +138,7 @@ More content after code.
 
         assert code_chunk is not None
         # Code block should be complete in one chunk
-        assert chunk.content.count("```") == 2
+        assert code_chunk.content.count("```") == 2
 
 
 class TestFixedSizeChunker:
@@ -159,7 +159,8 @@ class TestFixedSizeChunker:
         # Most chunks should be close to target size
         target_size = chunking_config.chunk_size
         for chunk in chunks[:-1]:  # Exclude last chunk which might be smaller
-            assert len(chunk.content) <= target_size * 1.2  # Allow some tolerance
+            # Allow some tolerance
+            assert len(chunk.content) <= target_size * 1.2
 
     def test_overlap_functionality(
         self, sample_markdown_content: str, chunking_config: ChunkingConfig
@@ -179,16 +180,17 @@ class TestFixedSizeChunker:
                 next_chunk = chunks[i + 1].content
 
                 # Find potential overlap
-                overlap_found = False
                 if len(current_chunk) > 20 and len(next_chunk) > 20:
-                    # Check if end of current chunk appears in beginning of next
+                    # Check if end of current chunk appears in next
                     current_end = current_chunk[-20:]
-                    if any(
-                        word in next_chunk[:100]
-                        for word in current_end.split()[-3:]
+                    overlap_words = [
+                        word for word in current_end.split()[-3:]
                         if len(word) > 3
-                    ):
-                        _overlap_found = True
+                    ]
+                    if any(word in next_chunk[:100] for word in overlap_words):
+                        # Overlap detected - this is expected behavior
+                        pass
 
-                # This is a heuristic check - overlap might not always be detectable this way
-                # The main goal is to ensure the code runs without error
+                # This is a heuristic check - overlap might not always be
+                # detectable this way. The main goal is to ensure the code
+                # runs without error

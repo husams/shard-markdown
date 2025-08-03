@@ -1,7 +1,6 @@
 """End-to-end tests for CLI workflows."""
 
 import time
-from pathlib import Path
 
 import pytest
 from click.testing import CliRunner
@@ -39,7 +38,8 @@ class TestBasicCLIWorkflows:
 
         print(f"Process output: {result.output}")
         assert result.exit_code == 0
-        assert "successfully" in result.output.lower() or "processed" in result.output.lower()
+        output_lower = result.output.lower()
+        assert "successfully" in output_lower or "processed" in output_lower
 
         # Query the processed content
         query_result = cli_runner.invoke(
@@ -59,7 +59,11 @@ class TestBasicCLIWorkflows:
         print(f"Query output: {query_result.output}")
         # Query might fail if ChromaDB isn't running, but process should succeed
         if query_result.exit_code == 0:
-            assert "results" in query_result.output.lower() or "chunks" in query_result.output.lower()
+            query_output_lower = query_result.output.lower()
+            success_indicators = ["results", "chunks"]
+            assert any(
+                indicator in query_output_lower for indicator in success_indicators
+            )
 
     def test_batch_processing_workflow(self, cli_runner, test_documents):
         """Test batch processing workflow."""
@@ -324,7 +328,8 @@ Content here.
         content_parts = ["# Large Document Test\n\n"]
         for i in range(100):  # Create 100 sections
             content_parts.append(f"## Section {i+1}\n\n")
-            content_parts.append(f"This is section {i+1} with substantial content. " * 20)
+            content_text = f"This is section {i+1} with substantial content. " * 20
+            content_parts.append(content_text)
             content_parts.append("\n\n")
 
             if i % 10 == 0:  # Add code blocks occasionally
@@ -381,9 +386,12 @@ Content here.
                 )
 
                 print(f"Query {query_type} output: {query_result.output}")
-                # Queries might fail if ChromaDB isn't available, but we test the interface
+                # Queries might fail if ChromaDB isn't available,
+                # but we test the interface
 
-    def test_config_override_workflow(self, cli_runner, sample_markdown_file, temp_dir):
+    def test_config_override_workflow(
+        self, cli_runner, sample_markdown_file, temp_dir
+    ):
         """Test configuration override workflow."""
         # Create custom config
         custom_config = temp_dir / "custom_config.yaml"
@@ -481,11 +489,9 @@ processing:
 
         print(f"Dry run output: {result.output}")
         assert result.exit_code == 0
-        assert (
-            "would process" in result.output.lower()
-            or "dry run" in result.output.lower()
-            or "preview" in result.output.lower()
-        )
+        output_lower = result.output.lower()
+        dry_run_indicators = ["would process", "dry run", "preview"]
+        assert any(indicator in output_lower for indicator in dry_run_indicators)
 
     def test_file_pattern_filtering(self, cli_runner, temp_dir):
         """Test file pattern filtering in recursive processing."""
@@ -517,9 +523,9 @@ processing:
 
         print(f"Pattern filtering output: {result.output}")
         assert result.exit_code == 0
-        assert (
-            "processed" in result.output.lower() or "success" in result.output.lower()
-        )
+        output_lower = result.output.lower()
+        success_indicators = ["processed", "success"]
+        assert any(indicator in output_lower for indicator in success_indicators)
 
 
 @pytest.mark.e2e
@@ -531,10 +537,9 @@ class TestCLIErrorScenarios:
         """CLI runner for error scenario tests."""
         return CliRunner()
 
-    def test_invalid_collection_name_scenarios(self,
-            cli_runner,
-            sample_markdown_file
-        ):
+    def test_invalid_collection_name_scenarios(
+        self, cli_runner, sample_markdown_file
+    ):
         """Test various invalid collection names."""
         invalid_names = [
             "",  # Empty
@@ -546,7 +551,12 @@ class TestCLIErrorScenarios:
         for invalid_name in invalid_names:
             result = cli_runner.invoke(
                 cli,
-                ["process", "--collection", invalid_name, str(sample_markdown_file)],
+                [
+                    "process",
+                    "--collection",
+                    invalid_name,
+                    str(sample_markdown_file),
+                ],
             )
 
             # Should handle invalid names appropriately
@@ -568,7 +578,9 @@ class TestCLIErrorScenarios:
 
         print(f"Missing files output: {result.output}")
         assert result.exit_code != 0
-        assert "exist" in result.output.lower() or "found" in result.output.lower()
+        output_lower = result.output.lower()
+        error_indicators = ["exist", "found"]
+        assert any(indicator in output_lower for indicator in error_indicators)
 
     def test_permission_denied_scenarios(self, cli_runner, temp_dir):
         """Test permission denied scenarios."""
@@ -598,16 +610,17 @@ class TestCLIErrorScenarios:
 
             # Should handle permission errors gracefully
             if result.exit_code != 0:
-                assert (
-                    "permission" in result.output.lower()
-                    or "access" in result.output.lower()
+                output_lower = result.output.lower()
+                permission_indicators = ["permission", "access"]
+                assert any(
+                    indicator in output_lower for indicator in permission_indicators
                 )
 
         finally:
             # Restore permissions for cleanup
             try:
                 restricted_dir.chmod(0o755)
-            except:
+            except Exception:
                 pass
 
     def test_malformed_config_scenarios(
@@ -640,10 +653,10 @@ invalid: yaml: content: here
 
         # Should handle malformed config gracefully
         if result.exit_code != 0:
-            assert (
-                "config" in result.output.lower()
-                or "yaml" in result.output.lower()
-                or "error" in result.output.lower()
+            output_lower = result.output.lower()
+            config_error_indicators = ["config", "yaml", "error"]
+            assert any(
+                indicator in output_lower for indicator in config_error_indicators
             )
 
 
@@ -672,7 +685,7 @@ This is document number {i} in the batch.
 ## Section 1
 Content for section 1 of document {i}.
 
-## Section 2  
+## Section 2
 Content for section 2 of document {i}.
 
 ## Conclusion

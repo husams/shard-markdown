@@ -16,7 +16,8 @@ class TestChromaDBConfig:
 
     def test_valid_config(self):
         """Test valid ChromaDB configuration."""
-        config = ChromaDBConfig(host="localhost",
+        config = ChromaDBConfig(
+            host="localhost",
             port=8000,
             ssl=False,
             timeout=30
@@ -299,10 +300,9 @@ class TestAppConfig:
         try:
             # This test assumes environment variable support is implemented
             # The actual behavior depends on the configuration loader
-            config = AppConfig()
-
             # Values might come from environment or defaults
             # This test would need to be adjusted based on actual implementation
+            pass
 
         finally:
             # Restore original environment
@@ -381,7 +381,7 @@ class TestConfigValidationScenarios:
         # Test port validation error
         try:
             ChromaDBConfig(port=70000)
-            assert False, "Should have raised ValidationError"
+            raise AssertionError("Should have raised ValidationError")
         except ValidationError as e:
             error_msg = str(e)
             assert "port" in error_msg.lower() or "65535" in error_msg
@@ -389,7 +389,7 @@ class TestConfigValidationScenarios:
         # Test chunk size validation error
         try:
             ChunkingConfig(default_size=50)
-            assert False, "Should have raised ValidationError"
+            raise AssertionError("Should have raised ValidationError")
         except ValidationError as e:
             error_msg = str(e)
             assert "size" in error_msg.lower() or "100" in error_msg

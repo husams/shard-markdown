@@ -179,6 +179,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'shard-markdown', 'shard-markdown Documentation',
-     author, 'shard-markdown', 'Intelligent markdown document chunking for ChromaDB collections',
+     author, 'shard-markdown',
+     'Intelligent markdown document chunking for ChromaDB collections',
      'Miscellaneous'),
 ]

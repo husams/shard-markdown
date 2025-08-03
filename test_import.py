@@ -10,12 +10,11 @@ sys.path.insert(0, str(src_path))
 
 try:
     # Test basic imports without heavy dependencies
+    from shard_markdown.config.settings import AppConfig, ChunkingConfig
 
     print("✓ Configuration models import successful")
 
-
     print("✓ Error classes import successful")
-
 
     print("✓ Core models import successful")
 
@@ -25,8 +24,8 @@ try:
     ChromaDB host = {config.chromadb.host}")
 
     # Test chunk config
-    chunk_config = ChunkingConfig(chunk_size=1000, overlap=200)
-    print(f"✓ Chunking config created: size = {chunk_config.chunk_size}")
+    chunk_config = ChunkingConfig(default_size=1000, default_overlap=200)
+    print(f"✓ Chunking config created: size = {chunk_config.default_size}")
 
     print("\nAll basic imports successful! The package structure is correct.")
 

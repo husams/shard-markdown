@@ -52,9 +52,8 @@ class TestMarkdownElement:
     def test_create_list_element(self):
         """Test creating list element."""
         items = ["Item 1", "Item 2", "Item 3"]
-        element = MarkdownElement(type="list",
-            text="List content",
-            items=items
+        element = MarkdownElement(
+            type="list", text="List content", items=items
         )
 
         assert element.type == "list"
@@ -63,9 +62,8 @@ class TestMarkdownElement:
     def test_element_with_metadata(self):
         """Test element with custom metadata."""
         metadata = {"custom_field": "value", "another": 123}
-        element = MarkdownElement(type="paragraph",
-            text="Test",
-            metadata=metadata
+        element = MarkdownElement(
+            type="paragraph", text="Test", metadata=metadata
         )
 
         assert element.metadata == metadata
@@ -391,7 +389,9 @@ class TestInsertResult:
     def test_create_failed_insert_result(self):
         """Test creating failed insert result."""
         result = InsertResult(
-            success=False, error="Connection failed", collection_name="test-collection"
+            success=False,
+            error="Connection failed",
+            collection_name="test-collection"
         )
 
         assert result.success is False

@@ -144,7 +144,9 @@ class ChromaDBOperations:
             if include_metadata and results.get("metadatas"):
                 document_data["metadata"] = results["metadatas"][0]
 
-            logger.info(f"Retrieved document '{document_id}' from '{collection_name}'")
+            logger.info(
+                f"Retrieved document '{document_id}' from '{collection_name}'"
+            )
 
             return document_data
 
@@ -199,7 +201,9 @@ class ChromaDBOperations:
                 include.append("metadatas")
 
             # Get documents
-            results = collection.get(limit=limit, offset=offset, include=include)
+            results = collection.get(
+                limit=limit, offset=offset, include=include
+            )
 
             # Format results
             documents = []
@@ -275,7 +279,8 @@ class ChromaDBOperations:
             collection.delete(ids=document_ids)
 
             logger.info(
-                f"Deleted {len(document_ids)} documents from " f"'{collection_name}'"
+                f"Deleted {len(document_ids)} documents from "
+                f"'{collection_name}'"
             )
 
             return {
@@ -286,7 +291,8 @@ class ChromaDBOperations:
 
         except Exception as e:
             raise ChromaDBError(
-                f"Failed to delete documents from collection: " f"{collection_name}",
+                f"Failed to delete documents from collection: "
+                f"{collection_name}",
                 error_code=1443,
                 context={
                     "collection_name": collection_name,
@@ -319,7 +325,9 @@ class ChromaDBOperations:
         ids = results["ids"][0]
         documents = results["documents"][0]
         distances = results["distances"][0]
-        metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
+        metadatas = (
+            results.get("metadatas", [[]])[0] if include_metadata else []
+        )
 
         for i, doc_id in enumerate(ids):
             # Convert distance to similarity score (ChromaDB uses distance,

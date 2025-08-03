@@ -19,10 +19,16 @@ class ChromaDBConfig(BaseModel):
     """ChromaDB connection configuration."""
 
     host: str = Field(default="localhost", description="ChromaDB server host")
-    port: int = Field(default=8000, ge=1, le=65535, description="ChromaDB server port")
+    port: int = Field(
+        default=8000, ge=1, le=65535, description="ChromaDB server port"
+    )
     ssl: bool = Field(default=False, description="Use SSL connection")
-    auth_token: Optional[str] = Field(default=None, description="Authentication token")
-    timeout: int = Field(default=30, ge=1, description="Connection timeout in seconds")
+    auth_token: Optional[str] = Field(
+        default=None, description="Authentication token"
+    )
+    timeout: int = Field(
+        default=30, ge=1, description="Connection timeout in seconds"
+    )
 
     @validator("host")
     def validate_host(cls, v: str) -> str:
@@ -36,10 +42,16 @@ class ChunkingConfig(BaseModel):
     """Document chunking configuration."""
 
     default_size: int = Field(
-        default=1000, ge=100, le=10000, description="Default chunk size in characters"
+        default=1000,
+        ge=100,
+        le=10000,
+        description="Default chunk size in characters",
     )
     default_overlap: int = Field(
-        default=200, ge=0, le=1000, description="Default overlap between chunks"
+        default=200,
+        ge=0,
+        le=1000,
+        description="Default overlap between chunks",
     )
     method: ChunkingMethod = Field(
         default=ChunkingMethod.STRUCTURE, description="Default chunking method"
@@ -63,7 +75,10 @@ class ProcessingConfig(BaseModel):
     """Document processing configuration."""
 
     batch_size: int = Field(
-        default=10, ge=1, le=100, description="Number of documents to process in batch"
+        default=10,
+        ge=1,
+        le=100,
+        description="Number of documents to process in batch",
     )
     max_workers: int = Field(
         default=4, ge=1, le=16, description="Maximum worker threads"
@@ -90,7 +105,9 @@ class LoggingConfig(BaseModel):
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         description="Log message format",
     )
-    file_path: Optional[Path] = Field(default=None, description="Log file path")
+    file_path: Optional[Path] = Field(
+        default=None, description="Log file path"
+    )
     max_file_size: int = Field(
         default=10485760, description="Maximum log file size in bytes"  # 10MB
     )
@@ -109,7 +126,8 @@ class AppConfig(BaseModel):
 
     # Custom user settings
     custom_metadata: Dict[str, Any] = Field(
-        default_factory=dict, description="Custom metadata to add to all chunks"
+        default_factory=dict,
+        description="Custom metadata to add to all chunks",
     )
     plugins: List[str] = Field(
         default_factory=list, description="List of plugin modules to load"
