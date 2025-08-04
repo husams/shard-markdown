@@ -46,11 +46,11 @@ jobs:
       - name: Run black
         run: uv run black --check --diff src/ tests/
 
-      - name: Run isort
-        run: uv run isort --check-only --diff src/ tests/
+      - name: Run ruff check
+        run: uv run ruff check src/ tests/
 
-      - name: Run flake8
-        run: uv run flake8 src/ tests/
+      - name: Run ruff format check
+        run: uv run ruff format --check src/ tests/
 
       - name: Run mypy
         run: uv run mypy src/

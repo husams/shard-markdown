@@ -50,9 +50,7 @@ dev = [
     "pytest-benchmark>=4.0.0",
     "black>=23.9.0",
     "isort>=5.12.0",
-    "flake8>=6.1.0",
-    "flake8-docstrings>=1.7.0",
-    "flake8-bugbear>=23.9.0",
+    "ruff>=0.1.8",
     "mypy>=1.6.0",
     "types-PyYAML>=6.0.0",
     "pre-commit>=3.4.0",
@@ -94,31 +92,54 @@ extend-exclude = '''
 )/
 '''
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-known_first_party = ["shard_markdown"]
+[tool.ruff.lint.isort]
+known-first-party = ["shard_markdown"]
+force-single-line = false
+lines-after-imports = 2
+no-lines-before = ["future", "standard-library"]
 
-[tool.flake8]
-max-line-length = 88
-max-complexity = 10
-extend-ignore = [
-    "E203",  # whitespace before ':' (conflicts with Black)
-    "W503",  # line break before binary operator (conflicts with Black)
-]
+[tool.ruff]
+line-length = 88
+target-version = "py312"
 exclude = [
+    ".claude",
     ".git",
     ".venv",
     "__pycache__",
     "build",
     "dist",
     ".eggs",
+    "node_modules",
 ]
-per-file-ignores = [
-    "__init__.py:F401",  # Allow unused imports in __init__.py
-    "test_*.py:D100,D101,D102,D103",  # Relax docstring requirements for tests
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "D",    # pydocstyle
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "S",    # bandit
 ]
+ignore = [
+    "E203",  # whitespace before ':' (conflicts with Black)
+    "W503",  # line break before binary operator (conflicts with Black)
+    "D100",  # Missing docstring in public module
+    "D104",  # Missing docstring in public package
+    "S101",  # Use of assert detected
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+"test_*.py" = ["D100", "D101", "D102", "D103", "S101"]  # Relax requirements for tests
+"tests/**/*.py" = ["D100", "D101", "D102", "D103", "S101"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.mypy]
 python_version = "3.12"
@@ -180,8 +201,6 @@ exclude_lines = [
 [dependency-groups]
 dev = [
     "bandit[toml]>=1.8.6",
-    "flake8-bugbear>=24.12.12",
-    "flake8-docstrings>=1.7.0",
     "safety>=3.6.0",
     "types-pyyaml>=6.0.12.20250516",
 ]
