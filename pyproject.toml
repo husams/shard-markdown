@@ -48,8 +48,6 @@ dev = [
     "pytest-mock>=3.11.0",
     "pytest-asyncio>=0.21.0",
     "pytest-benchmark>=4.0.0",
-    "black>=23.9.0",
-    "isort>=5.12.0",
     "ruff>=0.1.8",
     "mypy>=1.6.0",
     "types-PyYAML>=6.0.0",
@@ -72,25 +70,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 shard_markdown = ["py.typed"]
-
-[tool.black]
-line-length = 88
-target-version = ['py312', 'py313']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
 
 [tool.ruff.lint.isort]
 known-first-party = ["shard_markdown"]
@@ -127,7 +106,6 @@ select = [
     "S",    # bandit
 ]
 ignore = [
-    "E203",  # whitespace before ':' (conflicts with Black)
     "D100",  # Missing docstring in public module
     "D104",  # Missing docstring in public package
     "S101",  # Use of assert detected
