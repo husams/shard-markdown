@@ -7,4 +7,5 @@ __description__ = "Intelligent markdown document chunking for ChromaDB collectio
 
 from .core.models import DocumentChunk, MarkdownAST, ProcessingResult
 
+
 __all__ = ["DocumentChunk", "MarkdownAST", "ProcessingResult", "__version__"]

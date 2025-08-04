@@ -1,7 +1,7 @@
 """Query command for searching and retrieving documents."""
 
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 import click
 from rich.console import Console
@@ -10,6 +10,7 @@ from rich.table import Table
 from ...chromadb.factory import create_chromadb_client
 from ...utils.errors import ShardMarkdownError
 from ...utils.logging import get_logger
+
 
 _logger = get_logger(__name__)
 console = Console()
@@ -109,8 +110,7 @@ def search(  # noqa: C901
 
         # Perform search
         console.print(
-            f"[blue]Searching for: '{query_text}' in collection "
-            f"'{collection}'[/blue]"
+            f"[blue]Searching for: '{query_text}' in collection '{collection}'[/blue]"
         )
 
         try:
@@ -222,7 +222,7 @@ def get(
 
 
 def _display_search_results_table(
-    results: Dict[str, Any], include_metadata: bool, similarity_threshold: float
+    results: dict[str, Any], include_metadata: bool, similarity_threshold: float
 ) -> None:
     """Display search results in table format."""
     table = Table(title="Search Results")
@@ -239,7 +239,9 @@ def _display_search_results_table(
     distances = results["distances"][0]
     metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
 
-    for i, (doc_id, doc, distance) in enumerate(zip(ids, documents, distances)):
+    for i, (doc_id, doc, distance) in enumerate(
+        zip(ids, documents, distances, strict=False)
+    ):
         # Skip if below similarity threshold
         similarity = 1 - distance  # Convert distance to similarity
         if similarity < similarity_threshold:
@@ -278,7 +280,7 @@ def _display_search_results_table(
     console.print(table)
 
 
-def _display_document_table(results: Dict[str, Any], include_metadata: bool) -> None:
+def _display_document_table(results: dict[str, Any], include_metadata: bool) -> None:
     """Display document in table format."""
     doc_id = results["ids"][0]
     document = results["documents"][0]
@@ -303,8 +305,8 @@ def _display_document_table(results: Dict[str, Any], include_metadata: bool) -> 
 
 
 def _format_search_results(
-    results: Dict[str, Any], include_metadata: bool
-) -> List[Dict[str, Any]]:
+    results: dict[str, Any], include_metadata: bool
+) -> list[dict[str, Any]]:
     """Format search results for JSON/YAML output."""
     ids = results["ids"][0]
     documents = results["documents"][0]
@@ -312,7 +314,9 @@ def _format_search_results(
     metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
 
     formatted = []
-    for i, (doc_id, doc, distance) in enumerate(zip(ids, documents, distances)):
+    for i, (doc_id, doc, distance) in enumerate(
+        zip(ids, documents, distances, strict=False)
+    ):
         result = {
             "id": doc_id,
             "content": doc,
@@ -329,8 +333,8 @@ def _format_search_results(
 
 
 def _format_document_result(
-    results: Dict[str, Any], include_metadata: bool
-) -> Dict[str, Any]:
+    results: dict[str, Any], include_metadata: bool
+) -> dict[str, Any]:
     """Format document result for JSON/YAML output."""
     result = {"id": results["ids"][0], "content": results["documents"][0]}
 

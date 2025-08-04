@@ -2,7 +2,7 @@
 
 import statistics
 import time
-from typing import Any, Dict, List
+from typing import Any
 
 import psutil
 import pytest
@@ -91,7 +91,7 @@ class TestProcessingBenchmarks:
 
         # Test different worker counts
         worker_counts = [1, 2, 4]
-        results: Dict[int, Dict[str, Any]] = {}
+        results: dict[int, dict[str, Any]] = {}
 
         for workers in worker_counts:
             start_time = time.perf_counter()
@@ -133,7 +133,7 @@ class TestProcessingBenchmarks:
     )
     def test_chunking_performance_by_size(
         self, temp_dir: Any, chunk_size: int, overlap: int
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Benchmark performance with different chunk sizes."""
         config = ChunkingConfig(
             chunk_size=chunk_size, overlap=overlap, method="structure"
@@ -351,7 +351,7 @@ class TestProcessingBenchmarks:
     def test_chunking_method_performance_comparison(self, temp_dir: Any) -> None:
         """Compare performance of different chunking methods."""
         methods = ["structure", "fixed"]
-        results: Dict[str, Dict[str, float]] = {}
+        results: dict[str, dict[str, float]] = {}
 
         # Create test document
         doc_content = self._generate_document_content(
@@ -385,7 +385,7 @@ class TestProcessingBenchmarks:
                 "std_time": statistics.stdev(times) if len(times) > 1 else 0,
                 "avg_chunks": statistics.mean(chunks_list),
                 "throughput": statistics.mean(
-                    [c / t for c, t in zip(chunks_list, times)]
+                    [c / t for c, t in zip(chunks_list, times, strict=False)]
                 ),
             }
 

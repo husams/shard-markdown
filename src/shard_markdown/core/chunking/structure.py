@@ -1,10 +1,9 @@
 """Structure-aware chunking that respects markdown hierarchy."""
 
-from typing import List
-
 from ...utils.logging import get_logger
 from ..models import DocumentChunk, MarkdownAST, MarkdownElement
 from .base import BaseChunker
+
 
 logger = get_logger(__name__)
 
@@ -12,7 +11,7 @@ logger = get_logger(__name__)
 class StructureAwareChunker(BaseChunker):
     """Intelligent chunking that respects markdown structure."""
 
-    def chunk_document(self, ast: MarkdownAST) -> List[DocumentChunk]:
+    def chunk_document(self, ast: MarkdownAST) -> list[DocumentChunk]:
         """Chunk document while respecting structure boundaries.
 
         Args:
@@ -27,7 +26,7 @@ class StructureAwareChunker(BaseChunker):
         chunks = []
         current_chunk = ""
         current_start = 0
-        current_context: List[str] = []
+        current_context: list[str] = []
 
         for element in ast.elements:
             element_text = self._element_to_text(element)
@@ -40,7 +39,6 @@ class StructureAwareChunker(BaseChunker):
                     len(current_chunk) + len(element_text) > self.config.chunk_size
                     and current_chunk.strip()
                 ):
-
                     chunk = self._create_chunk(
                         current_chunk,
                         current_start,
@@ -61,7 +59,6 @@ class StructureAwareChunker(BaseChunker):
                 len(current_chunk) + len(element_text) > self.config.chunk_size
                 and current_chunk.strip()
             ):
-
                 # Create chunk with current content
                 chunk = self._create_chunk(
                     current_chunk,
@@ -122,7 +119,7 @@ class StructureAwareChunker(BaseChunker):
             return f"{element.text}\n\n"
 
     def _update_context(
-        self, context: List[str], header_element: MarkdownElement
+        self, context: list[str], header_element: MarkdownElement
     ) -> None:
         """Update hierarchical context based on header level.
 

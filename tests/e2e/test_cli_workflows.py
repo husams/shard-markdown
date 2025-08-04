@@ -327,15 +327,15 @@ Content here.
 
         content_parts = ["# Large Document Test\n\n"]
         for i in range(100):  # Create 100 sections
-            content_parts.append(f"## Section {i+1}\n\n")
-            content_text = f"This is section {i+1} with substantial content. " * 20
+            content_parts.append(f"## Section {i + 1}\n\n")
+            content_text = f"This is section {i + 1} with substantial content. " * 20
             content_parts.append(content_text)
             content_parts.append("\n\n")
 
             if i % 10 == 0:  # Add code blocks occasionally
                 content_parts.append("```python\n")
-                content_parts.append(f"def section_{i+1}_function():\n")
-                content_parts.append(f'    return "Section {i+1} result"\n')
+                content_parts.append(f"def section_{i + 1}_function():\n")
+                content_parts.append(f'    return "Section {i + 1} result"\n')
                 content_parts.append("```\n\n")
 
         large_doc.write_text("".join(content_parts))

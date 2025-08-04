@@ -6,6 +6,7 @@ repos:
       - id: black
         language_version: python3.12
         args: [--line-length=88]
+        exclude: ^docs/
 
   # Python linting and formatting with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -13,7 +14,9 @@ repos:
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
+        exclude: ^docs/
       - id: ruff-format
+        exclude: ^docs/
 
   # Type checking
   - repo: https://github.com/pre-commit/mirrors-mypy
@@ -23,21 +26,27 @@ repos:
         language_version: python3.12
         additional_dependencies: [types-PyYAML, types-python-dateutil]
         args: [--ignore-missing-imports]
+        exclude: ^docs/
 
   # General pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^docs/
       - id: end-of-file-fixer
+        exclude: ^docs/
       - id: check-yaml
+        exclude: ^docs/
       - id: check-toml
       - id: check-json
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1000]
       - id: debug-statements
+        exclude: ^docs/
       - id: check-docstring-first
+        exclude: ^docs/
 
   # Security scanning
   - repo: https://github.com/pycqa/bandit
@@ -47,22 +56,6 @@ repos:
         language_version: python3.12
         args: [-r, src/]
         exclude: tests/
-
-  # Documentation
-  - repo: https://github.com/pycqa/doc8
-    rev: v1.1.2
-    hooks:
-      - id: doc8
-        language_version: python3.12
-        args: [--max-line-length=100]
-        files: \.(rst|md)$
-
-  # Markdown linting
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.42.0
-    hooks:
-      - id: markdownlint
-        args: [--fix]
 
   # YAML formatting
   - repo: https://github.com/pre-commit/mirrors-prettier

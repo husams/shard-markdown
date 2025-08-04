@@ -1,12 +1,11 @@
 """Main chunking engine that selects appropriate strategy."""
 
-from typing import List
-
 from ...utils.errors import ProcessingError
 from ...utils.logging import get_logger
 from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
 from .fixed import FixedSizeChunker
 from .structure import StructureAwareChunker
+
 
 logger = get_logger(__name__)
 
@@ -26,7 +25,7 @@ class ChunkingEngine:
             "fixed": FixedSizeChunker(config),
         }
 
-    def chunk_document(self, ast: MarkdownAST) -> List[DocumentChunk]:
+    def chunk_document(self, ast: MarkdownAST) -> list[DocumentChunk]:
         """Chunk document using configured strategy.
 
         Args:
@@ -80,7 +79,7 @@ class ChunkingEngine:
                 cause=e,
             ) from e
 
-    def _validate_chunks(self, chunks: List[DocumentChunk]) -> None:
+    def _validate_chunks(self, chunks: list[DocumentChunk]) -> None:
         """Validate generated chunks.
 
         Args:
@@ -111,8 +110,7 @@ class ChunkingEngine:
 
         if oversized_chunks:
             raise ProcessingError(
-                f"Generated chunks exceed size limits at positions: "
-                f"{oversized_chunks}",
+                f"Generated chunks exceed size limits at positions: {oversized_chunks}",
                 error_code=1313,
                 context={
                     "oversized_chunk_indices": oversized_chunks,

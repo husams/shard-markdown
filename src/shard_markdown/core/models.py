@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -12,14 +12,10 @@ class MarkdownElement(BaseModel):
 
     type: str = Field(description="Element type (header, paragraph, code_block, etc.)")
     text: str = Field(description="Text content of the element")
-    level: Optional[int] = Field(default=None, description="Header level (for headers)")
-    language: Optional[str] = Field(
-        default=None, description="Language (for code blocks)"
-    )
-    items: Optional[List[str]] = Field(
-        default=None, description="List items (for lists)"
-    )
-    metadata: Dict[str, Any] = Field(
+    level: int | None = Field(default=None, description="Header level (for headers)")
+    language: str | None = Field(default=None, description="Language (for code blocks)")
+    items: list[str] | None = Field(default=None, description="List items (for lists)")
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Additional metadata"
     )
 
@@ -27,23 +23,23 @@ class MarkdownElement(BaseModel):
 class MarkdownAST(BaseModel):
     """Abstract Syntax Tree representation of a markdown document."""
 
-    elements: List[MarkdownElement] = Field(description="List of markdown elements")
-    frontmatter: Dict[str, Any] = Field(
+    elements: list[MarkdownElement] = Field(description="List of markdown elements")
+    frontmatter: dict[str, Any] = Field(
         default_factory=dict, description="YAML frontmatter"
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict, description="Document metadata"
     )
 
     @property
-    def headers(self) -> List[MarkdownElement]:
+    def headers(self) -> list[MarkdownElement]:
         """Get all header elements."""
         if not self.elements:
             return []
         return [elem for elem in self.elements if elem.type == "header"]
 
     @property
-    def code_blocks(self) -> List[MarkdownElement]:
+    def code_blocks(self) -> list[MarkdownElement]:
         """Get all code block elements."""
         if not self.elements:
             return []
@@ -53,9 +49,9 @@ class MarkdownAST(BaseModel):
 class DocumentChunk(BaseModel):
     """Represents a chunk of processed document content."""
 
-    id: Optional[str] = Field(default=None, description="Unique chunk identifier")
+    id: str | None = Field(default=None, description="Unique chunk identifier")
     content: str = Field(description="Chunk text content")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Chunk metadata")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Chunk metadata")
     start_position: int = Field(
         default=0, description="Start position in original document"
     )
@@ -82,10 +78,10 @@ class ProcessingResult(BaseModel):
     processing_time: float = Field(
         default=0.0, description="Processing time in seconds"
     )
-    collection_name: Optional[str] = Field(
+    collection_name: str | None = Field(
         default=None, description="Target collection name"
     )
-    error: Optional[str] = Field(default=None, description="Error message if failed")
+    error: str | None = Field(default=None, description="Error message if failed")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="Processing timestamp"
     )
@@ -101,7 +97,7 @@ class ProcessingResult(BaseModel):
 class BatchResult(BaseModel):
     """Result of processing multiple documents in batch."""
 
-    results: List[ProcessingResult] = Field(description="Individual processing results")
+    results: list[ProcessingResult] = Field(description="Individual processing results")
     total_files: int = Field(description="Total number of files processed")
     successful_files: int = Field(description="Number of successfully processed files")
     failed_files: int = Field(description="Number of failed files")
@@ -142,9 +138,7 @@ class ChunkingConfig(BaseModel):
     respect_boundaries: bool = Field(
         default=True, description="Respect structure boundaries"
     )
-    max_tokens: Optional[int] = Field(
-        default=None, description="Maximum tokens per chunk"
-    )
+    max_tokens: int | None = Field(default=None, description="Maximum tokens per chunk")
 
 
 class InsertResult(BaseModel):
@@ -153,7 +147,7 @@ class InsertResult(BaseModel):
     success: bool = Field(description="Whether insertion succeeded")
     chunks_inserted: int = Field(default=0, description="Number of chunks inserted")
     processing_time: float = Field(default=0.0, description="Insertion time in seconds")
-    error: Optional[str] = Field(default=None, description="Error message if failed")
+    error: str | None = Field(default=None, description="Error message if failed")
     collection_name: str = Field(description="Target collection name")
 
     @property

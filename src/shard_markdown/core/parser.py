@@ -1,7 +1,7 @@
 """Markdown document parser for AST generation."""
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import frontmatter
 import markdown
@@ -55,7 +55,7 @@ class MarkdownParser:
         except (AttributeError, TypeError, UnicodeDecodeError) as e:
             raise ValueError(f"Failed to parse markdown: {e}") from e
 
-    def _extract_elements(self, content: str) -> List[MarkdownElement]:  # noqa: C901
+    def _extract_elements(self, content: str) -> list[MarkdownElement]:  # noqa: C901
         """Extract structural elements from markdown content.
 
         Args:
@@ -64,9 +64,9 @@ class MarkdownParser:
         Returns:
             List of markdown elements in document order
         """
-        elements: List[MarkdownElement] = []
+        elements: list[MarkdownElement] = []
         lines = content.split("\n")
-        state: Dict[str, Any] = {
+        state: dict[str, Any] = {
             "current_text": [],
             "in_code_block": False,
             "line_offset": 0,
@@ -152,7 +152,7 @@ class MarkdownParser:
         return elements
 
     def _save_accumulated_text(
-        self, elements: List[MarkdownElement], state: Dict[str, Any]
+        self, elements: list[MarkdownElement], state: dict[str, Any]
     ) -> None:
         """Save accumulated text as paragraph element."""
         if state["current_text"]:
@@ -169,7 +169,7 @@ class MarkdownParser:
             state["current_text"] = []
 
     def _create_code_block(
-        self, elements: List[MarkdownElement], state: Dict[str, Any]
+        self, elements: list[MarkdownElement], state: dict[str, Any]
     ) -> None:
         """Create code block element from accumulated text."""
         code_content = "\n".join(state["current_text"])
@@ -190,8 +190,8 @@ class MarkdownParser:
         )
 
     def _extract_metadata_from_headers(
-        self, elements: List[MarkdownElement]
-    ) -> Dict[str, Optional[str]]:
+        self, elements: list[MarkdownElement]
+    ) -> dict[str, str | None]:
         """Extract document metadata from header structure.
 
         Args:
@@ -200,7 +200,7 @@ class MarkdownParser:
         Returns:
             Dictionary of extracted metadata
         """
-        metadata: Dict[str, Optional[str]] = {}
+        metadata: dict[str, str | None] = {}
 
         # Find first header as potential title
         for element in elements:
@@ -209,7 +209,7 @@ class MarkdownParser:
                 break
 
         # Count headers by level
-        header_counts: Dict[int, int] = {}
+        header_counts: dict[int, int] = {}
         for element in elements:
             if element.type == "header" and element.level is not None:
                 level = element.level
@@ -219,7 +219,7 @@ class MarkdownParser:
 
         return metadata
 
-    def get_parser_info(self) -> Dict[str, Any]:
+    def get_parser_info(self) -> dict[str, Any]:
         """Get information about the parser configuration.
 
         Returns:

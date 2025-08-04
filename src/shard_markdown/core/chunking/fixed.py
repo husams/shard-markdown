@@ -1,10 +1,9 @@
 """Fixed-size chunking with character or token limits."""
 
-from typing import List
-
 from ...utils.logging import get_logger
 from ..models import DocumentChunk, MarkdownAST
 from .base import BaseChunker
+
 
 logger = get_logger(__name__)
 
@@ -12,7 +11,7 @@ logger = get_logger(__name__)
 class FixedSizeChunker(BaseChunker):
     """Simple chunker that creates fixed-size chunks."""
 
-    def chunk_document(self, ast: MarkdownAST) -> List[DocumentChunk]:
+    def chunk_document(self, ast: MarkdownAST) -> list[DocumentChunk]:
         """Chunk document into fixed-size pieces.
 
         Args:

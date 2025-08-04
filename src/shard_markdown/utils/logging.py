@@ -2,8 +2,9 @@
 
 import logging
 import logging.handlers
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any
 
 from rich.console import Console
 from rich.logging import RichHandler
@@ -11,7 +12,7 @@ from rich.logging import RichHandler
 
 def setup_logging(
     level: int = logging.INFO,
-    file_path: Optional[Path] = None,
+    file_path: Path | None = None,
     max_file_size: int = 10485760,  # 10MB
     backup_count: int = 5,
 ) -> None:
@@ -92,7 +93,7 @@ class LogContext:
         """
         self.logger = logger
         self.context = context
-        self.old_factory: Optional[Callable[..., logging.LogRecord]] = None
+        self.old_factory: Callable[..., logging.LogRecord] | None = None
 
     def __enter__(self) -> "LogContext":
         """Enter the context manager and set up log record factory."""

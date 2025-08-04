@@ -4,7 +4,7 @@ import hashlib
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..utils.errors import FileSystemError, ProcessingError
 from ..utils.logging import get_logger
@@ -12,6 +12,7 @@ from .chunking.engine import ChunkingEngine
 from .metadata import MetadataExtractor
 from .models import BatchResult, ChunkingConfig, DocumentChunk, ProcessingResult
 from .parser import MarkdownParser
+
 
 logger = get_logger(__name__)
 
@@ -31,7 +32,7 @@ class DocumentProcessor:
         self.metadata_extractor = MetadataExtractor()
 
     def process_document(
-        self, file_path: Path, collection_name: Optional[str] = None
+        self, file_path: Path, collection_name: str | None = None
     ) -> ProcessingResult:
         """Process single document through full pipeline.
 
@@ -103,7 +104,7 @@ class DocumentProcessor:
             )
 
     def process_batch(
-        self, file_paths: List[Path], collection_name: str, max_workers: int = 4
+        self, file_paths: list[Path], collection_name: str, max_workers: int = 4
     ) -> BatchResult:
         """Process multiple documents with concurrency.
 
@@ -141,8 +142,8 @@ class DocumentProcessor:
         return batch_stats
 
     def _execute_concurrent_processing(
-        self, file_paths: List[Path], collection_name: str, max_workers: int
-    ) -> List[ProcessingResult]:
+        self, file_paths: list[Path], collection_name: str, max_workers: int
+    ) -> list[ProcessingResult]:
         """Execute concurrent processing of files."""
         results = []
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -168,13 +169,13 @@ class DocumentProcessor:
 
     def _calculate_batch_statistics(
         self,
-        results: List[ProcessingResult],
-        file_paths: List[Path],
+        results: list[ProcessingResult],
+        file_paths: list[Path],
         collection_name: str,
         start_time: float,
     ) -> BatchResult:
         """Calculate batch processing statistics."""
-        processing_stats: Dict[str, Any] = {
+        processing_stats: dict[str, Any] = {
             "successful": [r for r in results if r.success],
             "failed": [r for r in results if not r.success],
             "total_time": time.time() - start_time,
@@ -225,7 +226,7 @@ class DocumentProcessor:
 
         for encoding in encodings:
             try:
-                with open(file_path, "r", encoding=encoding) as f:
+                with open(file_path, encoding=encoding) as f:
                     content = f.read()
 
                 # Validate content is not empty
@@ -241,8 +242,7 @@ class DocumentProcessor:
             except UnicodeDecodeError:
                 if encoding == encodings[-1]:  # Last encoding failed
                     raise FileSystemError(
-                        f"Cannot decode file with any supported encoding: "
-                        f"{file_path}",
+                        f"Cannot decode file with any supported encoding: {file_path}",
                         error_code=1203,
                         context={
                             "file_path": str(file_path),
@@ -267,11 +267,11 @@ class DocumentProcessor:
 
     def _enhance_chunks(
         self,
-        chunks: List[DocumentChunk],
+        chunks: list[DocumentChunk],
         file_metadata: dict,
         doc_metadata: dict,
         file_path: Path,
-    ) -> List[DocumentChunk]:
+    ) -> list[DocumentChunk]:
         """Enhance chunks with comprehensive metadata.
 
         Args:

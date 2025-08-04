@@ -2,7 +2,7 @@
 
 import socket
 import time
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -11,6 +11,7 @@ from ..config.settings import ChromaDBConfig
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.errors import ChromaDBError, NetworkError
 from ..utils.logging import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -25,7 +26,7 @@ class ChromaDBClient:
             config: ChromaDB configuration
         """
         self.config = config
-        self.client: Optional[ClientAPI] = None
+        self.client: ClientAPI | None = None
         self._connection_validated = False
 
     def connect(self) -> bool:
@@ -55,7 +56,7 @@ class ChromaDBClient:
             self._connection_validated = True
 
             logger.info(
-                f"Connected to ChromaDB at " f"{self.config.host}:{self.config.port}"
+                f"Connected to ChromaDB at {self.config.host}:{self.config.port}"
             )
             return True
 
@@ -74,7 +75,7 @@ class ChromaDBClient:
                 cause=e,
             )
 
-    def get_collection(self, name: str) -> Union[chromadb.Collection, Any]:
+    def get_collection(self, name: str) -> chromadb.Collection | Any:
         """Get existing collection.
 
         Args:
@@ -110,8 +111,8 @@ class ChromaDBClient:
         self,
         name: str,
         create_if_missing: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Union[chromadb.Collection, Any]:
+        metadata: dict[str, Any] | None = None,
+    ) -> chromadb.Collection | Any:
         """Get existing or create new collection.
 
         Args:
@@ -171,7 +172,7 @@ class ChromaDBClient:
                 ) from create_error
 
     def bulk_insert(
-        self, collection: Union[chromadb.Collection, Any], chunks: List[DocumentChunk]
+        self, collection: chromadb.Collection | Any, chunks: list[DocumentChunk]
     ) -> InsertResult:
         """Bulk insert chunks into collection.
 
@@ -233,7 +234,7 @@ class ChromaDBClient:
                 collection_name=getattr(collection, "name", "unknown"),
             )
 
-    def list_collections(self) -> List[Dict[str, Any]]:
+    def list_collections(self) -> list[dict[str, Any]]:
         """List all available collections.
 
         Returns:
@@ -343,12 +344,12 @@ class ChromaDBClient:
 
         except socket.gaierror as e:
             raise NetworkError(
-                f"DNS resolution failed for ChromaDB host: " f"{self.config.host}",
+                f"DNS resolution failed for ChromaDB host: {self.config.host}",
                 error_code=1602,
                 context={"host": self.config.host},
                 cause=e,
             )
-        except socket.timeout as e:
+        except TimeoutError as e:
             raise NetworkError(
                 f"Connection timeout to ChromaDB: "
                 f"{self.config.host}:{self.config.port}",
@@ -361,7 +362,7 @@ class ChromaDBClient:
                 cause=e,
             )
 
-    def _get_auth_headers(self) -> Dict[str, str]:
+    def _get_auth_headers(self) -> dict[str, str]:
         """Get authentication headers if token is configured.
 
         Returns:
@@ -373,7 +374,7 @@ class ChromaDBClient:
         return headers
 
     def _validate_insertion_data(
-        self, ids: List[str], documents: List[str], metadatas: List[Dict[str, Any]]
+        self, ids: list[str], documents: list[str], metadatas: list[dict[str, Any]]
     ) -> None:
         """Validate data before insertion.
 

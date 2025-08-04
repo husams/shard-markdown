@@ -155,20 +155,20 @@ def función_ejemplo():
         large_content.append("# Large Document\n\n")
 
         for i in range(100):  # Create 100 sections
-            large_content.append(f"## Section {i+1}\n\n")
+            large_content.append(f"## Section {i + 1}\n\n")
             large_content.append(
-                f"This is the content for section {i+1}. "
+                f"This is the content for section {i + 1}. "
                 f"It contains multiple sentences to make it substantial. "
                 f"Each section has enough content to potentially create "
                 f"multiple chunks depending on the chunking strategy. "
-                f"Section {i+1} is part of a larger document structure.\n\n"
+                f"Section {i + 1} is part of a larger document structure.\n\n"
             )
 
             if i % 10 == 0:  # Add code blocks every 10 sections
                 large_content.append(
                     f"```python\n"
-                    f"def section_{i+1}_function():\n"
-                    f'    return "Content for section {i+1}"\n'
+                    f"def section_{i + 1}_function():\n"
+                    f'    return "Content for section {i + 1}"\n'
                     f"```\n\n"
                 )
 

@@ -1,9 +1,9 @@
 """Shared configuration utilities."""
 
-from typing import Any, Dict
+from typing import Any
 
 
-def set_nested_value(data: Dict[str, Any], path: str, value: Any) -> None:
+def set_nested_value(data: dict[str, Any], path: str, value: Any) -> None:
     """Set nested value in dictionary using dot notation.
 
     Args:

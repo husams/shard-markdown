@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+
 # Default configuration file locations
 _DEFAULT_CONFIG_LOCATIONS = [
     Path.home() / ".shard-md" / "config.yaml",

@@ -1,17 +1,17 @@
 """ChromaDB client factory with mock support."""
 
 import os
-from typing import Optional
 
 from ..config.settings import ChromaDBConfig
 from ..utils.logging import get_logger
 from .protocol import ChromaDBClientProtocol
 
+
 logger = get_logger(__name__)
 
 
 def create_chromadb_client(
-    config: ChromaDBConfig, use_mock: Optional[bool] = None
+    config: ChromaDBConfig, use_mock: bool | None = None
 ) -> ChromaDBClientProtocol:
     """Create ChromaDB client with optional mock support.
 
@@ -75,15 +75,15 @@ def _test_chromadb_connectivity(config: ChromaDBConfig) -> bool:
 
         if result == 0:
             logger.debug(
-                f"ChromaDB server is accessible at " f"{config.host}:{config.port}"
+                f"ChromaDB server is accessible at {config.host}:{config.port}"
             )
             return True
         else:
             logger.debug(
-                f"ChromaDB server not accessible at " f"{config.host}:{config.port}"
+                f"ChromaDB server not accessible at {config.host}:{config.port}"
             )
             return False
 
-    except (OSError, socket.error, ImportError) as e:
+    except (OSError, ImportError) as e:
         logger.debug("Failed to test ChromaDB connectivity: %s", e)
         return False

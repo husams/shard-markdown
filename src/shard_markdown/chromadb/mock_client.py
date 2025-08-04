@@ -3,10 +3,11 @@
 import json
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.logging import get_logger
+
 
 logger = get_logger(__name__)
 
@@ -14,7 +15,7 @@ logger = get_logger(__name__)
 class MockCollection:
     """Mock ChromaDB collection for testing."""
 
-    def __init__(self, name: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(self, name: str, metadata: dict[str, Any] | None = None) -> None:
         """Initialize mock collection.
 
         Args:
@@ -23,14 +24,14 @@ class MockCollection:
         """
         self.name = name
         self.metadata = metadata or {}
-        self.documents: Dict[str, Dict[str, Any]] = {}
+        self.documents: dict[str, dict[str, Any]] = {}
         self._count = 0
 
     def add(
-        self, ids: List[str], documents: List[str], metadatas: List[Dict[str, Any]]
+        self, ids: list[str], documents: list[str], metadatas: list[dict[str, Any]]
     ) -> None:
         """Add documents to mock collection."""
-        for id_, doc, meta in zip(ids, documents, metadatas):
+        for id_, doc, meta in zip(ids, documents, metadatas, strict=False):
             self.documents[id_] = {
                 "document": doc,
                 "metadata": meta,
@@ -44,9 +45,9 @@ class MockCollection:
 
     def get(
         self,
-        ids: Optional[List[str]] = None,
-        include: Optional[List[str]] = None,
-    ) -> Dict[str, Any]:
+        ids: list[str] | None = None,
+        include: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Get documents from collection."""
         if ids:
             return {
@@ -69,7 +70,7 @@ class MockCollection:
                 "metadatas": [doc["metadata"] for doc in self.documents.values()],
             }
 
-    def query(self, query_texts: List[str], n_results: int = 10) -> Dict[str, Any]:
+    def query(self, query_texts: list[str], n_results: int = 10) -> dict[str, Any]:
         """Mock query implementation."""
         # Simple mock: return first n_results documents
         docs = list(self.documents.values())[:n_results]
@@ -91,7 +92,7 @@ class MockChromaDBClient:
             config: Configuration object (optional for mock)
         """
         self.config = config
-        self.collections: Dict[str, MockCollection] = {}
+        self.collections: dict[str, MockCollection] = {}
         self._connection_validated = False
         self.storage_path = Path("./mock_chromadb_storage.json")
         self._load_storage()
@@ -113,7 +114,7 @@ class MockChromaDBClient:
         return self.collections[name]
 
     def create_collection(
-        self, name: str, metadata: Optional[Dict[str, Any]] = None
+        self, name: str, metadata: dict[str, Any] | None = None
     ) -> MockCollection:
         """Create new collection."""
         if name in self.collections:
@@ -129,7 +130,7 @@ class MockChromaDBClient:
         self,
         name: str,
         create_if_missing: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> MockCollection:
         """Get existing or create new collection."""
         try:
@@ -139,7 +140,7 @@ class MockChromaDBClient:
                 return self.create_collection(name, metadata)
             raise
 
-    def list_collections(self) -> List[Dict[str, Any]]:
+    def list_collections(self) -> list[dict[str, Any]]:
         """List all collections."""
         collections_info = []
         for name, collection in self.collections.items():
@@ -159,7 +160,7 @@ class MockChromaDBClient:
             logger.info(f"Deleted mock collection: {name}")
 
     def bulk_insert(
-        self, collection: MockCollection, chunks: List[DocumentChunk]
+        self, collection: MockCollection, chunks: list[DocumentChunk]
     ) -> InsertResult:
         """Bulk insert chunks into collection."""
         start_time = time.time()
@@ -174,7 +175,7 @@ class MockChromaDBClient:
 
             processing_time = time.time() - start_time
             logger.info(
-                f"Mock bulk insert: {len(chunks)} chunks in " f"{processing_time:.2f}s"
+                f"Mock bulk insert: {len(chunks)} chunks in {processing_time:.2f}s"
             )
 
             return InsertResult(
@@ -184,7 +185,7 @@ class MockChromaDBClient:
                 collection_name=collection.name,
             )
 
-        except (ValueError, RuntimeError, OSError, IOError) as e:
+        except (ValueError, RuntimeError, OSError) as e:
             processing_time = time.time() - start_time
             logger.error("Mock bulk insert failed: %s", e)
 
@@ -199,7 +200,7 @@ class MockChromaDBClient:
         """Load collections from storage file."""
         if self.storage_path.exists():
             try:
-                with open(self.storage_path, "r") as f:
+                with open(self.storage_path) as f:
                     data = json.load(f)
 
                 for name, collection_data in data.items():
@@ -211,10 +212,10 @@ class MockChromaDBClient:
                     self.collections[name] = collection
 
                 logger.debug(
-                    f"Loaded {len(self.collections)} mock collections " "from storage"
+                    f"Loaded {len(self.collections)} mock collections from storage"
                 )
 
-            except (OSError, IOError, json.JSONDecodeError, ValueError) as e:
+            except (OSError, json.JSONDecodeError, ValueError) as e:
                 logger.warning("Failed to load mock storage: %s", e)
 
     def _save_storage(self) -> None:
@@ -232,7 +233,7 @@ class MockChromaDBClient:
 
             logger.debug("Saved mock collections to storage")
 
-        except (OSError, IOError, ValueError) as e:
+        except (OSError, ValueError) as e:
             logger.warning("Failed to save mock storage: %s", e)
 
 

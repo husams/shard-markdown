@@ -1,7 +1,7 @@
 """Config command for configuration management."""
 
 import json
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import click
 import yaml
@@ -10,8 +10,9 @@ from rich.table import Table
 
 from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
-from ...config.utils import set_nested_value, parse_config_value
+from ...config.utils import parse_config_value, set_nested_value
 from ...utils.logging import get_logger
+
 
 _logger = get_logger(__name__)
 console = Console()
@@ -73,7 +74,7 @@ def show(ctx: click.Context, format: str, section: str) -> None:
         elif format == "table":
             _display_config_table(config_dict)
 
-    except (IOError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError) as e:
         console.print("[red]Error displaying configuration:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
@@ -153,7 +154,7 @@ def set(
         console.print(f"[green]✓ Set {key} = {value}[/green]")
         console.print(f"[dim]Saved to: {config_path}[/dim]")
 
-    except (IOError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError) as e:
         console.print("[red]Error setting configuration:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
@@ -195,7 +196,7 @@ def init(ctx: click.Context, is_global: bool, force: bool, template: str) -> Non
         # Check if file already exists
         if config_path.exists() and not force:
             console.print(
-                f"[yellow]Configuration file already exists: " f"{config_path}[/yellow]"
+                f"[yellow]Configuration file already exists: {config_path}[/yellow]"
             )
             console.print("Use --force to overwrite, or edit the existing file.")
             return
@@ -205,11 +206,10 @@ def init(ctx: click.Context, is_global: bool, force: bool, template: str) -> Non
 
         console.print(f"[green]✓ Initialized configuration file: {config_path}[/green]")
         console.print(
-            "You can now edit the file or use 'shard-md config set' "
-            "to modify values."
+            "You can now edit the file or use 'shard-md config set' to modify values."
         )
 
-    except (IOError, ValueError, RuntimeError) as e:
+    except (OSError, ValueError, RuntimeError) as e:
         console.print("[red]Error initializing configuration:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
@@ -236,18 +236,18 @@ def path(ctx: click.Context) -> None:
 
     console.print("\n[dim]The first existing file will be used.[/dim]")
     console.print(
-        "[dim]Use 'shard-md config init' to create a new configuration " "file.[/dim]"
+        "[dim]Use 'shard-md config init' to create a new configuration file.[/dim]"
     )
 
 
-def _display_config_table(config_dict: Dict[str, Any]) -> None:
+def _display_config_table(config_dict: dict[str, Any]) -> None:
     """Display configuration in table format."""
 
     def flatten_dict(
-        d: Dict[str, Any], parent_key: str = "", sep: str = "."
-    ) -> Dict[str, Any]:
+        d: dict[str, Any], parent_key: str = "", sep: str = "."
+    ) -> dict[str, Any]:
         """Flatten nested dictionary with dot notation keys."""
-        items: List[Tuple[str, Any]] = []
+        items: list[tuple[str, Any]] = []
         for k, v in d.items():
             new_key = f"{parent_key}{sep}{k}" if parent_key else k
             if isinstance(v, dict):
@@ -259,7 +259,7 @@ def _display_config_table(config_dict: Dict[str, Any]) -> None:
     flat_config = flatten_dict(config_dict)
 
     # Group by section
-    sections: Dict[str, List[Tuple[str, Any]]] = {}
+    sections: dict[str, list[tuple[str, Any]]] = {}
     for key, value in flat_config.items():
         section = key.split(".")[0]
         if section not in sections:
@@ -272,7 +272,7 @@ def _display_config_table(config_dict: Dict[str, Any]) -> None:
         table.add_column("Setting", style="cyan")
         table.add_column("Value", style="white")
 
-        items_list: List[Tuple[str, Any]] = items
+        items_list: list[tuple[str, Any]] = items
         for key, value in items_list:
             # Remove section prefix from key for display
             display_key = ".".join(key.split(".")[1:]) if "." in key else key

@@ -2,7 +2,7 @@
 
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -21,7 +21,7 @@ class ChromaDBConfig(BaseModel):
     host: str = Field(default="localhost", description="ChromaDB server host")
     port: int = Field(default=8000, ge=1, le=65535, description="ChromaDB server port")
     ssl: bool = Field(default=False, description="Use SSL connection")
-    auth_token: Optional[str] = Field(default=None, description="Authentication token")
+    auth_token: str | None = Field(default=None, description="Authentication token")
     timeout: int = Field(default=30, ge=1, description="Connection timeout in seconds")
 
     @field_validator("host")  # type: ignore[misc]
@@ -54,7 +54,7 @@ class ChunkingConfig(BaseModel):
     respect_boundaries: bool = Field(
         default=True, description="Respect markdown structure boundaries"
     )
-    max_tokens: Optional[int] = Field(
+    max_tokens: int | None = Field(
         default=None, ge=1, description="Maximum tokens per chunk"
     )
 
@@ -101,9 +101,10 @@ class LoggingConfig(BaseModel):
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         description="Log message format",
     )
-    file_path: Optional[Path] = Field(default=None, description="Log file path")
+    file_path: Path | None = Field(default=None, description="Log file path")
     max_file_size: int = Field(
-        default=10485760, description="Maximum log file size in bytes"  # 10MB
+        default=10485760,
+        description="Maximum log file size in bytes",  # 10MB
     )
     backup_count: int = Field(
         default=5, description="Number of backup log files to keep"
@@ -119,11 +120,11 @@ class AppConfig(BaseModel):
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
 
     # Custom user settings
-    custom_metadata: Dict[str, Any] = Field(
+    custom_metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Custom metadata to add to all chunks",
     )
-    plugins: List[str] = Field(
+    plugins: list[str] = Field(
         default_factory=list, description="List of plugin modules to load"
     )
 
