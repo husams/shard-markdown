@@ -4,7 +4,7 @@ import hashlib
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..utils.errors import FileSystemError, ProcessingError
 from ..utils.logging import get_logger
@@ -89,7 +89,7 @@ class DocumentProcessor:
                 collection_name=collection_name,
             )
 
-        except (OSError, IOError, ValueError, RuntimeError) as e:
+        except (OSError, ValueError, RuntimeError) as e:
             processing_time = time.time() - start_time
             error_msg = str(e)
 
@@ -116,29 +116,46 @@ class DocumentProcessor:
             BatchResult with aggregated statistics
         """
         start_time = time.time()
-
         logger.info(
-            f"Starting batch processing of {len(file_paths)} files "
-            f"with {max_workers} workers"
+            "Starting batch processing of %d files with %d workers",
+            len(file_paths),
+            max_workers,
         )
 
-        results = []
+        # Process files concurrently and collect results
+        results = self._execute_concurrent_processing(
+            file_paths, collection_name, max_workers
+        )
+        # Build batch result with statistics
+        batch_stats = self._calculate_batch_statistics(
+            results, file_paths, collection_name, start_time
+        )
+        logger.info(
+            "Batch processing complete: %d/%d files, %d chunks, %.2fs",
+            batch_stats.successful_files,
+            batch_stats.total_files,
+            batch_stats.total_chunks,
+            batch_stats.total_processing_time,
+        )
 
-        # Process files concurrently
+        return batch_stats
+
+    def _execute_concurrent_processing(
+        self, file_paths: List[Path], collection_name: str, max_workers: int
+    ) -> List[ProcessingResult]:
+        """Execute concurrent processing of files."""
+        results = []
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            # Submit all tasks
             future_to_path = {
                 executor.submit(self.process_document, path, collection_name): path
                 for path in file_paths
             }
 
-            # Collect results as they complete
             for future in as_completed(future_to_path):
                 path = future_to_path[future]
                 try:
-                    result = future.result()
-                    results.append(result)
-                except (OSError, IOError, ValueError, RuntimeError) as e:
+                    results.append(future.result())
+                except (OSError, ValueError, RuntimeError) as e:
                     logger.error("Unexpected error processing %s: %s", path, e)
                     results.append(
                         ProcessingResult(
@@ -147,31 +164,32 @@ class DocumentProcessor:
                             error=f"Unexpected error: {str(e)}",
                         )
                     )
+        return results
 
-        # Calculate aggregate statistics
-        total_processing_time = time.time() - start_time
-        successful_results = [r for r in results if r.success]
-        failed_results = [r for r in results if not r.success]
+    def _calculate_batch_statistics(
+        self,
+        results: List[ProcessingResult],
+        file_paths: List[Path],
+        collection_name: str,
+        start_time: float,
+    ) -> BatchResult:
+        """Calculate batch processing statistics."""
+        processing_stats: Dict[str, Any] = {
+            "successful": [r for r in results if r.success],
+            "failed": [r for r in results if not r.success],
+            "total_time": time.time() - start_time,
+        }
+        total_chunks = sum(r.chunks_created for r in processing_stats["successful"])
 
-        total_chunks = sum(r.chunks_created for r in successful_results)
-
-        batch_result = BatchResult(
+        return BatchResult(
             results=results,
             total_files=len(file_paths),
-            successful_files=len(successful_results),
-            failed_files=len(failed_results),
+            successful_files=len(processing_stats["successful"]),
+            failed_files=len(processing_stats["failed"]),
             total_chunks=total_chunks,
-            total_processing_time=total_processing_time,
+            total_processing_time=processing_stats["total_time"],
             collection_name=collection_name,
         )
-
-        logger.info(
-            f"Batch processing complete: "
-            f"{batch_result.successful_files}/{batch_result.total_files} files, "
-            f"{total_chunks} chunks, {total_processing_time:.2f}s"
-        )
-
-        return batch_result
 
     def _read_file(self, file_path: Path) -> str:
         """Read file content with encoding detection.
@@ -232,7 +250,7 @@ class DocumentProcessor:
                         },
                     )
                 continue
-            except (OSError, IOError) as e:
+            except OSError as e:
                 raise FileSystemError(
                     f"Error reading file: {file_path}",
                     error_code=1206,

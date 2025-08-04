@@ -38,11 +38,15 @@ class MarkdownAST(BaseModel):
     @property
     def headers(self) -> List[MarkdownElement]:
         """Get all header elements."""
+        if not self.elements:
+            return []
         return [elem for elem in self.elements if elem.type == "header"]
 
     @property
     def code_blocks(self) -> List[MarkdownElement]:
         """Get all code block elements."""
+        if not self.elements:
+            return []
         return [elem for elem in self.elements if elem.type == "code_block"]
 
 
