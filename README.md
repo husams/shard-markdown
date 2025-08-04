@@ -297,13 +297,10 @@ pytest -m integration
 
 ```bash
 # Format code
-black src/ tests/
+ruff format src/ tests/
 
-# Sort imports
-isort src/ tests/
-
-# Lint code
-flake8 src/ tests/
+# Lint and fix code
+ruff check --fix src/ tests/
 
 # Type checking
 mypy src/
