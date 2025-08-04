@@ -176,10 +176,6 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod",
 ]
 
-[tool.pylint.main]
-ignore-paths = [
-    ".claude",
-]
 
 [dependency-groups]
 dev = [
