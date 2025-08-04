@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 from .defaults import DEFAULT_CONFIG_LOCATIONS, DEFAULT_CONFIG_YAML, ENV_VAR_MAPPINGS
 from .settings import AppConfig
+from .utils import set_nested_value, parse_config_value
 
 
 def load_config(config_path: Optional[Path] = None) -> AppConfig:
@@ -140,56 +141,6 @@ def _apply_env_overrides(config_data: Dict[str, Any]) -> Dict[str, Any]:
     for env_var, config_path in ENV_VAR_MAPPINGS.items():
         env_value = os.getenv(env_var)
         if env_value is not None:
-            _set_nested_value(result, config_path, _convert_env_value(env_value))
+            set_nested_value(result, config_path, parse_config_value(env_value))
 
     return result
-
-
-def _set_nested_value(data: Dict[str, Any], path: str, value: Any) -> None:
-    """Set nested value in dictionary using dot notation.
-
-    Args:
-        data: Dictionary to modify
-        path: Dot-separated path (e.g., "chromadb.host")
-        value: Value to set
-    """
-    keys = path.split(".")
-    current = data
-
-    # Navigate to parent of target key
-    for key in keys[:-1]:
-        if key not in current:
-            current[key] = {}
-        current = current[key]
-
-    # Set the final value
-    current[keys[-1]] = value
-
-
-def _convert_env_value(value: str) -> Any:
-    """Convert environment variable string to appropriate type.
-
-    Args:
-        value: String value from environment
-
-    Returns:
-        Converted value (str, int, bool, or None)
-    """
-    # Handle boolean values
-    if value.lower() in ("true", "1", "yes", "on"):
-        return True
-    elif value.lower() in ("false", "0", "no", "off"):
-        return False
-
-    # Handle None/null values
-    elif value.lower() in ("null", "none", ""):
-        return None
-
-    # Try to convert to integer
-    try:
-        return int(value)
-    except ValueError:
-        pass
-
-    # Return as string
-    return value
