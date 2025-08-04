@@ -1,15 +1,11 @@
 """ChromaDB client factory with mock support."""
 
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from ..config.settings import ChromaDBConfig
 from ..utils.logging import get_logger
 from .protocol import ChromaDBClientProtocol
-
-if TYPE_CHECKING:
-    from .client import ChromaDBClient
-    from .mock_client import MockChromaDBClient
 
 logger = get_logger(__name__)
 
@@ -53,6 +49,7 @@ def create_chromadb_client(
 def _is_chromadb_available() -> bool:
     """Check if ChromaDB is available."""
     try:
+        import chromadb  # noqa: F401
 
         return True
     except ImportError:

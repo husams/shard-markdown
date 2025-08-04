@@ -5,6 +5,7 @@ import time
 from typing import Any, Dict, List, Optional, Union
 
 import chromadb
+from chromadb.api import ClientAPI
 
 from ..config.settings import ChromaDBConfig
 from ..core.models import DocumentChunk, InsertResult
@@ -24,7 +25,7 @@ class ChromaDBClient:
             config: ChromaDB configuration
         """
         self.config = config
-        self.client: Optional[chromadb.HttpClient] = None
+        self.client: Optional[ClientAPI] = None
         self._connection_validated = False
 
     def connect(self) -> bool:
