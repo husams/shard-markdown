@@ -176,6 +176,11 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod",
 ]
 
+[tool.pylint.main]
+ignore-paths = [
+    ".claude",
+]
+
 [dependency-groups]
 dev = [
     "bandit[toml]>=1.8.6",
