@@ -148,13 +148,21 @@ def process(  # noqa: C901
         )
 
         # Initialize processor
-        processor = DocumentProcessor(ChunkingConfig(
-            chunk_size=chunk_size, overlap=chunk_overlap, method=chunk_method
-        ))
+        processor = DocumentProcessor(
+            ChunkingConfig(
+                chunk_size=chunk_size, overlap=chunk_overlap, method=chunk_method
+            )
+        )
 
         # Process files
         _process_files_with_progress(
-            validated_paths, collection, processor, chroma_client, collection_obj, max_workers, verbose
+            validated_paths,
+            collection,
+            processor,
+            chroma_client,
+            collection_obj,
+            max_workers,
+            verbose,
         )
 
     except ShardMarkdownError as e:
@@ -164,7 +172,11 @@ def process(  # noqa: C901
 
 
 def _validate_and_prepare(
-    input_paths: tuple, chunk_size: int, chunk_overlap: int, collection: str, recursive: bool
+    input_paths: tuple,
+    chunk_size: int,
+    chunk_overlap: int,
+    collection: str,
+    recursive: bool,
 ) -> List[Path]:
     """Validate parameters and prepare input paths."""
     validate_chunk_parameters(chunk_size, chunk_overlap)
@@ -173,7 +185,11 @@ def _validate_and_prepare(
 
 
 def _setup_chromadb_and_collection(
-    config: Any, use_mock: bool, collection: str, clear_collection: bool, create_collection: bool
+    config: Any,
+    use_mock: bool,
+    collection: str,
+    clear_collection: bool,
+    create_collection: bool,
 ) -> tuple:
     """Set up ChromaDB client and collection."""
     chroma_client = create_chromadb_client(config.chromadb, use_mock=use_mock)
@@ -198,47 +214,67 @@ def _handle_collection_clearing(
     """Handle collection clearing if requested."""
     try:
         chroma_client.get_collection(collection)
-        if click.confirm(
-            f"Clear all documents from collection '{collection}'?"
-        ):
+        if click.confirm(f"Clear all documents from collection '{collection}'?"):
             try:
                 collection_manager.clear_collection(collection)
-                console.print(
-                    f"[yellow]Cleared collection '{collection}'[/yellow]"
-                )
+                console.print(f"[yellow]Cleared collection '{collection}'[/yellow]")
             except AttributeError:
                 console.print(
-                    "[yellow]Collection clearing not implemented in mock client[/yellow]"
+                    "[yellow]Collection clearing not implemented in "
+                    "mock client[/yellow]"
                 )
     except (ValueError, RuntimeError):
         pass  # Collection doesn't exist
 
 
 def _process_files_with_progress(
-    validated_paths: List[Path], collection: str, processor: Any, chroma_client: Any,
-    collection_obj: Any, max_workers: int, verbose: int
+    validated_paths: List[Path],
+    collection: str,
+    processor: Any,
+    chroma_client: Any,
+    collection_obj: Any,
+    max_workers: int,
+    verbose: int,
 ) -> None:
     """Process files with progress tracking."""
     progress_config = [
-        SpinnerColumn(), TextColumn("[progress.description]{task.description}"),
-        BarColumn(), TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-        TextColumn("({task.completed}/{task.total})"), TimeElapsedColumn(),
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TextColumn("({task.completed}/{task.total})"),
+        TimeElapsedColumn(),
     ]
     with Progress(*progress_config) as progress:
         if len(validated_paths) == 1:
             _process_single_file(
-                validated_paths[0], collection, processor, chroma_client, collection_obj, progress
+                validated_paths[0],
+                collection,
+                processor,
+                chroma_client,
+                collection_obj,
+                progress,
             )
         else:
             _process_batch_files(
-                validated_paths, collection, processor, chroma_client, collection_obj,
-                max_workers, verbose, progress
+                validated_paths,
+                collection,
+                processor,
+                chroma_client,
+                collection_obj,
+                max_workers,
+                verbose,
+                progress,
             )
 
 
 def _process_single_file(
-    file_path: Path, collection: str, processor: Any, chroma_client: Any,
-    collection_obj: Any, progress: Any
+    file_path: Path,
+    collection: str,
+    processor: Any,
+    chroma_client: Any,
+    collection_obj: Any,
+    progress: Any,
 ) -> None:
     """Process a single file."""
     task = progress.add_task("Processing document...", total=1)
@@ -263,14 +299,18 @@ def _process_single_file(
     if insert_result.success:
         _display_single_result(result, insert_result)
     else:
-        console.print(
-            f"[red]Failed to insert chunks: {insert_result.error}[/red]"
-        )
+        console.print(f"[red]Failed to insert chunks: {insert_result.error}[/red]")
 
 
 def _process_batch_files(
-    validated_paths: List[Path], collection: str, processor: Any, chroma_client: Any,
-    collection_obj: Any, max_workers: int, verbose: int, progress: Any
+    validated_paths: List[Path],
+    collection: str,
+    processor: Any,
+    chroma_client: Any,
+    collection_obj: Any,
+    max_workers: int,
+    verbose: int,
+    progress: Any,
 ) -> None:
     """Process multiple files in batch."""
     batch_result = processor.process_batch(
@@ -290,7 +330,7 @@ def _process_batch_files(
                     processor.metadata_extractor.extract_file_metadata(
                         result.file_path
                     ),
-                    processor.metadata_extractor.extract_document_metadata(ast)
+                    processor.metadata_extractor.extract_document_metadata(ast),
                 )
                 enhanced_chunks = processor._enhance_chunks(
                     chunks, metadata_pair[0], metadata_pair[1], result.file_path

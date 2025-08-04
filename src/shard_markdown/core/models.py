@@ -70,8 +70,6 @@ class DocumentChunk(BaseModel):
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add metadata to chunk."""
-        if not isinstance(self.metadata, dict):
-            self.metadata = {}
         self.metadata[key] = value
 
 

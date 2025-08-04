@@ -66,99 +66,128 @@ class MarkdownParser:
         """
         elements: List[MarkdownElement] = []
         lines = content.split("\n")
-        state = {
-            'current_text': [],
-            'in_code_block': False,
-            'line_offset': 0
+        state: Dict[str, Any] = {
+            "current_text": [],
+            "in_code_block": False,
+            "line_offset": 0,
         }
         patterns = {
-            'code_fence': re.compile(r"^```"),
-            'header': re.compile(r"^(#{1,6})\s+(.+)"),
-            'list': re.compile(r"^(\s*)([-*+]|\d+\.)\s+(.+)")
+            "code_fence": re.compile(r"^```"),
+            "header": re.compile(r"^(#{1,6})\s+(.+)"),
+            "list": re.compile(r"^(\s*)([-*+]|\d+\.)\s+(.+)"),
         }
 
         for line_num, line in enumerate(lines, 1):
             # Handle code blocks
-            if patterns['code_fence'].match(line):
-                if not state['in_code_block']:
+            if patterns["code_fence"].match(line):
+                if not state["in_code_block"]:
                     self._save_accumulated_text(elements, state)
-                    state['in_code_block'] = True
-                    state['current_text'] = [line]
-                    state['line_offset'] = line_num
+                    state["in_code_block"] = True
+                    state["current_text"] = [line]
+                    state["line_offset"] = line_num
                 else:
-                    state['current_text'].append(line)
+                    state["current_text"].append(line)
                     self._create_code_block(elements, state)
-                    state['current_text'] = []
-                    state['in_code_block'] = False
+                    state["current_text"] = []
+                    state["in_code_block"] = False
                 continue
 
-            if state['in_code_block']:
-                state['current_text'].append(line)
+            if state["in_code_block"]:
+                state["current_text"].append(line)
                 continue
 
             # Handle headers
-            header_match = patterns['header'].match(line)
+            header_match = patterns["header"].match(line)
             if header_match:
                 self._save_accumulated_text(elements, state)
                 level, title = len(header_match.group(1)), header_match.group(2)
-                elements.append(MarkdownElement(
-                    type="header", text=title, level=level,
-                    metadata={"line_number": line_num}
-                ))
+                elements.append(
+                    MarkdownElement(
+                        type="header",
+                        text=title,
+                        level=level,
+                        metadata={"line_number": line_num},
+                    )
+                )
                 continue
 
             # Handle lists
-            list_match = patterns['list'].match(line)
+            list_match = patterns["list"].match(line)
             if list_match:
                 indent, marker, content_text = list_match.groups()
                 list_type = "ordered" if marker.endswith(".") else "unordered"
-                elements.append(MarkdownElement(
-                    type="list_item", text=content_text, level=len(indent) // 2,
-                    metadata={"line_number": line_num, "list_type": list_type, "marker": marker}
-                ))
+                elements.append(
+                    MarkdownElement(
+                        type="list_item",
+                        text=content_text,
+                        level=len(indent) // 2,
+                        metadata={
+                            "line_number": line_num,
+                            "list_type": list_type,
+                            "marker": marker,
+                        },
+                    )
+                )
                 continue
 
             # Handle tables
             if "|" in line and line.strip():
-                elements.append(MarkdownElement(
-                    type="table_row", text=line.strip(), level=0,
-                    metadata={"line_number": line_num}
-                ))
+                elements.append(
+                    MarkdownElement(
+                        type="table_row",
+                        text=line.strip(),
+                        level=0,
+                        metadata={"line_number": line_num},
+                    )
+                )
                 continue
 
             # Accumulate regular text
-            if not state['current_text']:
-                state['line_offset'] = line_num
-            state['current_text'].append(line)
+            if not state["current_text"]:
+                state["line_offset"] = line_num
+            state["current_text"].append(line)
 
         # Add any remaining text
         self._save_accumulated_text(elements, state)
         return elements
 
-    def _save_accumulated_text(self, elements: List[MarkdownElement], state: Dict[str, Any]) -> None:
+    def _save_accumulated_text(
+        self, elements: List[MarkdownElement], state: Dict[str, Any]
+    ) -> None:
         """Save accumulated text as paragraph element."""
-        if state['current_text']:
-            text_content = "\n".join(state['current_text']).strip()
+        if state["current_text"]:
+            text_content = "\n".join(state["current_text"]).strip()
             if text_content:
-                elements.append(MarkdownElement(
-                    type="paragraph", text=text_content, level=0,
-                    metadata={"line_number": state['line_offset']}
-                ))
-            state['current_text'] = []
+                elements.append(
+                    MarkdownElement(
+                        type="paragraph",
+                        text=text_content,
+                        level=0,
+                        metadata={"line_number": state["line_offset"]},
+                    )
+                )
+            state["current_text"] = []
 
-    def _create_code_block(self, elements: List[MarkdownElement], state: Dict[str, Any]) -> None:
+    def _create_code_block(
+        self, elements: List[MarkdownElement], state: Dict[str, Any]
+    ) -> None:
         """Create code block element from accumulated text."""
-        code_content = "\n".join(state['current_text'])
+        code_content = "\n".join(state["current_text"])
         lang = None
-        if state['current_text'] and state['current_text'][0].startswith("```"):
-            lang_match = state['current_text'][0][3:].strip()
+        if state["current_text"] and state["current_text"][0].startswith("```"):
+            lang_match = state["current_text"][0][3:].strip()
             if lang_match:
                 lang = lang_match
-        
-        elements.append(MarkdownElement(
-            type="code_block", text=code_content, level=0,
-            language=lang, metadata={"line_number": state['line_offset']}
-        ))
+
+        elements.append(
+            MarkdownElement(
+                type="code_block",
+                text=code_content,
+                level=0,
+                language=lang,
+                metadata={"line_number": state["line_offset"]},
+            )
+        )
 
     def _extract_metadata_from_headers(
         self, elements: List[MarkdownElement]
@@ -192,11 +221,15 @@ class MarkdownParser:
 
     def get_parser_info(self) -> Dict[str, Any]:
         """Get information about the parser configuration.
-        
+
         Returns:
             Dictionary containing parser configuration details
         """
         return {
-            'extensions': self.md.treeprocessors.keys() if hasattr(self.md, 'treeprocessors') else [],
-            'parser_type': 'markdown_parser'
+            "extensions": (
+                self.md.treeprocessors.keys()
+                if hasattr(self.md, "treeprocessors")
+                else []
+            ),
+            "parser_type": "markdown_parser",
         }

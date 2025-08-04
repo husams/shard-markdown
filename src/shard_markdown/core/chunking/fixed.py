@@ -3,7 +3,7 @@
 from typing import List
 
 from ...utils.logging import get_logger
-from ..models import DocumentChunk, MarkdownAST, MarkdownElement
+from ..models import DocumentChunk, MarkdownAST
 from .base import BaseChunker
 
 logger = get_logger(__name__)
@@ -102,14 +102,14 @@ class FixedSizeChunker(BaseChunker):
 
     def get_chunker_info(self) -> dict:
         """Get information about the fixed-size chunker configuration.
-        
+
         Returns:
             Dictionary containing chunker configuration details
         """
         logger.debug("Retrieving fixed-size chunker configuration info")
         return {
-            'chunker_type': 'fixed_size',
-            'chunk_size': self.config.chunk_size,
-            'overlap': self.config.overlap,
-            'respect_boundaries': self.config.respect_boundaries
+            "chunker_type": "fixed_size",
+            "chunk_size": self.config.chunk_size,
+            "overlap": self.config.overlap,
+            "respect_boundaries": self.config.respect_boundaries,
         }

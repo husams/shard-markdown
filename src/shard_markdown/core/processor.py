@@ -4,7 +4,7 @@ import hashlib
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..utils.errors import FileSystemError, ProcessingError
 from ..utils.logging import get_logger
@@ -118,7 +118,8 @@ class DocumentProcessor:
         start_time = time.time()
         logger.info(
             "Starting batch processing of %d files with %d workers",
-            len(file_paths), max_workers
+            len(file_paths),
+            max_workers,
         )
 
         # Process files concurrently and collect results
@@ -131,8 +132,10 @@ class DocumentProcessor:
         )
         logger.info(
             "Batch processing complete: %d/%d files, %d chunks, %.2fs",
-            batch_stats.successful_files, batch_stats.total_files,
-            batch_stats.total_chunks, batch_stats.total_processing_time
+            batch_stats.successful_files,
+            batch_stats.total_files,
+            batch_stats.total_chunks,
+            batch_stats.total_processing_time,
         )
 
         return batch_stats
@@ -154,30 +157,37 @@ class DocumentProcessor:
                     results.append(future.result())
                 except (OSError, ValueError, RuntimeError) as e:
                     logger.error("Unexpected error processing %s: %s", path, e)
-                    results.append(ProcessingResult(
-                        file_path=path, success=False, error=f"Unexpected error: {str(e)}"
-                    ))
+                    results.append(
+                        ProcessingResult(
+                            file_path=path,
+                            success=False,
+                            error=f"Unexpected error: {str(e)}",
+                        )
+                    )
         return results
 
     def _calculate_batch_statistics(
-        self, results: List[ProcessingResult], file_paths: List[Path],
-        collection_name: str, start_time: float
+        self,
+        results: List[ProcessingResult],
+        file_paths: List[Path],
+        collection_name: str,
+        start_time: float,
     ) -> BatchResult:
         """Calculate batch processing statistics."""
-        processing_stats = {
-            'successful': [r for r in results if r.success],
-            'failed': [r for r in results if not r.success],
-            'total_time': time.time() - start_time
+        processing_stats: Dict[str, Any] = {
+            "successful": [r for r in results if r.success],
+            "failed": [r for r in results if not r.success],
+            "total_time": time.time() - start_time,
         }
-        total_chunks = sum(r.chunks_created for r in processing_stats['successful'])
-        
+        total_chunks = sum(r.chunks_created for r in processing_stats["successful"])
+
         return BatchResult(
             results=results,
             total_files=len(file_paths),
-            successful_files=len(processing_stats['successful']),
-            failed_files=len(processing_stats['failed']),
+            successful_files=len(processing_stats["successful"]),
+            failed_files=len(processing_stats["failed"]),
             total_chunks=total_chunks,
-            total_processing_time=processing_stats['total_time'],
+            total_processing_time=processing_stats["total_time"],
             collection_name=collection_name,
         )
 
