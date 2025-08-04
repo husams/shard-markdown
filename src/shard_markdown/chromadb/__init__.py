@@ -1,13 +1,14 @@
 """ChromaDB integration with mock fallback."""
 
-from typing import Optional, Type
+from typing import Optional
+
 
 # Try to import real ChromaDB client, fallback to mock if not available
 try:
     from .client import ChromaDBClient
 
     CHROMADB_AVAILABLE = True
-    CHROMADB_CLIENT_CLASS: Optional[Type] = ChromaDBClient
+    CHROMADB_CLIENT_CLASS: type | None = ChromaDBClient
 except ImportError:
     CHROMADB_AVAILABLE = False
     CHROMADB_CLIENT_CLASS = None
@@ -15,6 +16,7 @@ except ImportError:
 from .collections import CollectionManager
 from .factory import create_chromadb_client
 from .mock_client import MockChromaDBClient
+
 
 __all__ = [
     "CHROMADB_CLIENT_CLASS",

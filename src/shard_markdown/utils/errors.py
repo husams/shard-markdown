@@ -1,7 +1,7 @@
 """Error handling and exception classes."""
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class ShardMarkdownError(Exception):
@@ -12,8 +12,8 @@ class ShardMarkdownError(Exception):
         message: str,
         error_code: int,
         category: str,
-        context: Optional[Dict[str, Any]] = None,
-        cause: Optional[Exception] = None,
+        context: dict[str, Any] | None = None,
+        cause: Exception | None = None,
     ) -> None:
         """Initialize the ShardMarkdownError.
 
@@ -32,7 +32,7 @@ class ShardMarkdownError(Exception):
         self.cause = cause
         self.timestamp = datetime.utcnow()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary for logging/reporting."""
         return {
             "error_code": self.error_code,

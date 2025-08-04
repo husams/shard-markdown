@@ -3,10 +3,11 @@
 import hashlib
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from ..utils.logging import get_logger
 from .models import MarkdownAST
+
 
 logger = get_logger(__name__)
 
@@ -14,7 +15,7 @@ logger = get_logger(__name__)
 class MetadataExtractor:
     """Extracts and enhances metadata for documents and chunks."""
 
-    def extract_file_metadata(self, file_path: Path) -> Dict[str, Any]:
+    def extract_file_metadata(self, file_path: Path) -> dict[str, Any]:
         """Extract file-level metadata.
 
         Args:
@@ -51,7 +52,7 @@ class MetadataExtractor:
 
             return metadata
 
-        except (OSError, IOError, ValueError) as e:
+        except (OSError, ValueError) as e:
             logger.warning("Failed to extract file metadata for %s: %s", file_path, e)
             return {
                 "file_path": str(file_path),
@@ -59,7 +60,7 @@ class MetadataExtractor:
                 "extraction_error": str(e),
             }
 
-    def extract_document_metadata(self, ast: MarkdownAST) -> Dict[str, Any]:
+    def extract_document_metadata(self, ast: MarkdownAST) -> dict[str, Any]:
         """Extract document-level metadata from AST.
 
         Args:
@@ -68,7 +69,7 @@ class MetadataExtractor:
         Returns:
             Dictionary of document metadata
         """
-        metadata: Dict[str, Any] = {}
+        metadata: dict[str, Any] = {}
 
         # Extract frontmatter metadata
         if ast.frontmatter:
@@ -112,7 +113,7 @@ class MetadataExtractor:
         # Extract code languages
         code_blocks = [e for e in ast.elements if e.type == "code_block" and e.language]
         if code_blocks:
-            languages = list(set(cb.language for cb in code_blocks if cb.language))
+            languages = list({cb.language for cb in code_blocks if cb.language})
             metadata["code_languages"] = languages
 
         # Calculate estimated reading time (assuming 200 words per minute)
@@ -125,11 +126,11 @@ class MetadataExtractor:
 
     def enhance_chunk_metadata(
         self,
-        chunk_metadata: Dict[str, Any],
+        chunk_metadata: dict[str, Any],
         chunk_index: int,
         total_chunks: int,
-        structural_context: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        structural_context: str | None = None,
+    ) -> dict[str, Any]:
         """Enhance chunk metadata with additional information.
 
         Args:
@@ -182,11 +183,11 @@ class MetadataExtractor:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hash_obj.update(chunk)
             return hash_obj.hexdigest()
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.warning("Failed to calculate hash for %s: %s", file_path, e)
             return f"error_{hash(str(file_path))}"
 
-    def _extract_title(self, ast: MarkdownAST) -> Optional[str]:
+    def _extract_title(self, ast: MarkdownAST) -> str | None:
         """Extract document title from first level-1 header.
 
         Args:

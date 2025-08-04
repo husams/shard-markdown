@@ -11,6 +11,7 @@ from ..config import load_config
 from ..utils.logging import setup_logging
 from .commands import collections, config, process, query
 
+
 # Install rich tracebacks for better error display
 install(show_locals=True)
 

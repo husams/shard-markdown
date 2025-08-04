@@ -1,10 +1,11 @@
 """Collection management operations."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
 from .protocol import ChromaDBClientProtocol
+
 
 logger = get_logger(__name__)
 
@@ -23,8 +24,8 @@ class CollectionManager:
     def create_collection(
         self,
         name: str,
-        description: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        description: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Any:
         """Create a new collection with validation.
 
@@ -53,7 +54,7 @@ class CollectionManager:
                 name, create_if_missing=True, metadata=collection_metadata
             )
             logger.info(
-                f"Created collection '{name}' with metadata: " f"{collection_metadata}"
+                f"Created collection '{name}' with metadata: {collection_metadata}"
             )
             return collection
 
@@ -88,7 +89,7 @@ class CollectionManager:
                 cause=e,
             ) from e
 
-    def list_collections(self) -> List[Dict[str, Any]]:
+    def list_collections(self) -> list[dict[str, Any]]:
         """List all collections with metadata.
 
         Returns:
@@ -183,7 +184,7 @@ class CollectionManager:
                 cause=e,
             ) from e
 
-    def get_collection_info(self, name: str) -> Dict[str, Any]:
+    def get_collection_info(self, name: str) -> dict[str, Any]:
         """Get detailed information about a collection.
 
         Args:
@@ -236,11 +237,11 @@ class CollectionManager:
 
         # Check for invalid characters (basic validation)
         invalid_chars = set(name) - set(
-            "abcdefghijklmnopqrstuvwxyz" "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_."
         )
         if invalid_chars:
             raise ChromaDBError(
-                f"Collection name contains invalid characters: " f"{invalid_chars}",
+                f"Collection name contains invalid characters: {invalid_chars}",
                 error_code=1413,
                 context={"name": name, "invalid_chars": list(invalid_chars)},
             )

@@ -1,7 +1,7 @@
 """Process command for document processing."""
 
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
 
 import click
 from rich.console import Console
@@ -25,6 +25,7 @@ from ...utils.validation import (
     validate_collection_name,
     validate_input_paths,
 )
+
 
 logger = get_logger(__name__)
 console = Console()
@@ -99,7 +100,7 @@ def process(  # noqa: C901
     clear_collection: bool,
     dry_run: bool,
     max_workers: int,
-    collection_metadata: Optional[str],
+    collection_metadata: str | None,
     use_mock: bool,
 ) -> None:
     """Process markdown files into ChromaDB collections.
@@ -177,7 +178,7 @@ def _validate_and_prepare(
     chunk_overlap: int,
     collection: str,
     recursive: bool,
-) -> List[Path]:
+) -> list[Path]:
     """Validate parameters and prepare input paths."""
     validate_chunk_parameters(chunk_size, chunk_overlap)
     validate_collection_name(collection)
@@ -228,7 +229,7 @@ def _handle_collection_clearing(
 
 
 def _process_files_with_progress(
-    validated_paths: List[Path],
+    validated_paths: list[Path],
     collection: str,
     processor: Any,
     chroma_client: Any,
@@ -303,7 +304,7 @@ def _process_single_file(
 
 
 def _process_batch_files(
-    validated_paths: List[Path],
+    validated_paths: list[Path],
     collection: str,
     processor: Any,
     chroma_client: Any,
@@ -369,7 +370,7 @@ def _handle_unexpected_error(e: Exception, verbose: int) -> None:
 
 
 def _show_dry_run_preview(
-    paths: List[Path], collection: str, chunk_size: int, chunk_overlap: int
+    paths: list[Path], collection: str, chunk_size: int, chunk_overlap: int
 ) -> None:
     """Display dry run preview of what would be processed."""
     table = Table(title="Dry Run Preview")
@@ -385,7 +386,7 @@ def _show_dry_run_preview(
 
     console.print("[blue]Files to be processed:[/blue]")
     for i, path in enumerate(paths[:10]):  # Show first 10 files
-        console.print(f"  {i+1:2d}. {path}")
+        console.print(f"  {i + 1:2d}. {path}")
 
     if len(paths) > 10:
         console.print(f"  ... and {len(paths) - 10} more files")

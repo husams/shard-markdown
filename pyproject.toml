@@ -103,6 +103,7 @@ line-length = 88
 target-version = "py312"
 exclude = [
     ".claude",
+    "docs",
     ".git",
     ".venv",
     "__pycache__",
@@ -127,7 +128,6 @@ select = [
 ]
 ignore = [
     "E203",  # whitespace before ':' (conflicts with Black)
-    "W503",  # line break before binary operator (conflicts with Black)
     "D100",  # Missing docstring in public module
     "D104",  # Missing docstring in public package
     "S101",  # Use of assert detected

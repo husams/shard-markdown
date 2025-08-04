@@ -1,14 +1,13 @@
 """Input validation utilities."""
 
 from pathlib import Path
-from typing import List
 
 from .errors import FileSystemError, InputValidationError
 
 
 def validate_input_paths(  # noqa: C901
-    paths: List[str], recursive: bool = False
-) -> List[Path]:
+    paths: list[str], recursive: bool = False
+) -> list[Path]:
     """Validate input file paths and collect markdown files.
 
     Args:
@@ -72,7 +71,7 @@ def validate_input_paths(  # noqa: C901
                 error_code=1201,
                 context={"path": path_str, "os_error": str(e)},
                 cause=e,
-            )
+            ) from e
 
     if not validated_paths:
         raise InputValidationError(
@@ -159,7 +158,7 @@ def validate_collection_name(name: str) -> None:
     )
     if invalid_chars:
         raise InputValidationError(
-            f"Collection name contains invalid characters: " f"{sorted(invalid_chars)}",
+            f"Collection name contains invalid characters: {sorted(invalid_chars)}",
             error_code=1022,
             context={"name": name, "invalid_chars": sorted(invalid_chars)},
         )

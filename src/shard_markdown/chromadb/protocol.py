@@ -1,6 +1,6 @@
 """Protocol for ChromaDB client interface."""
 
-from typing import Any, Dict, List, Optional, Protocol, Union
+from typing import Any, Protocol
 
 from ..core.models import DocumentChunk, InsertResult
 
@@ -38,7 +38,7 @@ class ChromaDBClientProtocol(Protocol):
         self,
         name: str,
         create_if_missing: bool = False,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> Any:
         """Get existing or create new collection.
 
@@ -52,7 +52,7 @@ class ChromaDBClientProtocol(Protocol):
         """
         ...
 
-    def bulk_insert(self, collection: Any, chunks: List[DocumentChunk]) -> InsertResult:
+    def bulk_insert(self, collection: Any, chunks: list[DocumentChunk]) -> InsertResult:
         """Bulk insert chunks into collection.
 
         Args:
@@ -64,7 +64,7 @@ class ChromaDBClientProtocol(Protocol):
         """
         ...
 
-    def list_collections(self) -> List[Dict[str, Any]]:
+    def list_collections(self) -> list[dict[str, Any]]:
         """List all available collections.
 
         Returns:
@@ -72,7 +72,7 @@ class ChromaDBClientProtocol(Protocol):
         """
         ...
 
-    def delete_collection(self, name: str) -> Union[bool, None]:
+    def delete_collection(self, name: str) -> bool | None:
         """Delete a collection.
 
         Args:

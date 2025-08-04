@@ -2,17 +2,17 @@
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 import yaml
 from dotenv import load_dotenv
 
 from .defaults import DEFAULT_CONFIG_LOCATIONS, DEFAULT_CONFIG_YAML, ENV_VAR_MAPPINGS
 from .settings import AppConfig
-from .utils import set_nested_value, parse_config_value
+from .utils import parse_config_value, set_nested_value
 
 
-def load_config(config_path: Optional[Path] = None) -> AppConfig:
+def load_config(config_path: Path | None = None) -> AppConfig:
     """Load configuration from file, environment variables, and defaults.
 
     Args:
@@ -29,7 +29,7 @@ def load_config(config_path: Optional[Path] = None) -> AppConfig:
     load_dotenv()
 
     # Determine configuration file path
-    config_file: Optional[Path]
+    config_file: Path | None
     if config_path:
         if not config_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
@@ -93,7 +93,7 @@ def create_default_config(config_path: Path, force: bool = False) -> None:
         f.write(DEFAULT_CONFIG_YAML)
 
 
-def _find_config_file() -> Optional[Path]:
+def _find_config_file() -> Path | None:
     """Find configuration file in default locations.
 
     Returns:
@@ -105,7 +105,7 @@ def _find_config_file() -> Optional[Path]:
     return None
 
 
-def _load_config_file(config_path: Path) -> Dict[str, Any]:
+def _load_config_file(config_path: Path) -> dict[str, Any]:
     """Load configuration from YAML file.
 
     Args:
@@ -118,16 +118,18 @@ def _load_config_file(config_path: Path) -> Dict[str, Any]:
         ValueError: If file format is invalid
     """
     try:
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             data = yaml.safe_load(f) or {}
         return data
     except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML in configuration file {config_path}: {e}")
-    except (OSError, IOError, UnicodeDecodeError) as e:
+        raise ValueError(
+            f"Invalid YAML in configuration file {config_path}: {e}"
+        ) from e
+    except (OSError, UnicodeDecodeError) as e:
         raise ValueError(f"Error reading configuration file {config_path}: {e}") from e
 
 
-def _apply_env_overrides(config_data: Dict[str, Any]) -> Dict[str, Any]:
+def _apply_env_overrides(config_data: dict[str, Any]) -> dict[str, Any]:
     """Apply environment variable overrides to configuration.
 
     Args:
