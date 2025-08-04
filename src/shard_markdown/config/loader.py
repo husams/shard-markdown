@@ -122,7 +122,9 @@ def _load_config_file(config_path: Path) -> dict[str, Any]:
             data = yaml.safe_load(f) or {}
         return data
     except yaml.YAMLError as e:
-        raise ValueError(f"Invalid YAML in configuration file {config_path}: {e}")
+        raise ValueError(
+            f"Invalid YAML in configuration file {config_path}: {e}"
+        ) from e
     except (OSError, UnicodeDecodeError) as e:
         raise ValueError(f"Error reading configuration file {config_path}: {e}") from e
 

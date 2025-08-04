@@ -113,7 +113,7 @@ class MetadataExtractor:
         # Extract code languages
         code_blocks = [e for e in ast.elements if e.type == "code_block" and e.language]
         if code_blocks:
-            languages = list(set(cb.language for cb in code_blocks if cb.language))
+            languages = list({cb.language for cb in code_blocks if cb.language})
             metadata["code_languages"] = languages
 
         # Calculate estimated reading time (assuming 200 words per minute)

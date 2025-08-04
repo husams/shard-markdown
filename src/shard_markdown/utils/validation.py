@@ -71,7 +71,7 @@ def validate_input_paths(  # noqa: C901
                 error_code=1201,
                 context={"path": path_str, "os_error": str(e)},
                 cause=e,
-            )
+            ) from e
 
     if not validated_paths:
         raise InputValidationError(

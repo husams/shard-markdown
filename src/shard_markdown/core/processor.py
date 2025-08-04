@@ -219,7 +219,7 @@ class DocumentProcessor:
                 error_code=1201,
                 context={"file_path": str(file_path)},
                 cause=e,
-            )
+            ) from e
 
         # Try multiple encodings
         encodings = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
@@ -248,7 +248,7 @@ class DocumentProcessor:
                             "file_path": str(file_path),
                             "encodings_tried": encodings,
                         },
-                    )
+                    ) from None
                 continue
             except OSError as e:
                 raise FileSystemError(

@@ -1,6 +1,6 @@
 """ChromaDB integration with mock fallback."""
 
-from typing import Optional, Type
+from typing import Optional
 
 
 # Try to import real ChromaDB client, fallback to mock if not available

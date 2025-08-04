@@ -73,7 +73,7 @@ class ChromaDBClient:
                     "ssl": self.config.ssl,
                 },
                 cause=e,
-            )
+            ) from e
 
     def get_collection(self, name: str) -> chromadb.Collection | Any:
         """Get existing collection.
@@ -207,8 +207,9 @@ class ChromaDBClient:
 
             processing_time = time.time() - start_time
 
+            collection_name = getattr(collection, "name", "unknown")
             logger.info(
-                f"Inserted {len(chunks)} chunks into '{getattr(collection, 'name', 'unknown')}' "
+                f"Inserted {len(chunks)} chunks into '{collection_name}' "
                 f"in {processing_time:.2f}s"
             )
 
@@ -348,7 +349,7 @@ class ChromaDBClient:
                 error_code=1602,
                 context={"host": self.config.host},
                 cause=e,
-            )
+            ) from e
         except TimeoutError as e:
             raise NetworkError(
                 f"Connection timeout to ChromaDB: "
@@ -360,7 +361,7 @@ class ChromaDBClient:
                     "timeout": self.config.timeout,
                 },
                 cause=e,
-            )
+            ) from e
 
     def _get_auth_headers(self) -> dict[str, str]:
         """Get authentication headers if token is configured.
@@ -386,7 +387,7 @@ class ChromaDBClient:
         Raises:
             ChromaDBError: If validation fails
         """
-        if len(set([len(ids), len(documents), len(metadatas)])) > 1:
+        if len({len(ids), len(documents), len(metadatas)}) > 1:
             raise ChromaDBError(
                 "Mismatched lengths in insertion data",
                 error_code=1430,

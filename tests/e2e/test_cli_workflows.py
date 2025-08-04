@@ -616,8 +616,10 @@ class TestCLIErrorScenarios:
             # Restore permissions for cleanup
             try:
                 restricted_dir.chmod(0o755)
-            except Exception:
-                pass
+            except Exception as e:
+                # Log the exception if directory permission restore fails
+                # This is acceptable during test cleanup
+                print(f"Warning: Could not restore directory permissions: {e}")
 
     def test_malformed_config_scenarios(
         self, cli_runner, sample_markdown_file, temp_dir

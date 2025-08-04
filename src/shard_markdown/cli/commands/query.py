@@ -22,7 +22,7 @@ def _handle_chromadb_errors(e: Exception, verbose: int) -> None:
         console.print(f"[red]Error:[/red] {e.message}")
         if verbose > 0:
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
-    elif isinstance(e, (ConnectionError, RuntimeError, ValueError)):
+    elif isinstance(e, ConnectionError | RuntimeError | ValueError):
         console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
