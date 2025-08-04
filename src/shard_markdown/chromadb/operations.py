@@ -54,7 +54,7 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include = ["documents", "distances"]
+            include: List[str] = ["documents", "distances"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -125,7 +125,7 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include = ["documents"]
+            include: List[str] = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -138,7 +138,7 @@ class ChromaDBOperations:
             # Format result
             document_data = {
                 "id": results["ids"][0],
-                "content": results["documents"][0],
+                "content": results["documents"][0] if results["documents"] else "",
             }
 
             if include_metadata and results.get("metadatas"):
@@ -194,7 +194,7 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include = ["documents"]
+            include: List[str] = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -208,13 +208,13 @@ class ChromaDBOperations:
                     "id": doc_id,
                     "content": (
                         results["documents"][i][:200] + "..."
-                        if len(results["documents"][i]) > 200
-                        else results["documents"][i]
+                        if results["documents"] and i < len(results["documents"]) and len(results["documents"][i]) > 200
+                        else results["documents"][i] if results["documents"] and i < len(results["documents"]) else ""
                     ),
-                    "content_length": len(results["documents"][i]),
+                    "content_length": len(results["documents"][i]) if results["documents"] and i < len(results["documents"]) else 0,
                 }
 
-                if include_metadata and results.get("metadatas"):
+                if include_metadata and results.get("metadatas") and i < len(results.get("metadatas", [])):
                     doc_data["metadata"] = results["metadatas"][i]
 
                 documents.append(doc_data)
