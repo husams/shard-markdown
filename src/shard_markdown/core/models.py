@@ -38,11 +38,15 @@ class MarkdownAST(BaseModel):
     @property
     def headers(self) -> List[MarkdownElement]:
         """Get all header elements."""
+        if not self.elements:
+            return []
         return [elem for elem in self.elements if elem.type == "header"]
 
     @property
     def code_blocks(self) -> List[MarkdownElement]:
         """Get all code block elements."""
+        if not self.elements:
+            return []
         return [elem for elem in self.elements if elem.type == "code_block"]
 
 
@@ -66,6 +70,8 @@ class DocumentChunk(BaseModel):
 
     def add_metadata(self, key: str, value: Any) -> None:
         """Add metadata to chunk."""
+        if not isinstance(self.metadata, dict):
+            self.metadata = {}
         self.metadata[key] = value
 
 
