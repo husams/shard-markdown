@@ -81,7 +81,7 @@ class ChromaDBOperations:
                 "results": processed_results["results"],
             }
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             if isinstance(e, ChromaDBError):
                 raise
 
@@ -93,7 +93,7 @@ class ChromaDBOperations:
                     "query": query_text,
                 },
                 cause=e,
-            )
+            ) from e
 
     def get_document(
         self,
@@ -144,11 +144,11 @@ class ChromaDBOperations:
             if include_metadata and results.get("metadatas"):
                 document_data["metadata"] = results["metadatas"][0]
 
-            logger.info(f"Retrieved document '{document_id}' from '{collection_name}'")
+            logger.info("Retrieved document '%s' from '%s'", document_id, collection_name)
 
             return document_data
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             if isinstance(e, ChromaDBError):
                 raise
 
@@ -160,7 +160,7 @@ class ChromaDBOperations:
                     "document_id": document_id,
                 },
                 cause=e,
-            )
+            ) from e
 
     def list_documents(
         self,
@@ -235,7 +235,7 @@ class ChromaDBOperations:
                 "documents": documents,
             }
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             if isinstance(e, ChromaDBError):
                 raise
 
@@ -244,7 +244,7 @@ class ChromaDBOperations:
                 error_code=1442,
                 context={"collection_name": collection_name},
                 cause=e,
-            )
+            ) from e
 
     def delete_documents(
         self, collection_name: str, document_ids: List[str]
@@ -284,7 +284,7 @@ class ChromaDBOperations:
                 "deleted_ids": document_ids,
             }
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             raise ChromaDBError(
                 f"Failed to delete documents from collection: " f"{collection_name}",
                 error_code=1443,
@@ -293,7 +293,7 @@ class ChromaDBOperations:
                     "document_ids": document_ids,
                 },
                 cause=e,
-            )
+            ) from e
 
     def _process_query_results(
         self,

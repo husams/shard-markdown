@@ -79,7 +79,7 @@ def cli(
         ctx.obj["quiet"] = quiet
         ctx.obj["log_file"] = log_file
 
-    except Exception as e:
+    except (OSError, ValueError) as e:
         console.print(f"[red]Error initializing shard-md:[/red] {str(e)}")
         sys.exit(1)
 

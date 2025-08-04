@@ -49,8 +49,8 @@ def load_config(config_path: Optional[Path] = None) -> AppConfig:
     # Create and validate configuration
     try:
         return AppConfig(**config_data)
-    except Exception as e:
-        raise ValueError(f"Invalid configuration: {e}")
+    except (TypeError, ValueError, KeyError) as e:
+        raise ValueError(f"Invalid configuration: {e}") from e
 
 
 def save_config(config: AppConfig, config_path: Path) -> None:
@@ -122,8 +122,8 @@ def _load_config_file(config_path: Path) -> Dict[str, Any]:
         return data
     except yaml.YAMLError as e:
         raise ValueError(f"Invalid YAML in configuration file {config_path}: {e}")
-    except Exception as e:
-        raise ValueError(f"Error reading configuration file {config_path}: {e}")
+    except (OSError, IOError, UnicodeDecodeError) as e:
+        raise ValueError(f"Error reading configuration file {config_path}: {e}") from e
 
 
 def _apply_env_overrides(config_data: Dict[str, Any]) -> Dict[str, Any]:

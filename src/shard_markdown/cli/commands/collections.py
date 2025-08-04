@@ -98,11 +98,11 @@ def list(
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
         raise click.Abort()
 
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {str(e)}")
+    except (ConnectionError, RuntimeError, ValueError) as e:
+        console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @collections.command()
@@ -166,11 +166,11 @@ def create(
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
         raise click.Abort()
 
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {str(e)}")
+    except (ConnectionError, RuntimeError, ValueError) as e:
+        console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @collections.command()
@@ -217,11 +217,11 @@ def delete(
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
         raise click.Abort()
 
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {str(e)}")
+    except (ConnectionError, RuntimeError, ValueError) as e:
+        console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @collections.command()
@@ -277,11 +277,11 @@ def info(
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
         raise click.Abort()
 
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {str(e)}")
+    except (ConnectionError, RuntimeError, ValueError) as e:
+        console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 def _display_collections_table(

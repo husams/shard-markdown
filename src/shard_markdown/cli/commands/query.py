@@ -85,8 +85,8 @@ def search(  # noqa: C901
         # Get collection
         try:
             collection_obj = chroma_client.get_collection(collection)
-        except Exception:
-            raise click.ClickException(f"Collection '{collection}' not found")
+        except (ValueError, RuntimeError):
+            raise click.ClickException(f"Collection '{collection}' not found") from None
 
         # Perform search
         console.print(
@@ -96,8 +96,8 @@ def search(  # noqa: C901
 
         try:
             results = collection_obj.query(query_texts=[query_text], n_results=limit)
-        except Exception as e:
-            raise click.ClickException(f"Search failed: {str(e)}")
+        except (ValueError, RuntimeError) as e:
+            raise click.ClickException(f"Search failed: {str(e)}") from e
 
         # Process results
         if not results["ids"][0]:
@@ -127,11 +127,11 @@ def search(  # noqa: C901
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
         raise click.Abort()
 
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {str(e)}")
+    except (ConnectionError, RuntimeError, ValueError) as e:
+        console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @query.command()
@@ -171,8 +171,8 @@ def get(
         # Get collection
         try:
             collection_obj = chroma_client.get_collection(collection)
-        except Exception:
-            raise click.ClickException(f"Collection '{collection}' not found")
+        except (ValueError, RuntimeError):
+            raise click.ClickException(f"Collection '{collection}' not found") from None
 
         # Get document
         console.print(
@@ -187,8 +187,8 @@ def get(
                     ["documents", "metadatas"] if include_metadata else ["documents"]
                 ),
             )
-        except Exception as e:
-            raise click.ClickException(f"Failed to retrieve document: {str(e)}")
+        except (ValueError, RuntimeError) as e:
+            raise click.ClickException(f"Failed to retrieve document: {str(e)}") from e
 
         # Check if document exists
         if not results["ids"]:
@@ -215,11 +215,11 @@ def get(
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
         raise click.Abort()
 
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {str(e)}")
+    except (ConnectionError, RuntimeError, ValueError) as e:
+        console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 def _display_search_results_table(

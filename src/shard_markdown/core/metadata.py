@@ -51,8 +51,8 @@ class MetadataExtractor:
 
             return metadata
 
-        except Exception as e:
-            logger.warning(f"Failed to extract file metadata for {file_path}: {e}")
+        except (OSError, IOError, ValueError) as e:
+            logger.warning("Failed to extract file metadata for %s: %s", file_path, e)
             return {
                 "file_path": str(file_path),
                 "file_name": file_path.name,
@@ -182,8 +182,8 @@ class MetadataExtractor:
                 for chunk in iter(lambda: f.read(4096), b""):
                     hash_obj.update(chunk)
             return hash_obj.hexdigest()
-        except Exception as e:
-            logger.warning(f"Failed to calculate hash for {file_path}: {e}")
+        except (OSError, IOError) as e:
+            logger.warning("Failed to calculate hash for %s: %s", file_path, e)
             return f"error_{hash(str(file_path))}"
 
     def _extract_title(self, ast: MarkdownAST) -> Optional[str]:

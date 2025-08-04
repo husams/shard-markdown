@@ -45,7 +45,7 @@ class DocumentProcessor:
         start_time = time.time()
 
         try:
-            logger.info(f"Processing document: {file_path}")
+            logger.info("Processing document: %s", file_path)
 
             # Read and validate file
             content = self._read_file(file_path)
@@ -61,7 +61,7 @@ class DocumentProcessor:
             chunks = self.chunker.chunk_document(ast)
 
             if not chunks:
-                logger.warning(f"No chunks generated for {file_path}")
+                logger.warning("No chunks generated for %s", file_path)
                 return ProcessingResult(
                     file_path=file_path,
                     success=False,
@@ -89,11 +89,11 @@ class DocumentProcessor:
                 collection_name=collection_name,
             )
 
-        except Exception as e:
+        except (OSError, IOError, ValueError, RuntimeError) as e:
             processing_time = time.time() - start_time
             error_msg = str(e)
 
-            logger.error(f"Failed to process {file_path}: {error_msg}")
+            logger.error("Failed to process %s: %s", file_path, error_msg)
 
             return ProcessingResult(
                 file_path=file_path,
@@ -138,8 +138,8 @@ class DocumentProcessor:
                 try:
                     result = future.result()
                     results.append(result)
-                except Exception as e:
-                    logger.error(f"Unexpected error processing {path}: {e}")
+                except (OSError, IOError, ValueError, RuntimeError) as e:
+                    logger.error("Unexpected error processing %s: %s", path, e)
                     results.append(
                         ProcessingResult(
                             file_path=path,
@@ -232,13 +232,13 @@ class DocumentProcessor:
                         },
                     )
                 continue
-            except Exception as e:
+            except (OSError, IOError) as e:
                 raise FileSystemError(
                     f"Error reading file: {file_path}",
                     error_code=1206,
                     context={"file_path": str(file_path)},
                     cause=e,
-                )
+                ) from e
 
         # This should never be reached, but mypy needs it
         raise FileSystemError(
