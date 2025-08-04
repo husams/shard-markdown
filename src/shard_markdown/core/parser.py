@@ -52,8 +52,8 @@ class MarkdownParser:
                 metadata={"html": html, "toc": getattr(self.md, "toc", "")},
             )
 
-        except Exception as e:
-            raise ValueError(f"Failed to parse markdown: {e}")
+        except (AttributeError, TypeError, UnicodeDecodeError) as e:
+            raise ValueError(f"Failed to parse markdown: {e}") from e
 
     def _extract_elements(self, content: str) -> List[MarkdownElement]:  # noqa: C901
         """Extract structural elements from markdown content.

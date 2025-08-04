@@ -72,11 +72,11 @@ def show(ctx: click.Context, format: str, section: str) -> None:
         elif format == "table":
             _display_config_table(config_dict)
 
-    except Exception as e:
-        console.print(f"[red]Error displaying configuration:[/red] {str(e)}")
+    except (IOError, ValueError, RuntimeError) as e:
+        console.print("[red]Error displaying configuration:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @config.command()
@@ -142,8 +142,8 @@ def set(
 
         try:
             updated_config = AppConfig(**config_dict)
-        except Exception as e:
-            console.print(f"[red]Invalid configuration value:[/red] {str(e)}")
+        except (ValueError, TypeError) as e:
+            console.print("[red]Invalid configuration value:[/red] %s", str(e))
             return
 
         # Save the configuration
@@ -152,11 +152,11 @@ def set(
         console.print(f"[green]✓ Set {key} = {value}[/green]")
         console.print(f"[dim]Saved to: {config_path}[/dim]")
 
-    except Exception as e:
-        console.print(f"[red]Error setting configuration:[/red] {str(e)}")
+    except (IOError, ValueError, RuntimeError) as e:
+        console.print("[red]Error setting configuration:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @config.command()
@@ -208,11 +208,11 @@ def init(ctx: click.Context, is_global: bool, force: bool, template: str) -> Non
             "to modify values."
         )
 
-    except Exception as e:
-        console.print(f"[red]Error initializing configuration:[/red] {str(e)}")
+    except (IOError, ValueError, RuntimeError) as e:
+        console.print("[red]Error initializing configuration:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 @config.command()

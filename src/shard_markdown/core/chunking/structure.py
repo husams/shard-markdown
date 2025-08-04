@@ -92,7 +92,7 @@ class StructureAwareChunker(BaseChunker):
             )
             chunks.append(chunk)
 
-        logger.info(f"Created {len(chunks)} chunks using structure-aware method")
+        logger.info("Created %s chunks using structure-aware method", len(chunks))
         return chunks
 
     def _element_to_text(self, element: MarkdownElement) -> str:

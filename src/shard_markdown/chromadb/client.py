@@ -61,7 +61,7 @@ class ChromaDBClient:
 
         except (NetworkError, ChromaDBError):
             raise
-        except Exception as e:
+        except (OSError, ConnectionError, TimeoutError, ValueError) as e:
             raise ChromaDBError(
                 f"Unexpected error connecting to ChromaDB: "
                 f"{self.config.host}:{self.config.port}",
@@ -95,16 +95,16 @@ class ChromaDBClient:
 
         try:
             collection = self.client.get_collection(name)
-            logger.info(f"Retrieved existing collection: {name}")
+            logger.info("Retrieved existing collection: %s", name)
             return collection
 
-        except Exception as e:
+        except (ValueError, KeyError, AttributeError, RuntimeError) as e:
             raise ChromaDBError(
                 f"Collection '{name}' does not exist",
                 error_code=1413,
                 context={"collection_name": name},
                 cause=e,
-            )
+            ) from e
 
     def get_or_create_collection(
         self,
@@ -155,10 +155,10 @@ class ChromaDBClient:
                     name=name, metadata=collection_metadata
                 )
 
-                logger.info(f"Created new collection: {name}")
+                logger.info("Created new collection: %s", name)
                 return collection
 
-            except Exception as create_error:
+            except (ValueError, RuntimeError, OSError) as create_error:
                 raise ChromaDBError(
                     f"Failed to create collection: {name}",
                     error_code=1414,
@@ -168,7 +168,7 @@ class ChromaDBClient:
                         "create_error": str(create_error),
                     },
                     cause=create_error,
-                )
+                ) from create_error
 
     def bulk_insert(
         self, collection: Union[chromadb.Collection, Any], chunks: List[DocumentChunk]
@@ -218,12 +218,12 @@ class ChromaDBClient:
                 collection_name=getattr(collection, "name", "unknown"),
             )
 
-        except Exception as e:
+        except (ValueError, RuntimeError, OSError, TypeError) as e:
             processing_time = time.time() - start_time
             error_msg = str(e)
 
             logger.error(
-                f"Bulk insert failed after {processing_time:.2f}s: {error_msg}"
+                "Bulk insert failed after %.2fs: %s", processing_time, error_msg
             )
 
             return InsertResult(
@@ -261,9 +261,9 @@ class ChromaDBClient:
                         "count": collection.count(),
                     }
                     collection_info.append(info)
-                except Exception as e:
+                except (ValueError, RuntimeError, AttributeError) as e:
                     logger.warning(
-                        f"Failed to get info for collection " f"{collection.name}: {e}"
+                        "Failed to get info for collection %s: %s", collection.name, e
                     )
                     collection_info.append(
                         {
@@ -274,16 +274,16 @@ class ChromaDBClient:
                         }
                     )
 
-            logger.info(f"Listed {len(collection_info)} collections")
+            logger.info("Listed %d collections", len(collection_info))
             return collection_info
 
-        except Exception as e:
+        except (ValueError, RuntimeError, AttributeError) as e:
             raise ChromaDBError(
                 "Failed to list collections",
                 error_code=1420,
                 context={"operation": "list_collections"},
                 cause=e,
-            )
+            ) from e
 
     def delete_collection(self, name: str) -> bool:
         """Delete a collection.
@@ -306,16 +306,16 @@ class ChromaDBClient:
 
         try:
             self.client.delete_collection(name)
-            logger.info(f"Deleted collection: {name}")
+            logger.info("Deleted collection: %s", name)
             return True
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError) as e:
             raise ChromaDBError(
                 f"Failed to delete collection: {name}",
                 error_code=1421,
                 context={"collection_name": name},
                 cause=e,
-            )
+            ) from e
 
     def _test_connectivity(self) -> None:
         """Test basic network connectivity to ChromaDB.

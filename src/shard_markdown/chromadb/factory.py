@@ -84,6 +84,6 @@ def _test_chromadb_connectivity(config: ChromaDBConfig) -> bool:
             )
             return False
 
-    except Exception as e:
-        logger.debug(f"Failed to test ChromaDB connectivity: {e}")
+    except (OSError, socket.error, ImportError) as e:
+        logger.debug("Failed to test ChromaDB connectivity: %s", e)
         return False

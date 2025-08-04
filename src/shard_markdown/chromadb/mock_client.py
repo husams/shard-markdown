@@ -184,9 +184,9 @@ class MockChromaDBClient:
                 collection_name=collection.name,
             )
 
-        except Exception as e:
+        except (ValueError, RuntimeError, OSError, IOError) as e:
             processing_time = time.time() - start_time
-            logger.error(f"Mock bulk insert failed: {e}")
+            logger.error("Mock bulk insert failed: %s", e)
 
             return InsertResult(
                 success=False,
@@ -214,8 +214,8 @@ class MockChromaDBClient:
                     f"Loaded {len(self.collections)} mock collections " "from storage"
                 )
 
-            except Exception as e:
-                logger.warning(f"Failed to load mock storage: {e}")
+            except (OSError, IOError, json.JSONDecodeError, ValueError) as e:
+                logger.warning("Failed to load mock storage: %s", e)
 
     def _save_storage(self) -> None:
         """Save collections to storage file."""
@@ -232,8 +232,8 @@ class MockChromaDBClient:
 
             logger.debug("Saved mock collections to storage")
 
-        except Exception as e:
-            logger.warning(f"Failed to save mock storage: {e}")
+        except (OSError, IOError, ValueError) as e:
+            logger.warning("Failed to save mock storage: %s", e)
 
 
 # Function to create mock client instead of real one for testing

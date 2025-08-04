@@ -66,7 +66,7 @@ class FixedSizeChunker(BaseChunker):
             if chunks and start <= chunks[-1].start_position:
                 start = chunks[-1].end_position
 
-        logger.info(f"Created {len(chunks)} chunks using fixed-size method")
+        logger.info("Created %s chunks using fixed-size method", len(chunks))
         return chunks
 
     def _ast_to_text(self, ast: MarkdownAST) -> str:

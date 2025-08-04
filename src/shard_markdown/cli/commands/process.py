@@ -158,7 +158,7 @@ def process(  # noqa: C901
         try:
             chroma_client.get_collection(collection)
             collection_exists = True
-        except Exception:
+        except (ValueError, RuntimeError):
             collection_exists = False
 
         if clear_collection and collection_exists:
@@ -264,9 +264,9 @@ def process(  # noqa: C901
                             )
                             all_chunks.extend(enhanced_chunks)
 
-                        except Exception as e:
+                        except (IOError, ValueError, RuntimeError) as e:
                             logger.error(
-                                f"Failed to get chunks for " f"{result.file_path}: {e}"
+                                "Failed to get chunks for %s: %s", result.file_path, e
                             )
 
                 if all_chunks:
@@ -291,11 +291,11 @@ def process(  # noqa: C901
                 console.print(f"[dim]Context: {e.context}[/dim]")
         raise click.Abort()
 
-    except Exception as e:
-        console.print(f"[red]Unexpected error:[/red] {str(e)}")
+    except (ConnectionError, RuntimeError, ValueError) as e:
+        console.print("[red]Unexpected error:[/red] %s", str(e))
         if verbose > 1:
             console.print_exception()
-        raise click.Abort()
+        raise click.Abort() from e
 
 
 def _show_dry_run_preview(

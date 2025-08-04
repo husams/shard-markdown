@@ -57,13 +57,13 @@ class CollectionManager:
             )
             return collection
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             raise ChromaDBError(
                 f"Failed to create collection '{name}': {str(e)}",
                 error_code=1420,
                 context={"name": name, "metadata": collection_metadata},
                 cause=e,
-            )
+            ) from e
 
     def get_collection(self, name: str) -> Any:
         """Get existing collection.
@@ -80,13 +80,13 @@ class CollectionManager:
         try:
             return self.client.get_collection(name)
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             raise ChromaDBError(
                 f"Collection '{name}' not found: {str(e)}",
                 error_code=1421,
                 context={"name": name},
                 cause=e,
-            )
+            ) from e
 
     def list_collections(self) -> List[Dict[str, Any]]:
         """List all collections with metadata.
@@ -101,13 +101,13 @@ class CollectionManager:
             collections_data = self.client.list_collections()
             return collections_data
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             raise ChromaDBError(
                 f"Failed to list collections: {str(e)}",
                 error_code=1422,
                 context={"operation": "list_collections"},
                 cause=e,
-            )
+            ) from e
 
     def delete_collection(self, name: str) -> bool:
         """Delete a collection.
@@ -123,16 +123,16 @@ class CollectionManager:
         """
         try:
             result = self.client.delete_collection(name)
-            logger.info(f"Deleted collection '{name}'")
+            logger.info("Deleted collection '%s'", name)
             return result if result is not None else True
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             raise ChromaDBError(
                 f"Failed to delete collection '{name}': {str(e)}",
                 error_code=1423,
                 context={"name": name},
                 cause=e,
-            )
+            ) from e
 
     def collection_exists(self, name: str) -> bool:
         """Check if a collection exists.
@@ -172,16 +172,16 @@ class CollectionManager:
                 self.delete_collection(name)
                 self.create_collection(name, metadata=metadata)
 
-            logger.info(f"Cleared collection '{name}'")
+            logger.info("Cleared collection '%s'", name)
             return True
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             raise ChromaDBError(
                 f"Failed to clear collection '{name}': {str(e)}",
                 error_code=1424,
                 context={"name": name},
                 cause=e,
-            )
+            ) from e
 
     def get_collection_info(self, name: str) -> Dict[str, Any]:
         """Get detailed information about a collection.
@@ -203,13 +203,13 @@ class CollectionManager:
 
             return {"name": name, "count": count, "metadata": metadata}
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             raise ChromaDBError(
                 f"Failed to get collection info for '{name}': {str(e)}",
                 error_code=1425,
                 context={"name": name},
                 cause=e,
-            )
+            ) from e
 
     def _validate_collection_name(self, name: str) -> None:
         """Validate collection name.

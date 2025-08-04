@@ -66,10 +66,10 @@ class ChunkingEngine:
                 chunk.add_metadata("chunk_index", i)
                 chunk.add_metadata("total_chunks", len(chunks))
 
-            logger.info(f"Successfully chunked document into {len(chunks)} chunks")
+            logger.info("Successfully chunked document into %s chunks", len(chunks))
             return chunks
 
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError) as e:
             if isinstance(e, ProcessingError):
                 raise
 
@@ -78,7 +78,7 @@ class ChunkingEngine:
                 error_code=1311,
                 context={"strategy": strategy_name, "ast_elements": len(ast.elements)},
                 cause=e,
-            )
+            ) from e
 
     def _validate_chunks(self, chunks: List[DocumentChunk]) -> None:
         """Validate generated chunks.
@@ -121,4 +121,4 @@ class ChunkingEngine:
                 },
             )
 
-        logger.debug(f"Validated {len(chunks)} chunks successfully")
+        logger.debug("Validated %s chunks successfully", len(chunks))
