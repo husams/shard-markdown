@@ -10,6 +10,7 @@ from rich.table import Table
 
 from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
+from ...config.utils import set_nested_value, parse_config_value
 from ...utils.logging import get_logger
 
 _logger = get_logger(__name__)
@@ -135,7 +136,7 @@ def set(
         config_dict = current_config.dict()
 
         # Parse and set the value
-        _set_nested_value(config_dict, key, _parse_config_value(value))
+        set_nested_value(config_dict, key, parse_config_value(value))
 
         # Validate the new configuration
         from ...config.settings import AppConfig
@@ -279,46 +280,3 @@ def _display_config_table(config_dict: Dict[str, Any]) -> None:
 
         console.print(table)
         console.print()
-
-
-def _set_nested_value(data: Dict[str, Any], path: str, value: Any) -> None:
-    """Set nested value in dictionary using dot notation."""
-    keys = path.split(".")
-    current = data
-
-    # Navigate to parent of target key
-    for key in keys[:-1]:
-        if key not in current:
-            current[key] = {}
-        current = current[key]
-
-    # Set the final value
-    current[keys[-1]] = value
-
-
-def _parse_config_value(value: str) -> Any:
-    """Parse configuration value to appropriate type."""
-    # Handle boolean values
-    if value.lower() in ("true", "1", "yes", "on"):
-        return True
-    elif value.lower() in ("false", "0", "no", "off"):
-        return False
-
-    # Handle None/null values
-    elif value.lower() in ("null", "none", ""):
-        return None
-
-    # Try to convert to integer
-    try:
-        return int(value)
-    except ValueError:
-        pass
-
-    # Try to convert to float
-    try:
-        return float(value)
-    except ValueError:
-        pass
-
-    # Return as string
-    return value

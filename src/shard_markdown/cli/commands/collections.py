@@ -16,6 +16,27 @@ _logger = get_logger(__name__)
 console = Console()
 
 
+def _handle_chromadb_errors(e: Exception, verbose: int) -> None:
+    """Handle ChromaDB errors with consistent formatting."""
+    if isinstance(e, ShardMarkdownError):
+        console.print(f"[red]Error:[/red] {e.message}")
+        if verbose > 0:
+            console.print(f"[dim]Error code: {e.error_code}[/dim]")
+    elif isinstance(e, (ConnectionError, RuntimeError, ValueError)):
+        console.print("[red]Unexpected error:[/red] %s", str(e))
+        if verbose > 1:
+            console.print_exception()
+    raise click.Abort() from e
+
+
+def _get_connected_chromadb_client(config):
+    """Get connected ChromaDB client or raise exception."""
+    chroma_client = create_chromadb_client(config.chromadb)
+    if not chroma_client.connect():
+        raise click.ClickException("Failed to connect to ChromaDB")
+    return chroma_client
+
+
 @click.group()
 def collections() -> None:
     """Manage ChromaDB collections.
@@ -63,9 +84,7 @@ def list(
 
     try:
         # Initialize ChromaDB client
-        chroma_client = create_chromadb_client(config.chromadb)
-        if not chroma_client.connect():
-            raise click.ClickException("Failed to connect to ChromaDB")
+        chroma_client = _get_connected_chromadb_client(config)
 
         # Get collections
         collection_manager = CollectionManager(chroma_client)
@@ -92,17 +111,8 @@ def list(
         else:
             console.print(f"[green]Found {len(collections_info)} collection(s)[/green]")
 
-    except ShardMarkdownError as e:
-        console.print(f"[red]Error:[/red] {e.message}")
-        if verbose > 0:
-            console.print(f"[dim]Error code: {e.error_code}[/dim]")
-        raise click.Abort()
-
-    except (ConnectionError, RuntimeError, ValueError) as e:
-        console.print("[red]Unexpected error:[/red] %s", str(e))
-        if verbose > 1:
-            console.print_exception()
-        raise click.Abort() from e
+    except (ShardMarkdownError, ConnectionError, RuntimeError, ValueError) as e:
+        _handle_chromadb_errors(e, verbose)
 
 
 @collections.command()
@@ -128,9 +138,7 @@ def create(
                 raise click.BadParameter(f"Invalid JSON metadata: {e}")
 
         # Initialize ChromaDB client
-        chroma_client = create_chromadb_client(config.chromadb)
-        if not chroma_client.connect():
-            raise click.ClickException("Failed to connect to ChromaDB")
+        chroma_client = _get_connected_chromadb_client(config)
 
         # Create collection
         collection_manager = CollectionManager(chroma_client)
@@ -160,17 +168,8 @@ def create(
             metadata_json = json.dumps(collection_metadata, indent=2)
             console.print(f"Metadata: {metadata_json}")
 
-    except ShardMarkdownError as e:
-        console.print(f"[red]Error:[/red] {e.message}")
-        if verbose > 0:
-            console.print(f"[dim]Error code: {e.error_code}[/dim]")
-        raise click.Abort()
-
-    except (ConnectionError, RuntimeError, ValueError) as e:
-        console.print("[red]Unexpected error:[/red] %s", str(e))
-        if verbose > 1:
-            console.print_exception()
-        raise click.Abort() from e
+    except (ShardMarkdownError, ConnectionError, RuntimeError, ValueError) as e:
+        _handle_chromadb_errors(e, verbose)
 
 
 @collections.command()
@@ -187,9 +186,7 @@ def delete(
 
     try:
         # Initialize ChromaDB client
-        chroma_client = create_chromadb_client(config.chromadb)
-        if not chroma_client.connect():
-            raise click.ClickException("Failed to connect to ChromaDB")
+        chroma_client = _get_connected_chromadb_client(config)
 
         collection_manager = CollectionManager(chroma_client)
 
@@ -211,17 +208,8 @@ def delete(
         collection_manager.delete_collection(name)
         console.print(f"[green]✓ Deleted collection '{name}'[/green]")
 
-    except ShardMarkdownError as e:
-        console.print(f"[red]Error:[/red] {e.message}")
-        if verbose > 0:
-            console.print(f"[dim]Error code: {e.error_code}[/dim]")
-        raise click.Abort()
-
-    except (ConnectionError, RuntimeError, ValueError) as e:
-        console.print("[red]Unexpected error:[/red] %s", str(e))
-        if verbose > 1:
-            console.print_exception()
-        raise click.Abort() from e
+    except (ShardMarkdownError, ConnectionError, RuntimeError, ValueError) as e:
+        _handle_chromadb_errors(e, verbose)
 
 
 @collections.command()
@@ -248,9 +236,7 @@ def info(
 
     try:
         # Initialize ChromaDB client
-        chroma_client = create_chromadb_client(config.chromadb)
-        if not chroma_client.connect():
-            raise click.ClickException("Failed to connect to ChromaDB")
+        chroma_client = _get_connected_chromadb_client(config)
 
         collection_manager = CollectionManager(chroma_client)
 
@@ -271,17 +257,8 @@ def info(
 
             console.print(yaml.dump(info_data, default_flow_style=False))
 
-    except ShardMarkdownError as e:
-        console.print(f"[red]Error:[/red] {e.message}")
-        if verbose > 0:
-            console.print(f"[dim]Error code: {e.error_code}[/dim]")
-        raise click.Abort()
-
-    except (ConnectionError, RuntimeError, ValueError) as e:
-        console.print("[red]Unexpected error:[/red] %s", str(e))
-        if verbose > 1:
-            console.print_exception()
-        raise click.Abort() from e
+    except (ShardMarkdownError, ConnectionError, RuntimeError, ValueError) as e:
+        _handle_chromadb_errors(e, verbose)
 
 
 def _display_collections_table(
