@@ -139,9 +139,24 @@ module = [
     "chromadb.*",
     "markdown.*",
     "frontmatter.*",
-    "tiktoken.*"
+    "tiktoken.*",
+    "pytest.*",
+    "pytest_mock.*",
+    "psutil.*",
+    "click.*"
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["shard_markdown.cli.*", "shard_markdown.config.*"]
+allow_untyped_decorators = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_missing_imports = true
+allow_untyped_defs = true
+allow_untyped_calls = true
+allow_untyped_decorators = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"

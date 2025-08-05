@@ -29,7 +29,7 @@ def _handle_chromadb_errors(e: Exception, verbose: int) -> None:
     raise click.Abort() from e
 
 
-def _get_connected_chromadb_client(config):
+def _get_connected_chromadb_client(config: Any) -> Any:
     """Get connected ChromaDB client or raise exception."""
     chroma_client = create_chromadb_client(config.chromadb)
     if not chroma_client.connect():
