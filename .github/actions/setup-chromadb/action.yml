@@ -1,5 +1,5 @@
 name: Setup ChromaDB
-description: Setup ChromaDB container across different platforms with robust health checks
+description: Setup ChromaDB container across different platforms with robust health checks and version-aware API detection
 
 inputs:
   chromadb-version:
@@ -23,22 +23,25 @@ runs:
       shell: bash
       run: |
         echo "🐧 Setting up ChromaDB on Linux..."
+        echo "📋 Version: ${{ inputs.chromadb-version }}"
+        echo "🔌 Port: ${{ inputs.port }}"
 
         # Stop any existing container
         docker stop chromadb 2>/dev/null || true
         docker rm chromadb 2>/dev/null || true
 
-        # Start ChromaDB with comprehensive health checks
+        # Start ChromaDB with version-aware health checks
+        # Use v1 heartbeat for compatibility with older versions, will be verified later
         docker run -d \
           --name chromadb \
           -p ${{ inputs.port }}:8000 \
           -e ANONYMIZED_TELEMETRY=false \
           -e ALLOW_RESET=true \
           -e IS_PERSISTENT=true \
-          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1" \
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1" \
           --health-interval 5s \
           --health-timeout 10s \
-          --health-retries 20 \
+          --health-retries 24 \
           --health-start-period 30s \
           chromadb/chroma:${{ inputs.chromadb-version }}
 
@@ -61,6 +64,8 @@ runs:
       shell: bash
       run: |
         echo "🍎 Setting up ChromaDB on macOS..."
+        echo "📋 Version: ${{ inputs.chromadb-version }}"
+        echo "🔌 Port: ${{ inputs.port }}"
 
         # Stop any existing container
         docker stop chromadb 2>/dev/null || true
@@ -75,21 +80,44 @@ runs:
           -e IS_PERSISTENT=true \
           chromadb/chroma:${{ inputs.chromadb-version }}
 
-        echo "⏳ Waiting for ChromaDB API to be ready..."
+        echo "⏳ Waiting for ChromaDB API to be ready with version detection..."
 
-        # Manual health check with curl
+        # Version-aware health check with multiple endpoints
         elapsed=0
-        while [ $elapsed -lt ${{ inputs.timeout }} ]; do
-          if curl -f -s http://localhost:${{ inputs.port }}/api/v1/heartbeat >/dev/null 2>&1; then
-            echo "✅ ChromaDB API is ready on macOS"
+        api_ready=false
+        detected_version=""
+
+        while [ $elapsed -lt ${{ inputs.timeout }} ] && [ "$api_ready" = "false" ]; do
+          # Try v2 API first (ChromaDB 1.0+)
+          if curl -f -s http://localhost:${{ inputs.port }}/api/v2/heartbeat >/dev/null 2>&1; then
+            echo "✅ ChromaDB v2 API is ready on macOS"
+            detected_version="v2"
+            api_ready=true
             break
           fi
-          sleep 2
-          elapsed=$((elapsed + 2))
+
+          # Fall back to v1 API (ChromaDB 0.5.x and earlier)
+          if curl -f -s http://localhost:${{ inputs.port }}/api/v1/heartbeat >/dev/null 2>&1; then
+            echo "✅ ChromaDB v1 API is ready on macOS"
+            detected_version="v1"
+            api_ready=true
+            break
+          fi
+
+          # Try root heartbeat (older versions)
+          if curl -f -s http://localhost:${{ inputs.port }}/heartbeat >/dev/null 2>&1; then
+            echo "✅ ChromaDB root API is ready on macOS"
+            detected_version="root"
+            api_ready=true
+            break
+          fi
+
+          sleep 3
+          elapsed=$((elapsed + 3))
           echo -n "."
         done
 
-        if [ $elapsed -ge ${{ inputs.timeout }} ]; then
+        if [ "$api_ready" = "false" ]; then
           echo "❌ ChromaDB startup timeout on macOS"
           echo "📋 Container logs:"
           docker logs chromadb
@@ -98,11 +126,15 @@ runs:
           exit 1
         fi
 
+        echo "🔍 Detected API version: $detected_version"
+
     - name: Setup ChromaDB on Windows
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         Write-Host "🪟 Setting up ChromaDB on Windows..."
+        Write-Host "📋 Version: ${{ inputs.chromadb-version }}"
+        Write-Host "🔌 Port: ${{ inputs.port }}"
 
         # Stop any existing container
         try { docker stop chromadb 2>$null } catch {}
@@ -117,22 +149,41 @@ runs:
           -e IS_PERSISTENT=true `
           chromadb/chroma:${{ inputs.chromadb-version }}
 
-        Write-Host "⏳ Waiting for ChromaDB API to be ready..."
+        Write-Host "⏳ Waiting for ChromaDB API to be ready with version detection..."
 
-        # Windows PowerShell health check
+        # Windows PowerShell version-aware health check
         $timeout = [int]"${{ inputs.timeout }}"
         $elapsed = 0
         $ready = $false
+        $detectedVersion = ""
 
         while ($elapsed -lt $timeout -and -not $ready) {
           try {
-            $response = Invoke-RestMethod -Uri "http://localhost:${{ inputs.port }}/api/v1/heartbeat" -Method Get -TimeoutSec 5
-            Write-Host "✅ ChromaDB API is ready on Windows"
+            # Try v2 API first
+            $response = Invoke-RestMethod -Uri "http://localhost:${{ inputs.port }}/api/v2/heartbeat" -Method Get -TimeoutSec 5
+            Write-Host "✅ ChromaDB v2 API is ready on Windows"
+            $detectedVersion = "v2"
             $ready = $true
           } catch {
-            Start-Sleep -Seconds 2
-            $elapsed += 2
-            Write-Host -NoNewline "."
+            try {
+              # Fall back to v1 API
+              $response = Invoke-RestMethod -Uri "http://localhost:${{ inputs.port }}/api/v1/heartbeat" -Method Get -TimeoutSec 5
+              Write-Host "✅ ChromaDB v1 API is ready on Windows"
+              $detectedVersion = "v1"
+              $ready = $true
+            } catch {
+              try {
+                # Try root heartbeat
+                $response = Invoke-RestMethod -Uri "http://localhost:${{ inputs.port }}/heartbeat" -Method Get -TimeoutSec 5
+                Write-Host "✅ ChromaDB root API is ready on Windows"
+                $detectedVersion = "root"
+                $ready = $true
+              } catch {
+                Start-Sleep -Seconds 3
+                $elapsed += 3
+                Write-Host -NoNewline "."
+              }
+            }
           }
         }
 
@@ -145,48 +196,154 @@ runs:
           exit 1
         }
 
-    - name: Verify ChromaDB API
+        Write-Host "🔍 Detected API version: $detectedVersion"
+
+    - name: Verify ChromaDB API with Version Detection
       shell: bash
       run: |
-        echo "🔍 Final verification of ChromaDB API..."
+        echo "🔍 Final comprehensive verification of ChromaDB API..."
 
-        # Test the heartbeat endpoint
-        if curl -f http://localhost:${{ inputs.port }}/api/v1/heartbeat; then
-          echo "✅ ChromaDB heartbeat successful"
+        # Use the version detection script if available
+        if [ -f "./scripts/detect-chromadb-version.sh" ]; then
+          echo "📋 Running version detection script..."
+          ./scripts/detect-chromadb-version.sh --host localhost --port ${{ inputs.port }} --json || {
+            echo "⚠️ Version detection script failed, falling back to manual detection"
+          }
+        fi
+
+        # Manual version detection with comprehensive fallbacks
+        base_url="http://localhost:${{ inputs.port }}"
+        api_version=""
+        heartbeat_url=""
+        version_url=""
+
+        echo "🔍 Testing API endpoint availability..."
+
+        # Test v2 API (ChromaDB 1.0+)
+        if curl -f -s --max-time 10 "${base_url}/api/v2/heartbeat" >/dev/null 2>&1; then
+          api_version="v2"
+          heartbeat_url="${base_url}/api/v2/heartbeat"
+          version_url="${base_url}/api/v2/version"
+          echo "✅ ChromaDB v2 API endpoints are accessible"
+        # Test v1 API (ChromaDB 0.5.x and earlier)
+        elif curl -f -s --max-time 10 "${base_url}/api/v1/heartbeat" >/dev/null 2>&1; then
+          api_version="v1"
+          heartbeat_url="${base_url}/api/v1/heartbeat"
+          version_url="${base_url}/api/v1/version"
+          echo "✅ ChromaDB v1 API endpoints are accessible"
+        # Test root API (older versions)
+        elif curl -f -s --max-time 10 "${base_url}/heartbeat" >/dev/null 2>&1; then
+          api_version="root"
+          heartbeat_url="${base_url}/heartbeat"
+          version_url="${base_url}/version"
+          echo "✅ ChromaDB root API endpoints are accessible"
         else
-          echo "❌ ChromaDB heartbeat failed"
+          echo "❌ No compatible ChromaDB API endpoints found"
+          echo "🔍 Debug: Testing basic connectivity..."
+          curl -v --max-time 10 "${base_url}/" || true
+          echo "📋 Container logs:"
+          docker logs chromadb || true
           exit 1
         fi
 
-        # Test version endpoint
-        if curl -f http://localhost:${{ inputs.port }}/api/v1/version; then
+        # Test heartbeat endpoint with retries
+        echo "💓 Testing heartbeat endpoint: $heartbeat_url"
+        retry_count=0
+        max_retries=5
+        while [ $retry_count -lt $max_retries ]; do
+          if curl -f --max-time 10 "$heartbeat_url" >/dev/null 2>&1; then
+            echo "✅ ChromaDB heartbeat successful"
+            break
+          fi
+          retry_count=$((retry_count + 1))
+          if [ $retry_count -lt $max_retries ]; then
+            echo "⏳ Heartbeat attempt $retry_count failed, retrying in 2s..."
+            sleep 2
+          else
+            echo "❌ ChromaDB heartbeat failed after $max_retries attempts"
+            exit 1
+          fi
+        done
+
+        # Test version endpoint (non-critical)
+        echo "📋 Testing version endpoint: $version_url"
+        if curl -f --max-time 10 "$version_url" 2>/dev/null; then
           echo "✅ ChromaDB version endpoint accessible"
         else
-          echo "⚠️  ChromaDB version endpoint not accessible (non-critical)"
+          echo "⚠️ ChromaDB version endpoint not accessible (non-critical)"
         fi
 
+        # Export detected information for subsequent steps
+        echo "CHROMADB_API_VERSION=$api_version" >> $GITHUB_ENV
+        echo "CHROMADB_HEARTBEAT_URL=$heartbeat_url" >> $GITHUB_ENV
+        echo "CHROMADB_VERSION_URL=$version_url" >> $GITHUB_ENV
+
         echo "🎉 ChromaDB setup complete and verified!"
+        echo "📊 Configuration Summary:"
+        echo "  - API Version: $api_version"
+        echo "  - Heartbeat URL: $heartbeat_url"
+        echo "  - Version URL: $version_url"
+        echo "  - Docker Image: chromadb/chroma:${{ inputs.chromadb-version }}"
 
     - name: Debug ChromaDB on failure
       if: failure()
       shell: bash
       run: |
-        echo "🚨 ChromaDB setup failed - collecting debug information..."
+        echo "🚨 ChromaDB setup failed - collecting comprehensive debug information..."
+        echo ""
         echo "📋 Container status:"
         docker ps -a --filter name=chromadb || true
         echo ""
-        echo "📋 Container logs:"
-        docker logs chromadb || true
+        echo "📋 Container logs (last 100 lines):"
+        docker logs --tail 100 chromadb || true
         echo ""
-        echo "🔍 Container inspect:"
-        docker inspect chromadb || true
+        echo "🔍 Container inspect (health status):"
+        docker inspect chromadb --format='{{json .State.Health}}' | jq '.' 2>/dev/null || docker inspect chromadb || true
         echo ""
-        echo "🌐 Network connectivity test:"
-        curl -v http://localhost:${{ inputs.port }}/api/v1/heartbeat || true
+        echo "🌐 Network connectivity tests:"
+        base_url="http://localhost:${{ inputs.port }}"
+
+        echo "Testing v2 API:"
+        curl -v --max-time 10 "${base_url}/api/v2/heartbeat" || true
         echo ""
+
+        echo "Testing v1 API:"
+        curl -v --max-time 10 "${base_url}/api/v1/heartbeat" || true
+        echo ""
+
+        echo "Testing root API:"
+        curl -v --max-time 10 "${base_url}/heartbeat" || true
+        echo ""
+
+        echo "Testing base URL:"
+        curl -v --max-time 10 "${base_url}/" || true
+        echo ""
+
         echo "🔌 Port status:"
         if command -v netstat >/dev/null; then
-          netstat -tulpn | grep ${{ inputs.port }} || true
+          netstat -tulpn | grep ${{ inputs.port }} || echo "Port ${{ inputs.port }} not found in netstat"
         elif command -v ss >/dev/null; then
-          ss -tulpn | grep ${{ inputs.port }} || true
+          ss -tulpn | grep ${{ inputs.port }} || echo "Port ${{ inputs.port }} not found in ss"
+        else
+          echo "Neither netstat nor ss available for port checking"
         fi
+        echo ""
+
+        echo "🐳 Docker system information:"
+        docker version || true
+        echo ""
+        docker system info || true
+        echo ""
+
+        echo "🔍 Docker network inspection:"
+        docker network ls || true
+        echo ""
+
+        echo "💾 System resources:"
+        df -h || true
+        echo ""
+        free -h 2>/dev/null || true
+        echo ""
+
+        echo "🏷️ Image information:"
+        docker images chromadb/chroma:${{ inputs.chromadb-version }} || true

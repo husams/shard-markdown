@@ -114,6 +114,20 @@ class ChromaDBError(ShardMarkdownError):
         super().__init__(message, error_code, "DATABASE", **kwargs)
 
 
+class ChromaDBConnectionError(ChromaDBError):
+    """Specific errors related to ChromaDB connection issues."""
+
+    def __init__(self, message: str, error_code: int = 1405, **kwargs: Any) -> None:
+        """Initialize the ChromaDBConnectionError.
+
+        Args:
+            message: Error message description
+            error_code: Unique error code (default 1405)
+            **kwargs: Additional arguments passed to parent class
+        """
+        super().__init__(message, error_code, **kwargs)
+
+
 class SystemError(ShardMarkdownError):
     """System-level errors."""
 

@@ -94,19 +94,19 @@ jobs:
             .pytest_cache/
             *.log
 
-  # Coverage testing with ChromaDB service
+  # Coverage testing with ChromaDB service using version-aware detection
   coverage:
     runs-on: ubuntu-latest
     services:
       chromadb:
-        image: chromadb/chroma:latest
+        image: chromadb/chroma:0.5.23 # Use stable version instead of latest
         ports:
           - 8000:8000
         options: >-
-          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1"
           --health-interval 30s
           --health-timeout 10s
-          --health-retries 10
+          --health-retries 15
 
     steps:
       - name: Checkout code
@@ -124,9 +124,30 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev --extra chromadb
 
-      - name: Wait for ChromaDB
+      - name: Wait for ChromaDB with version-aware detection
         run: |
-          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v1/heartbeat; do sleep 5; done'
+          echo "🔍 Waiting for ChromaDB to be ready with version detection..."
+          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/heartbeat >/dev/null 2>&1; do sleep 5; echo -n "."; done'
+
+          echo "✅ ChromaDB is ready"
+
+          # Detect and log API version
+          if [ -f "./scripts/detect-chromadb-version.sh" ]; then
+            echo "📋 Running version detection..."
+            ./scripts/detect-chromadb-version.sh --host localhost --port 8000
+          else
+            echo "📋 Manual API version detection..."
+            if curl -f -s http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v2 API detected"
+            elif curl -f -s http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v1 API detected"
+            elif curl -f -s http://localhost:8000/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB root API detected"
+            else
+              echo "❌ No compatible API found"
+              exit 1
+            fi
+          fi
 
       - name: Run tests with coverage
         env:
@@ -261,3 +282,60 @@ jobs:
           name: security-reports
           path: |
             bandit-report.json
+
+  # ChromaDB integration test with version matrix
+  chromadb-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chromadb-version: ["0.5.23", "0.5.18"] # Test stable versions
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev --extra chromadb
+
+      - name: Setup ChromaDB
+        uses: ./.github/actions/setup-chromadb
+        with:
+          chromadb-version: ${{ matrix.chromadb-version }}
+          port: 8000
+          timeout: 120
+
+      - name: Run ChromaDB integration tests
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          echo "🧪 Running ChromaDB integration tests with version ${{ matrix.chromadb-version }}"
+
+          # Run ChromaDB-specific tests
+          uv run pytest tests/integration/ -v --tb=short --strict-markers -m "chromadb"
+
+          # Run basic CLI integration test
+          uv run shard-md collections create ci-test-${{ matrix.chromadb-version }}
+          echo "# CI Test" > ci-test.md
+          echo "Testing ChromaDB integration in CI." >> ci-test.md
+          uv run shard-md process --collection ci-test-${{ matrix.chromadb-version }} ci-test.md
+          uv run shard-md query search "integration" --collection ci-test-${{ matrix.chromadb-version }}
+          uv run shard-md collections delete ci-test-${{ matrix.chromadb-version }}
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: integration-test-results-${{ matrix.chromadb-version }}
+          path: |
+            .pytest_cache/
+            *.log
