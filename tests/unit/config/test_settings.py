@@ -146,7 +146,7 @@ class TestChunkingConfig:
 
         # Invalid method should fail
         with pytest.raises(ValidationError):
-            ChunkingConfig(method="invalid_method")  # type: ignore[arg-type]
+            ChunkingConfig(method="invalid_method")
 
 
 class TestProcessingConfig:
