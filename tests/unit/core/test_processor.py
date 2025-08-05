@@ -108,7 +108,7 @@ class TestDocumentProcessor:
         result = processor.process_document(empty_file, "test-collection")
 
         assert result.success is False
-        assert "empty" in result.error.lower()
+        assert result.error and "empty" in result.error.lower()
 
     def test_process_document_large_file(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -123,7 +123,7 @@ class TestDocumentProcessor:
             result = processor.process_document(large_file, "test-collection")
 
             assert result.success is False
-            assert "too large" in result.error.lower()
+            assert result.error and "too large" in result.error.lower()
 
     def test_process_document_no_chunks_generated(
         self,
@@ -143,7 +143,7 @@ class TestDocumentProcessor:
         result = processor.process_document(sample_markdown_file, "test-collection")
 
         assert result.success is False
-        assert "no chunks generated" in result.error.lower()
+        assert result.error and "no chunks generated" in result.error.lower()
         assert result.chunks_created == 0
 
     def test_process_document_parsing_error(
@@ -158,7 +158,7 @@ class TestDocumentProcessor:
         result = processor.process_document(sample_markdown_file, "test-collection")
 
         assert result.success is False
-        assert "parsing failed" in result.error.lower()
+        assert result.error and "parsing failed" in result.error.lower()
 
     def test_process_document_encoding_error(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -172,7 +172,9 @@ class TestDocumentProcessor:
 
         # Should handle encoding gracefully
         assert result.success is False
-        assert "decode" in result.error.lower() or "encoding" in result.error.lower()
+        assert result.error and (
+            "decode" in result.error.lower() or "encoding" in result.error.lower()
+        )
 
     def test_read_file_multiple_encodings(
         self, processor: DocumentProcessor, temp_dir: Path

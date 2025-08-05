@@ -431,6 +431,7 @@ class TestDocumentProcessingErrors:
 
             # Should handle permission error gracefully
             assert result.success is False
+            assert result.error is not None
             error_msg = result.error.lower()
             assert "permission" in error_msg or "access" in error_msg
 
@@ -479,6 +480,7 @@ class TestDocumentProcessingErrors:
 
             # Should handle size limit gracefully
             assert result.success is False
+            assert result.error is not None
             error_msg = result.error.lower()
             assert "too large" in error_msg or "size" in error_msg
 
@@ -489,6 +491,7 @@ class TestDocumentProcessingErrors:
         result = processor.process_document(nonexistent_file, "nonexistent-test")
 
         assert result.success is False
+        assert result.error is not None
         error_msg = result.error.lower()
         assert "not found" in error_msg or "does not exist" in error_msg
 
@@ -499,6 +502,7 @@ class TestDocumentProcessingErrors:
         result = processor.process_document(temp_dir, "directory-test")
 
         assert result.success is False
+        assert result.error is not None
         error_msg = result.error.lower()
         assert "directory" in error_msg or "not a file" in error_msg
 
@@ -512,7 +516,7 @@ class TestDocumentProcessingErrors:
         result = processor.process_document(empty_file, "empty-test")
 
         assert result.success is False
-        assert "empty" in result.error.lower()
+        assert result.error and "empty" in result.error.lower()
 
     def test_whitespace_only_file(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -527,6 +531,7 @@ class TestDocumentProcessingErrors:
         if result.success:
             assert result.chunks_created == 0
         else:
+            assert result.error is not None
             error_msg = result.error.lower()
             assert "empty" in error_msg or "no content" in error_msg
 
