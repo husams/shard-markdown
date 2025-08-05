@@ -1,4 +1,4 @@
-"""ChromaDB client wrapper with connection management."""
+"""ChromaDB client wrapper with connection management and version detection."""
 
 import socket
 import time
@@ -11,13 +11,14 @@ from ..config.settings import ChromaDBConfig
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.errors import ChromaDBError, NetworkError
 from ..utils.logging import get_logger
+from .version_detector import APIVersionInfo, ChromaDBVersionDetector
 
 
 logger = get_logger(__name__)
 
 
 class ChromaDBClient:
-    """ChromaDB client wrapper with connection management."""
+    """ChromaDB client wrapper with connection management and version detection."""
 
     def __init__(self, config: ChromaDBConfig) -> None:
         """Initialize client with configuration.
@@ -28,9 +29,18 @@ class ChromaDBClient:
         self.config = config
         self.client: ClientAPI | None = None
         self._connection_validated = False
+        self._version_info: APIVersionInfo | None = None
+
+        # Initialize version detector
+        self.version_detector = ChromaDBVersionDetector(
+            host=config.host,
+            port=config.port,
+            timeout=config.timeout,
+            max_retries=3,  # Fewer retries for client operations
+        )
 
     def connect(self) -> bool:
-        """Establish connection to ChromaDB instance.
+        """Establish connection to ChromaDB instance with version detection.
 
         Returns:
             True if connection successful, False otherwise
@@ -43,20 +53,26 @@ class ChromaDBClient:
             # Test basic connectivity first
             self._test_connectivity()
 
-            # Create ChromaDB client
-            self.client = chromadb.HttpClient(
-                host=self.config.host,
-                port=self.config.port,
-                ssl=self.config.ssl,
-                headers=self._get_auth_headers(),
+            # Detect API version and endpoints
+            logger.info("Detecting ChromaDB API version...")
+            self._version_info = self.version_detector.detect_api_version()
+
+            logger.info(
+                f"Detected ChromaDB API version: {self._version_info.version} "
+                f"(ChromaDB {self._version_info.chromadb_version or 'unknown'})"
             )
 
-            # Test connection with heartbeat
-            self.client.heartbeat()
+            # Create ChromaDB client with version-specific settings
+            client_settings = self._get_client_settings()
+            self.client = chromadb.HttpClient(**client_settings)
+
+            # Test connection with heartbeat - use version-aware approach
+            self._test_heartbeat()
             self._connection_validated = True
 
             logger.info(
-                f"Connected to ChromaDB at {self.config.host}:{self.config.port}"
+                f"Connected to ChromaDB at {self.config.host}:{self.config.port} "
+                f"using {self._version_info.version} API"
             )
             return True
 
@@ -71,9 +87,20 @@ class ChromaDBClient:
                     "host": self.config.host,
                     "port": self.config.port,
                     "ssl": self.config.ssl,
+                    "detected_version": self._version_info.version
+                    if self._version_info
+                    else None,
                 },
                 cause=e,
             ) from e
+
+    def get_api_version_info(self) -> APIVersionInfo | None:
+        """Get detected API version information.
+
+        Returns:
+            API version info or None if not detected yet
+        """
+        return self._version_info
 
     def get_collection(self, name: str) -> chromadb.Collection | Any:
         """Get existing collection.
@@ -103,7 +130,12 @@ class ChromaDBClient:
             raise ChromaDBError(
                 f"Collection '{name}' does not exist",
                 error_code=1413,
-                context={"collection_name": name},
+                context={
+                    "collection_name": name,
+                    "api_version": self._version_info.version
+                    if self._version_info
+                    else None,
+                },
                 cause=e,
             ) from e
 
@@ -149,6 +181,9 @@ class ChromaDBClient:
                         "created_by": "shard-md-cli",
                         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
                         "version": "1.0.0",
+                        "api_version": self._version_info.version
+                        if self._version_info
+                        else "unknown",
                     }
                 )
 
@@ -167,6 +202,9 @@ class ChromaDBClient:
                         "collection_name": name,
                         "get_error": str(get_error),
                         "create_error": str(create_error),
+                        "api_version": self._version_info.version
+                        if self._version_info
+                        else None,
                     },
                     cause=create_error,
                 ) from create_error
@@ -199,6 +237,15 @@ class ChromaDBClient:
             documents = [chunk.content for chunk in chunks]
             metadatas = [chunk.metadata for chunk in chunks]
 
+            # Add API version info to metadata
+            if self._version_info:
+                for metadata in metadatas:
+                    metadata["api_version"] = self._version_info.version
+                    if self._version_info.chromadb_version:
+                        metadata["chromadb_version"] = (
+                            self._version_info.chromadb_version
+                        )
+
             # Validate data before insertion
             self._validate_insertion_data(ids, documents, metadatas)
 
@@ -208,9 +255,12 @@ class ChromaDBClient:
             processing_time = time.time() - start_time
 
             collection_name = getattr(collection, "name", "unknown")
+            api_version = (
+                self._version_info.version if self._version_info else "unknown"
+            )
             logger.info(
                 f"Inserted {len(chunks)} chunks into '{collection_name}' "
-                f"in {processing_time:.2f}s"
+                f"in {processing_time:.2f}s using {api_version} API"
             )
 
             return InsertResult(
@@ -283,7 +333,12 @@ class ChromaDBClient:
             raise ChromaDBError(
                 "Failed to list collections",
                 error_code=1420,
-                context={"operation": "list_collections"},
+                context={
+                    "operation": "list_collections",
+                    "api_version": self._version_info.version
+                    if self._version_info
+                    else None,
+                },
                 cause=e,
             ) from e
 
@@ -315,9 +370,86 @@ class ChromaDBClient:
             raise ChromaDBError(
                 f"Failed to delete collection: {name}",
                 error_code=1421,
-                context={"collection_name": name},
+                context={
+                    "collection_name": name,
+                    "api_version": self._version_info.version
+                    if self._version_info
+                    else None,
+                },
                 cause=e,
             ) from e
+
+    def test_connection(self) -> bool:
+        """Test connection to ChromaDB with version detection.
+
+        Returns:
+            True if connection test successful
+        """
+        try:
+            return self.version_detector.test_connection(self._version_info)
+        except Exception as e:
+            logger.debug(f"Connection test failed: {e}")
+            return False
+
+    def _get_client_settings(self) -> dict[str, Any]:
+        """Get client settings based on detected API version.
+
+        Returns:
+            Dict of client settings
+        """
+        settings = {
+            "host": self.config.host,
+            "port": self.config.port,
+            "ssl": self.config.ssl,
+            "headers": self._get_auth_headers(),
+        }
+
+        # Add version-specific settings if needed
+        if self._version_info:
+            # Future: Add version-specific client configurations here
+            pass
+
+        return settings
+
+    def _test_heartbeat(self) -> None:
+        """Test heartbeat with version-aware approach.
+
+        Raises:
+            ChromaDBError: If heartbeat fails
+        """
+        try:
+            if self.client:
+                # Standard ChromaDB client heartbeat
+                self.client.heartbeat()
+            else:
+                # Fallback to version detector
+                if not self.version_detector.test_connection(self._version_info):
+                    raise ChromaDBError(
+                        "Heartbeat test failed",
+                        error_code=1403,
+                        context={
+                            "host": self.config.host,
+                            "port": self.config.port,
+                            "api_version": self._version_info.version
+                            if self._version_info
+                            else None,
+                        },
+                    )
+        except Exception as e:
+            if not isinstance(e, ChromaDBError):
+                raise ChromaDBError(
+                    f"Heartbeat failed: {e}",
+                    error_code=1403,
+                    context={
+                        "host": self.config.host,
+                        "port": self.config.port,
+                        "api_version": self._version_info.version
+                        if self._version_info
+                        else None,
+                    },
+                    cause=e,
+                ) from e
+            raise
 
     def _test_connectivity(self) -> None:
         """Test basic network connectivity to ChromaDB.

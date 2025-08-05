@@ -50,7 +50,7 @@ jobs:
           # assignee_trigger: "claude-bot"
 
           # Optional: Allow Claude to run specific commands
-          allowed_tools: "Bash,Task,TodoWrite,Edit,MultiEdit,Read,Write,Glob,Grep,LS,WebFetch,WebSearch,ExitPlanMode,NotebookRead,NotebookEdit,ListMcpResourcesTool,ReadMcpResourceTool,Bash(flake8),Bash(mypy),Bash(ruff),Bash(pylint)"
+          allowed_tools: "Bash,Task,TodoWrite,Edit,MultiEdit,Read,Write,Glob,Grep,LS,WebFetch,WebSearch,ExitPlanMode,NotebookRead,NotebookEdit,ListMcpResourcesTool,ReadMcpResourceTool,Bash(git:*),Bash(flake8),Bash(black),Bash(mypy),Bash(ruff),Bash(pylint)"
 
           # Optional: Add custom instructions for Claude to customize its behavior for your project
           # custom_instructions: |

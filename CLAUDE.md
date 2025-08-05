@@ -370,3 +370,7 @@ mypy --version
 ```
 
 This ensures consistent development practices across the team and maintains high code quality standards.
+
+
+# COMMIT RULES
+- Allows use amend commits with "--amend{ option, if pull request already open for the branch.

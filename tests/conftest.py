@@ -396,3 +396,111 @@ def performance_documents(temp_dir: Path, large_document_content: str) -> list[P
         documents.append(doc_path)
 
     return documents
+
+
+@pytest.fixture
+def benchmark_config() -> dict:
+    """Create benchmark configuration for performance tests."""
+    return {
+        "min_rounds": 5,
+        "max_time": 1.0,
+        "disable_gc": False,
+        "warmup": False,
+        "sort": "min",
+        "group": "group",
+        "timer": "time.perf_counter",
+    }
+
+
+@pytest.fixture
+def config_file(temp_dir: Path) -> Path:
+    """Create a temporary configuration file for testing."""
+    config_content = """
+chromadb:
+  host: localhost
+  port: 8000
+
+chunking:
+  default_size: 1000
+  default_overlap: 200
+  method: structure
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+"""
+
+    config_path = temp_dir / "config.yaml"
+    config_path.write_text(config_content.strip())
+    return config_path
+
+
+@pytest.fixture
+def sample_markdown_content() -> str:
+    """Provide sample markdown content for testing."""
+    return """# Sample Document
+
+This is a sample markdown document for testing purposes.
+
+## Section 1
+
+Here's some content in section 1 with enough text to make it meaningful for
+chunking tests.
+
+### Subsection 1.1
+
+More detailed content here that provides additional context and information.
+
+## Section 2
+
+Different content in section 2 with various formatting elements.
+
+```python
+def example_function():
+    return "Hello, World!"
+```
+
+### Code Examples
+
+Here are some code examples:
+
+```javascript
+function greet(name) {
+    return `Hello, ${name}!`;
+}
+```
+
+## Conclusion
+
+That's the end of our sample document with enough content for testing.
+"""
+
+
+@pytest.fixture
+def mock_processor() -> Mock:
+    """Create mock document processor."""
+    processor = Mock()
+    processor.process_file.return_value = ProcessingResult(
+        file_path=Path("test.md"),
+        success=True,
+        chunks_created=5,
+        processing_time=2.5,
+        collection_name="test-collection",
+    )
+    processor.process_directory.return_value = [
+        ProcessingResult(
+            file_path=Path("doc1.md"),
+            success=True,
+            chunks_created=3,
+            processing_time=1.2,
+            collection_name="test-collection",
+        ),
+        ProcessingResult(
+            file_path=Path("doc2.md"),
+            success=True,
+            chunks_created=4,
+            processing_time=1.8,
+            collection_name="test-collection",
+        ),
+    ]
+    return processor

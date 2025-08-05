@@ -27,7 +27,7 @@ repos:
       - id: trailing-whitespace
         exclude: ^docs/
       - id: end-of-file-fixer
-        exclude: ^docs/
+        exclude: ^docs/|^\.github/|\.mcp\.json$
       - id: check-yaml
         exclude: ^docs/
       - id: check-toml
