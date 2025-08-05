@@ -69,9 +69,9 @@ class TestProcessingBenchmarks:
         # Performance assertions
         assert avg_time < 5.0, f"Processing too slow: {avg_time:.3f}s"
         assert avg_chunks > 0, "No chunks created"
-        assert (
-            std_dev < avg_time * 0.5
-        ), f"High variance in processing time: {std_dev:.3f}s"
+        assert std_dev < avg_time * 0.5, (
+            f"High variance in processing time: {std_dev:.3f}s"
+        )
 
     def test_batch_processing_benchmark(
         self, temp_dir: Any, benchmark_config: ChunkingConfig
@@ -118,9 +118,9 @@ class TestProcessingBenchmarks:
 
         # Performance assertions
         assert all(r["successful_files"] == len(documents) for r in results.values())
-        assert (
-            results[4]["time"] <= results[1]["time"]
-        ), "Concurrency should improve performance"
+        assert results[4]["time"] <= results[1]["time"], (
+            "Concurrency should improve performance"
+        )
 
     @pytest.mark.parametrize(
         "chunk_size,overlap",
@@ -230,9 +230,9 @@ class TestProcessingBenchmarks:
             print(f"  Processing time: {processing_time:.3f}s")
 
             # Memory usage assertions
-            assert (
-                max_memory_increase < 500
-            ), f"Memory usage too high: {max_memory_increase:.1f}MB"
+            assert max_memory_increase < 500, (
+                f"Memory usage too high: {max_memory_increase:.1f}MB"
+            )
             assert result.success, f"Processing failed: {result.error}"
 
     def test_large_document_scalability(
@@ -329,9 +329,9 @@ class TestProcessingBenchmarks:
                 }
             )
 
-            assert result.successful_files == len(
-                documents
-            ), f"Not all files processed with {workers} workers"
+            assert result.successful_files == len(documents), (
+                f"Not all files processed with {workers} workers"
+            )
 
         print("\nConcurrent Processing Scalability Results:")
         for scalability_result in scalability_results:
@@ -347,9 +347,9 @@ class TestProcessingBenchmarks:
         max_worker_efficiency = scalability_results[-1]["efficiency"]
 
         efficiency_ratio = max_worker_efficiency / single_worker_efficiency
-        assert (
-            efficiency_ratio > 0.5
-        ), f"Efficiency degraded too much: {efficiency_ratio:.2f}"
+        assert efficiency_ratio > 0.5, (
+            f"Efficiency degraded too much: {efficiency_ratio:.2f}"
+        )
 
     def test_chunking_method_performance_comparison(self, temp_dir: Any) -> None:
         """Compare performance of different chunking methods."""
@@ -376,9 +376,9 @@ class TestProcessingBenchmarks:
                 result = processor.process_document(doc_path, f"method-{method}-{run}")
                 end_time = time.perf_counter()
 
-                assert (
-                    result.success
-                ), f"Processing failed for method {method}: {result.error}"
+                assert result.success, (
+                    f"Processing failed for method {method}: {result.error}"
+                )
 
                 times.append(end_time - start_time)
                 chunks_list.append(result.chunks_created)
@@ -403,9 +403,9 @@ class TestProcessingBenchmarks:
 
         # Both methods should complete in reasonable time
         for method, method_result in results.items():
-            assert (
-                method_result["avg_time"] < 10.0
-            ), f"{method} method too slow: {method_result['avg_time']:.3f}s"
+            assert method_result["avg_time"] < 10.0, (
+                f"{method} method too slow: {method_result['avg_time']:.3f}s"
+            )
 
     def _generate_document_content(
         self, sections: int, paragraphs_per_section: int
@@ -491,9 +491,9 @@ class TestMemoryEfficiency:
         second_half_avg = statistics.mean(memory_readings[10:])
 
         memory_growth = second_half_avg - first_half_avg
-        assert (
-            memory_growth < 10
-        ), f"Potential memory leak detected: {memory_growth:.1f} MB growth"
+        assert memory_growth < 10, (
+            f"Potential memory leak detected: {memory_growth:.1f} MB growth"
+        )
 
     def test_large_file_memory_efficiency(
         self, temp_dir: Any, benchmark_config: ChunkingConfig
