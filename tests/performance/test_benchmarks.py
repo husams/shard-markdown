@@ -270,12 +270,12 @@ class TestProcessingBenchmarks:
             assert result.success, f"Processing failed for size {size}: {result.error}"
 
         print("\nScalability Benchmark Results:")
-        for result in results:
-            print(f"  Sections: {result['sections']}")
-            print(f"    Document size: {result['document_size']} chars")
-            print(f"    Processing time: {result['processing_time']:.3f}s")
-            print(f"    Chunks created: {result['chunks_created']}")
-            print(f"    Throughput: {result['throughput']:.0f} chars/second")
+        for benchmark_result in results:
+            print(f"  Sections: {benchmark_result['sections']}")
+            print(f"    Document size: {benchmark_result['document_size']} chars")
+            print(f"    Processing time: {benchmark_result['processing_time']:.3f}s")
+            print(f"    Chunks created: {benchmark_result['chunks_created']}")
+            print(f"    Throughput: {benchmark_result['throughput']:.0f} chars/second")
 
         # Check that processing time scales reasonably
         times = [r["processing_time"] for r in results]
@@ -334,10 +334,13 @@ class TestProcessingBenchmarks:
             )
 
         print("\nConcurrent Processing Scalability Results:")
-        for result in scalability_results:
-            print(f"  Workers: {result['workers']}")
-            print(f"    Processing time: {result['processing_time']:.3f}s")
-            print(f"    Efficiency: {result['efficiency']:.3f} files/second/worker")
+        for scalability_result in scalability_results:
+            print(f"  Workers: {scalability_result['workers']}")
+            print(f"    Processing time: {scalability_result['processing_time']:.3f}s")
+            print(
+                f"    Efficiency: {scalability_result['efficiency']:.3f} "
+                f"files/second/worker"
+            )
 
         # Check efficiency doesn't degrade too much with more workers
         single_worker_efficiency = scalability_results[0]["efficiency"]
@@ -390,18 +393,18 @@ class TestProcessingBenchmarks:
             }
 
         print("\nChunking Method Performance Comparison:")
-        for method, result in results.items():
+        for method, method_result in results.items():
             print(f"  {method.title()} Method:")
-            avg_time = result["avg_time"]
-            std_time = result["std_time"]
+            avg_time = method_result["avg_time"]
+            std_time = method_result["std_time"]
             print(f"    Average time: {avg_time:.3f}s ± {std_time:.3f}s")
-            print(f"    Average chunks: {result['avg_chunks']:.1f}")
-            print(f"    Throughput: {result['throughput']:.1f} chunks/second")
+            print(f"    Average chunks: {method_result['avg_chunks']:.1f}")
+            print(f"    Throughput: {method_result['throughput']:.1f} chunks/second")
 
         # Both methods should complete in reasonable time
-        for method, result in results.items():
-            assert result["avg_time"] < 10.0, (
-                f"{method} method too slow: {result['avg_time']:.3f}s"
+        for method, method_result in results.items():
+            assert method_result["avg_time"] < 10.0, (
+                f"{method} method too slow: {method_result['avg_time']:.3f}s"
             )
 
     def _generate_document_content(
