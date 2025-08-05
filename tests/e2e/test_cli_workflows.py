@@ -1,6 +1,7 @@
 """End-to-end tests for CLI workflows."""
 
 import time
+from typing import Any
 
 import pytest
 from click.testing import CliRunner
@@ -13,13 +14,13 @@ class TestBasicCLIWorkflows:
     """Test basic end-to-end CLI workflows."""
 
     @pytest.fixture
-    def cli_runner(self):
+    def cli_runner(self) -> CliRunner:
         """CLI runner for e2e tests."""
         return CliRunner()
 
     def test_complete_document_processing_workflow(
-        self, cli_runner, sample_markdown_file
-    ):
+        self, cli_runner: CliRunner, sample_markdown_file: Any
+    ) -> None:
         """Test complete workflow from document to processed chunks."""
         # Process a document
         result = cli_runner.invoke(
@@ -65,7 +66,9 @@ class TestBasicCLIWorkflows:
                 indicator in query_output_lower for indicator in success_indicators
             )
 
-    def test_batch_processing_workflow(self, cli_runner, test_documents):
+    def test_batch_processing_workflow(
+        self, cli_runner: CliRunner, test_documents: Any
+    ) -> None:
         """Test batch processing workflow."""
         file_paths = [str(path) for path in test_documents.values()]
 
@@ -87,7 +90,9 @@ class TestBasicCLIWorkflows:
         assert result.exit_code == 0
         assert "processed" in result.output.lower()
 
-    def test_recursive_directory_processing(self, cli_runner, test_documents):
+    def test_recursive_directory_processing(
+        self, cli_runner: CliRunner, test_documents: Any
+    ) -> None:
         """Test recursive directory processing."""
         # Get the directory containing test documents
         test_dir = list(test_documents.values())[0].parent
@@ -109,7 +114,7 @@ class TestBasicCLIWorkflows:
         assert result.exit_code == 0
         assert "processed" in result.output.lower()
 
-    def test_collection_management_workflow(self, cli_runner):
+    def test_collection_management_workflow(self, cli_runner: CliRunner) -> None:
         """Test collection management workflow."""
         # List collections
         list_result = cli_runner.invoke(cli, ["collections", "list"])
@@ -141,7 +146,9 @@ class TestBasicCLIWorkflows:
         )
         print(f"Collection delete output: {delete_result.output}")
 
-    def test_config_management_workflow(self, cli_runner, temp_dir):
+    def test_config_management_workflow(
+        self, cli_runner: CliRunner, temp_dir: Any
+    ) -> None:
         """Test configuration management workflow."""
         config_file = temp_dir / "test_config.yaml"
 
@@ -166,7 +173,7 @@ class TestBasicCLIWorkflows:
             )
             print(f"Config validate output: {validate_result.output}")
 
-    def test_help_and_version_commands(self, cli_runner):
+    def test_help_and_version_commands(self, cli_runner: CliRunner) -> None:
         """Test help and version commands work correctly."""
         # Test main help
         help_result = cli_runner.invoke(cli, ["--help"])
@@ -197,11 +204,13 @@ class TestAdvancedCLIWorkflows:
     """Test advanced CLI workflows and combinations."""
 
     @pytest.fixture
-    def cli_runner(self):
+    def cli_runner(self) -> CliRunner:
         """CLI runner for advanced tests."""
         return CliRunner()
 
-    def test_custom_chunking_strategies(self, cli_runner, sample_markdown_file):
+    def test_custom_chunking_strategies(
+        self, cli_runner: CliRunner, sample_markdown_file: Any
+    ) -> None:
         """Test different chunking strategies."""
         strategies = [
             ("structure", "1000", "200"),
@@ -231,7 +240,9 @@ class TestAdvancedCLIWorkflows:
             print(f"Chunking {method} output: {result.output}")
             assert result.exit_code == 0
 
-    def test_metadata_preservation_workflow(self, cli_runner, temp_dir):
+    def test_metadata_preservation_workflow(
+        self, cli_runner: CliRunner, temp_dir: Any
+    ) -> None:
         """Test that metadata is preserved through processing."""
         # Create document with frontmatter
         doc_with_frontmatter = temp_dir / "frontmatter_doc.md"
@@ -268,7 +279,9 @@ Content here.
         assert result.exit_code == 0
         assert "processed" in result.output.lower()
 
-    def test_error_recovery_workflow(self, cli_runner, temp_dir):
+    def test_error_recovery_workflow(
+        self, cli_runner: CliRunner, temp_dir: Any
+    ) -> None:
         """Test error recovery and partial processing."""
         # Create mix of valid and invalid files
         valid_file = temp_dir / "valid.md"
@@ -293,7 +306,9 @@ Content here.
         print(f"Error recovery output: {result.output}")
         # Should process what it can, might have partial success
 
-    def test_concurrent_processing_workflow(self, cli_runner, test_documents):
+    def test_concurrent_processing_workflow(
+        self, cli_runner: CliRunner, test_documents: Any
+    ) -> None:
         """Test concurrent processing with different worker counts."""
         file_paths = [str(path) for path in test_documents.values()]
 
@@ -320,7 +335,9 @@ Content here.
 
             assert result.exit_code == 0
 
-    def test_large_document_processing_workflow(self, cli_runner, temp_dir):
+    def test_large_document_processing_workflow(
+        self, cli_runner: CliRunner, temp_dir: Any
+    ) -> None:
         """Test processing of large documents."""
         # Create a substantial document
         large_doc = temp_dir / "large_document.md"
@@ -357,7 +374,9 @@ Content here.
         print(f"Large document output: {result.output}")
         assert result.exit_code == 0
 
-    def test_query_workflow_variations(self, cli_runner, sample_markdown_file):
+    def test_query_workflow_variations(
+        self, cli_runner: CliRunner, sample_markdown_file: Any
+    ) -> None:
         """Test different query variations."""
         # First process a document
         process_result = cli_runner.invoke(
@@ -389,7 +408,12 @@ Content here.
                 # Queries might fail if ChromaDB isn't available,
                 # but we test the interface
 
-    def test_config_override_workflow(self, cli_runner, sample_markdown_file, temp_dir):
+    def test_config_override_workflow(
+        self,
+        cli_runner: CliRunner,
+        sample_markdown_file: Any,
+        temp_dir: Any,
+    ) -> None:
         """Test configuration override workflow."""
         # Create custom config
         custom_config = temp_dir / "custom_config.yaml"
@@ -425,7 +449,9 @@ processing:
         print(f"Config override output: {result.output}")
         assert result.exit_code == 0
 
-    def test_verbose_and_quiet_modes(self, cli_runner, sample_markdown_file):
+    def test_verbose_and_quiet_modes(
+        self, cli_runner: CliRunner, sample_markdown_file: Any
+    ) -> None:
         """Test verbose and quiet output modes."""
         # Test quiet mode
         quiet_result = cli_runner.invoke(
@@ -469,7 +495,7 @@ processing:
 
         print(f"Very verbose mode output: {very_verbose_result.output}")
 
-    def test_dry_run_workflow(self, cli_runner, test_documents):
+    def test_dry_run_workflow(self, cli_runner: CliRunner, test_documents: Any) -> None:
         """Test dry run functionality."""
         file_paths = [str(path) for path in test_documents.values()]
 
@@ -491,7 +517,7 @@ processing:
         dry_run_indicators = ["would process", "dry run", "preview"]
         assert any(indicator in output_lower for indicator in dry_run_indicators)
 
-    def test_file_pattern_filtering(self, cli_runner, temp_dir):
+    def test_file_pattern_filtering(self, cli_runner: CliRunner, temp_dir: Any) -> None:
         """Test file pattern filtering in recursive processing."""
         # Create various file types
         files_dir = temp_dir / "mixed_files"
@@ -531,11 +557,13 @@ class TestCLIErrorScenarios:
     """Test CLI error scenarios and edge cases."""
 
     @pytest.fixture
-    def cli_runner(self):
+    def cli_runner(self) -> CliRunner:
         """CLI runner for error scenario tests."""
         return CliRunner()
 
-    def test_invalid_collection_name_scenarios(self, cli_runner, sample_markdown_file):
+    def test_invalid_collection_name_scenarios(
+        self, cli_runner: CliRunner, sample_markdown_file: Any
+    ) -> None:
         """Test various invalid collection names."""
         invalid_names = [
             "",  # Empty
@@ -559,7 +587,7 @@ class TestCLIErrorScenarios:
             print(f"Invalid name '{invalid_name}' output: {result.output}")
             # Most should fail, but we allow flexibility in validation
 
-    def test_missing_files_scenarios(self, cli_runner):
+    def test_missing_files_scenarios(self, cli_runner: CliRunner) -> None:
         """Test scenarios with missing files."""
         result = cli_runner.invoke(
             cli,
@@ -578,7 +606,9 @@ class TestCLIErrorScenarios:
         error_indicators = ["exist", "found"]
         assert any(indicator in output_lower for indicator in error_indicators)
 
-    def test_permission_denied_scenarios(self, cli_runner, temp_dir):
+    def test_permission_denied_scenarios(
+        self, cli_runner: CliRunner, temp_dir: Any
+    ) -> None:
         """Test permission denied scenarios."""
         # Create a directory without read permissions
         try:
@@ -622,8 +652,11 @@ class TestCLIErrorScenarios:
                 print(f"Warning: Could not restore directory permissions: {e}")
 
     def test_malformed_config_scenarios(
-        self, cli_runner, sample_markdown_file, temp_dir
-    ):
+        self,
+        cli_runner: CliRunner,
+        sample_markdown_file: Any,
+        temp_dir: Any,
+    ) -> None:
         """Test scenarios with malformed config files."""
         # Create malformed config
         bad_config = temp_dir / "bad_config.yaml"
@@ -663,11 +696,13 @@ class TestCLIPerformance:
     """Test CLI performance characteristics."""
 
     @pytest.fixture
-    def cli_runner(self):
+    def cli_runner(self) -> CliRunner:
         """CLI runner for performance tests."""
         return CliRunner()
 
-    def test_large_batch_processing_performance(self, cli_runner, temp_dir):
+    def test_large_batch_processing_performance(
+        self, cli_runner: CliRunner, temp_dir: Any
+    ) -> None:
         """Test performance with large batch of files."""
         # Create many small files
         files_dir = temp_dir / "many_files"
@@ -714,7 +749,9 @@ This concludes document {i}.
         assert result.exit_code == 0
         assert processing_time < 60  # Should complete within 60 seconds
 
-    def test_memory_usage_with_large_documents(self, cli_runner, temp_dir):
+    def test_memory_usage_with_large_documents(
+        self, cli_runner: CliRunner, temp_dir: Any
+    ) -> None:
         """Test memory usage with large documents."""
         # Create a large document
         large_doc = temp_dir / "large_document.md"

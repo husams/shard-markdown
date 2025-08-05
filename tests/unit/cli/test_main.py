@@ -1,5 +1,6 @@
 """Unit tests for CLI main module."""
 
+from typing import Any
 from unittest.mock import Mock, patch
 
 from shard_markdown.cli.main import cli, main
@@ -8,7 +9,7 @@ from shard_markdown.cli.main import cli, main
 class TestCLIMain:
     """Test CLI main functionality."""
 
-    def test_cli_help(self, cli_runner):
+    def test_cli_help(self, cli_runner: Any) -> None:
         """Test CLI help output."""
         result = cli_runner.invoke(cli, ["--help"])
 
@@ -17,7 +18,7 @@ class TestCLIMain:
         assert "Intelligent document chunking" in result.output
         assert "Commands:" in result.output
 
-    def test_cli_version(self, cli_runner):
+    def test_cli_version(self, cli_runner: Any) -> None:
         """Test version command."""
         result = cli_runner.invoke(cli, ["version"])
 
@@ -25,7 +26,7 @@ class TestCLIMain:
         assert "0.1.0" in result.output
         assert "shard-md" in result.output
 
-    def test_cli_version_option(self, cli_runner):
+    def test_cli_version_option(self, cli_runner: Any) -> None:
         """Test --version option."""
         result = cli_runner.invoke(cli, ["--version"])
 
@@ -35,8 +36,12 @@ class TestCLIMain:
     @patch("shard_markdown.cli.main.load_config")
     @patch("shard_markdown.cli.main.setup_logging")
     def test_cli_with_config_file(
-        self, mock_setup_logging, mock_load_config, cli_runner, config_file
-    ):
+        self,
+        mock_setup_logging: Mock,
+        mock_load_config: Mock,
+        cli_runner: Any,
+        config_file: Any,
+    ) -> None:
         """Test CLI with custom config file."""
         mock_config = Mock()
         mock_config.logging.file_path = None
@@ -53,7 +58,7 @@ class TestCLIMain:
         mock_load_config.assert_called_once()
         mock_setup_logging.assert_called_once()
 
-    def test_cli_verbose_levels(self, cli_runner):
+    def test_cli_verbose_levels(self, cli_runner: Any) -> None:
         """Test different verbosity levels."""
         # Single verbose
         result = cli_runner.invoke(cli, ["-v", "--help"])
@@ -67,13 +72,15 @@ class TestCLIMain:
         result = cli_runner.invoke(cli, ["-vvv", "--help"])
         assert result.exit_code == 0
 
-    def test_cli_quiet_mode(self, cli_runner):
+    def test_cli_quiet_mode(self, cli_runner: Any) -> None:
         """Test quiet mode."""
         result = cli_runner.invoke(cli, ["--quiet", "--help"])
         assert result.exit_code == 0
 
     @patch("shard_markdown.cli.main.setup_logging")
-    def test_cli_log_file_option(self, mock_setup_logging, cli_runner, temp_dir):
+    def test_cli_log_file_option(
+        self, mock_setup_logging: Mock, cli_runner: Any, temp_dir: Any
+    ) -> None:
         """Test custom log file option."""
         log_file = temp_dir / "test.log"
 
@@ -86,7 +93,9 @@ class TestCLIMain:
         mock_setup_logging.assert_called_once()
 
     @patch("shard_markdown.cli.main.load_config")
-    def test_cli_config_loading_error(self, mock_load_config, cli_runner):
+    def test_cli_config_loading_error(
+        self, mock_load_config: Mock, cli_runner: Any
+    ) -> None:
         """Test handling of config loading errors."""
         mock_load_config.side_effect = Exception("Config error")
 
@@ -95,7 +104,7 @@ class TestCLIMain:
         assert result.exit_code == 1
         assert "Error initializing" in result.output
 
-    def test_main_function(self):
+    def test_main_function(self) -> None:
         """Test main entry point function."""
         # This would typically be tested by checking that cli() is called
         # Since we can't easily test the actual execution, we just ensure
@@ -104,7 +113,9 @@ class TestCLIMain:
 
     @patch("shard_markdown.cli.main.load_config")
     @patch("shard_markdown.cli.main.setup_logging")
-    def test_cli_context_setup(self, mock_setup_logging, mock_load_config, cli_runner):
+    def test_cli_context_setup(
+        self, mock_setup_logging: Mock, mock_load_config: Mock, cli_runner: Any
+    ) -> None:
         """Test that CLI context is properly set up."""
         mock_config = Mock()
         mock_config.logging.file_path = None
@@ -119,14 +130,14 @@ class TestCLIMain:
         mock_load_config.assert_called_once()
         mock_setup_logging.assert_called_once()
 
-    def test_cli_invalid_option(self, cli_runner):
+    def test_cli_invalid_option(self, cli_runner: Any) -> None:
         """Test handling of invalid CLI options."""
         result = cli_runner.invoke(cli, ["--invalid-option"])
 
         assert result.exit_code != 0
         assert "No such option" in result.output
 
-    def test_cli_command_groups_registered(self, cli_runner):
+    def test_cli_command_groups_registered(self, cli_runner: Any) -> None:
         """Test that all command groups are properly registered."""
         result = cli_runner.invoke(cli, ["--help"])
 
@@ -145,8 +156,8 @@ class TestCLILogging:
     @patch("shard_markdown.cli.main.setup_logging")
     @patch("shard_markdown.cli.main.load_config")
     def test_logging_setup_quiet_mode(
-        self, mock_load_config, mock_setup_logging, cli_runner
-    ):
+        self, mock_load_config: Mock, mock_setup_logging: Mock, cli_runner: Any
+    ) -> None:
         """Test logging setup in quiet mode."""
         mock_config = Mock()
         mock_config.logging.file_path = None
@@ -164,8 +175,8 @@ class TestCLILogging:
     @patch("shard_markdown.cli.main.setup_logging")
     @patch("shard_markdown.cli.main.load_config")
     def test_logging_setup_verbose_mode(
-        self, mock_load_config, mock_setup_logging, cli_runner
-    ):
+        self, mock_load_config: Mock, mock_setup_logging: Mock, cli_runner: Any
+    ) -> None:
         """Test logging setup in verbose mode."""
         mock_config = Mock()
         mock_config.logging.file_path = None
@@ -183,8 +194,12 @@ class TestCLILogging:
     @patch("shard_markdown.cli.main.setup_logging")
     @patch("shard_markdown.cli.main.load_config")
     def test_logging_setup_custom_log_file(
-        self, mock_load_config, mock_setup_logging, cli_runner, temp_dir
-    ):
+        self,
+        mock_load_config: Mock,
+        mock_setup_logging: Mock,
+        cli_runner: Any,
+        temp_dir: Any,
+    ) -> None:
         """Test logging setup with custom log file."""
         mock_config = Mock()
         mock_config.logging.file_path = None
@@ -206,7 +221,7 @@ class TestCLILogging:
 class TestCLIHelp:
     """Test CLI help and documentation."""
 
-    def test_cli_examples_in_help(self, cli_runner):
+    def test_cli_examples_in_help(self, cli_runner: Any) -> None:
         """Test that help includes usage examples."""
         result = cli_runner.invoke(cli, ["--help"])
 
@@ -216,14 +231,14 @@ class TestCLIHelp:
         assert "shard-md collections list" in result.output
         assert "shard-md query search" in result.output
 
-    def test_cli_prog_name(self, cli_runner):
+    def test_cli_prog_name(self, cli_runner: Any) -> None:
         """Test that CLI uses correct program name."""
         result = cli_runner.invoke(cli, ["--version"])
 
         assert result.exit_code == 0
         assert "shard-md" in result.output
 
-    def test_cli_description(self, cli_runner):
+    def test_cli_description(self, cli_runner: Any) -> None:
         """Test CLI description is informative."""
         result = cli_runner.invoke(cli, ["--help"])
 
@@ -236,7 +251,9 @@ class TestCLIErrorHandling:
     """Test CLI error handling."""
 
     @patch("shard_markdown.cli.main.load_config")
-    def test_config_error_handling(self, mock_load_config, cli_runner):
+    def test_config_error_handling(
+        self, mock_load_config: Mock, cli_runner: Any
+    ) -> None:
         """Test handling of configuration errors."""
         mock_load_config.side_effect = FileNotFoundError("Config not found")
 
@@ -248,8 +265,8 @@ class TestCLIErrorHandling:
     @patch("shard_markdown.cli.main.setup_logging")
     @patch("shard_markdown.cli.main.load_config")
     def test_logging_error_handling(
-        self, mock_load_config, mock_setup_logging, cli_runner
-    ):
+        self, mock_load_config: Mock, mock_setup_logging: Mock, cli_runner: Any
+    ) -> None:
         """Test handling of logging setup errors."""
         mock_config = Mock()
         mock_load_config.return_value = mock_config
@@ -260,7 +277,7 @@ class TestCLIErrorHandling:
         assert result.exit_code == 1
         assert "Error initializing shard-md" in result.output
 
-    def test_nonexistent_config_file(self, cli_runner):
+    def test_nonexistent_config_file(self, cli_runner: Any) -> None:
         """Test handling of non-existent config file."""
         result = cli_runner.invoke(cli, ["--config", "nonexistent.yaml", "--help"])
 
@@ -274,7 +291,9 @@ class TestCLIIntegration:
     """Test CLI integration aspects."""
 
     @patch("shard_markdown.cli.main.load_config")
-    def test_cli_with_real_config_structure(self, mock_load_config, cli_runner):
+    def test_cli_with_real_config_structure(
+        self, mock_load_config: Mock, cli_runner: Any
+    ) -> None:
         """Test CLI with realistic config structure."""
         # Create a realistic mock config
         mock_config = Mock()
@@ -295,7 +314,7 @@ class TestCLIIntegration:
 
         mock_load_config.assert_called_once()
 
-    def test_cli_traceback_handling(self, cli_runner):
+    def test_cli_traceback_handling(self, cli_runner: Any) -> None:
         """Test that rich tracebacks are properly installed."""
         # This is tested indirectly by ensuring the CLI loads without error
         # The rich.traceback.install() call should be executed on import

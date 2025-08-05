@@ -1,7 +1,9 @@
 """Unit tests for DocumentProcessor."""
 
 import time
+from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -14,29 +16,29 @@ class TestDocumentProcessor:
     """Test suite for DocumentProcessor class."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig):
+    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
         """Create DocumentProcessor instance for testing."""
         return DocumentProcessor(chunking_config)
 
     @pytest.fixture
-    def mock_parser(self):
+    def mock_parser(self) -> Generator[Mock, None, None]:
         """Mock MarkdownParser."""
         with patch("shard_markdown.core.processor.MarkdownParser") as mock:
             yield mock.return_value
 
     @pytest.fixture
-    def mock_chunker(self):
+    def mock_chunker(self) -> Generator[Mock, None, None]:
         """Mock ChunkingEngine."""
         with patch("shard_markdown.core.processor.ChunkingEngine") as mock:
             yield mock.return_value
 
     @pytest.fixture
-    def mock_metadata_extractor(self):
+    def mock_metadata_extractor(self) -> Generator[Mock, None, None]:
         """Mock MetadataExtractor."""
         with patch("shard_markdown.core.processor.MetadataExtractor") as mock:
             yield mock.return_value
 
-    def test_processor_initialization(self, chunking_config):
+    def test_processor_initialization(self, chunking_config: ChunkingConfig) -> None:
         """Test processor initializes correctly."""
         processor = DocumentProcessor(chunking_config)
 
@@ -47,13 +49,13 @@ class TestDocumentProcessor:
 
     def test_process_document_success(
         self,
-        processor,
-        sample_markdown_file,
-        sample_chunks,
-        mock_parser,
-        mock_chunker,
-        mock_metadata_extractor,
-    ):
+        processor: DocumentProcessor,
+        sample_markdown_file: Path,
+        sample_chunks: Any,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+    ) -> None:
         """Test successful document processing."""
         # Setup mocks
         mock_parser.parse.return_value = Mock()
@@ -80,7 +82,9 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_file_metadata.assert_called_once()
         mock_metadata_extractor.extract_document_metadata.assert_called_once()
 
-    def test_process_document_file_not_found(self, processor):
+    def test_process_document_file_not_found(
+        self, processor: DocumentProcessor
+    ) -> None:
         """Test processing with non-existent file."""
         non_existent_file = Path("nonexistent.md")
 
@@ -94,7 +98,9 @@ class TestDocumentProcessor:
         )
         assert result.chunks_created == 0
 
-    def test_process_document_empty_file(self, processor, temp_dir):
+    def test_process_document_empty_file(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test processing empty file."""
         empty_file = temp_dir / "empty.md"
         empty_file.write_text("")
@@ -104,7 +110,9 @@ class TestDocumentProcessor:
         assert result.success is False
         assert "empty" in result.error.lower()
 
-    def test_process_document_large_file(self, processor, temp_dir):
+    def test_process_document_large_file(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test processing file that's too large."""
         large_file = temp_dir / "large.md"
 
@@ -119,12 +127,12 @@ class TestDocumentProcessor:
 
     def test_process_document_no_chunks_generated(
         self,
-        processor,
-        sample_markdown_file,
-        mock_parser,
-        mock_chunker,
-        mock_metadata_extractor,
-    ):
+        processor: DocumentProcessor,
+        sample_markdown_file: Path,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+    ) -> None:
         """Test processing when no chunks are generated."""
         # Setup mocks
         mock_parser.parse.return_value = Mock()
@@ -139,8 +147,11 @@ class TestDocumentProcessor:
         assert result.chunks_created == 0
 
     def test_process_document_parsing_error(
-        self, processor, sample_markdown_file, mock_parser
-    ):
+        self,
+        processor: DocumentProcessor,
+        sample_markdown_file: Path,
+        mock_parser: Mock,
+    ) -> None:
         """Test handling of parsing errors."""
         mock_parser.parse.side_effect = Exception("Parsing failed")
 
@@ -149,7 +160,9 @@ class TestDocumentProcessor:
         assert result.success is False
         assert "parsing failed" in result.error.lower()
 
-    def test_process_document_encoding_error(self, processor, temp_dir):
+    def test_process_document_encoding_error(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling of encoding errors."""
         # Create file with invalid encoding
         invalid_file = temp_dir / "invalid_encoding.md"
@@ -161,7 +174,9 @@ class TestDocumentProcessor:
         assert result.success is False
         assert "decode" in result.error.lower() or "encoding" in result.error.lower()
 
-    def test_read_file_multiple_encodings(self, processor, temp_dir):
+    def test_read_file_multiple_encodings(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test reading file with different encodings."""
         # Create UTF-8 file
         utf8_file = temp_dir / "utf8.md"
@@ -178,7 +193,9 @@ class TestDocumentProcessor:
         result = processor._read_file(latin1_file)
         assert result is not None
 
-    def test_generate_chunk_id(self, processor, sample_markdown_file):
+    def test_generate_chunk_id(
+        self, processor: DocumentProcessor, sample_markdown_file: Path
+    ) -> None:
         """Test chunk ID generation."""
         chunk_id_1 = processor._generate_chunk_id(sample_markdown_file, 0)
         chunk_id_2 = processor._generate_chunk_id(sample_markdown_file, 1)
@@ -189,8 +206,12 @@ class TestDocumentProcessor:
         assert len(chunk_id_1.split("_")[0]) == 16  # Hash part
 
     def test_enhance_chunks(
-        self, processor, sample_chunks, sample_markdown_file, mock_metadata_extractor
-    ):
+        self,
+        processor: DocumentProcessor,
+        sample_chunks: Any,
+        sample_markdown_file: Path,
+        mock_metadata_extractor: Mock,
+    ) -> None:
         """Test chunk enhancement with metadata."""
         mock_metadata_extractor.enhance_chunk_metadata.return_value = {
             "enhanced": True,
@@ -214,13 +235,13 @@ class TestDocumentProcessor:
 
     def test_batch_processing_success(
         self,
-        processor,
-        test_documents,
-        sample_chunks,
-        mock_parser,
-        mock_chunker,
-        mock_metadata_extractor,
-    ):
+        processor: DocumentProcessor,
+        test_documents: Any,
+        sample_chunks: Any,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+    ) -> None:
         """Test successful batch processing."""
         # Setup mocks
         mock_parser.parse.return_value = Mock()
@@ -246,17 +267,17 @@ class TestDocumentProcessor:
 
     def test_batch_processing_partial_failure(
         self,
-        processor,
-        test_documents,
-        mock_parser,
-        mock_chunker,
-        mock_metadata_extractor,
-    ):
+        processor: DocumentProcessor,
+        test_documents: Any,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+    ) -> None:
         """Test batch processing with some failures."""
         # Setup mocks - make one file fail
         call_count = 0
 
-        def side_effect(*args):
+        def side_effect(*args: Any) -> Mock:
             nonlocal call_count
             call_count += 1
             if call_count == 2:  # Second call fails
@@ -278,7 +299,7 @@ class TestDocumentProcessor:
         assert result.failed_files == 2
         assert result.success_rate == 0.0
 
-    def test_batch_processing_empty_list(self, processor):
+    def test_batch_processing_empty_list(self, processor: DocumentProcessor) -> None:
         """Test batch processing with empty file list."""
         result = processor.process_batch([], "test-collection")
 
@@ -289,13 +310,13 @@ class TestDocumentProcessor:
 
     def test_concurrent_processing(
         self,
-        processor,
-        test_documents,
-        sample_chunks,
-        mock_parser,
-        mock_chunker,
-        mock_metadata_extractor,
-    ):
+        processor: DocumentProcessor,
+        test_documents: Any,
+        sample_chunks: Any,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+    ) -> None:
         """Test concurrent processing with multiple workers."""
         # Setup mocks
         mock_parser.parse.return_value = Mock()
@@ -323,14 +344,14 @@ class TestDocumentProcessor:
     @pytest.mark.parametrize("max_workers", [1, 2, 4, 8])
     def test_batch_processing_different_worker_counts(
         self,
-        processor,
-        test_documents,
-        sample_chunks,
-        mock_parser,
-        mock_chunker,
-        mock_metadata_extractor,
-        max_workers,
-    ):
+        processor: DocumentProcessor,
+        test_documents: Any,
+        sample_chunks: Any,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+        max_workers: int,
+    ) -> None:
         """Test batch processing with different worker counts."""
         # Setup mocks
         mock_parser.parse.return_value = Mock()
@@ -353,16 +374,16 @@ class TestDocumentProcessor:
 
     def test_processing_time_measurement(
         self,
-        processor,
-        sample_markdown_file,
-        mock_parser,
-        mock_chunker,
-        mock_metadata_extractor,
-    ):
+        processor: DocumentProcessor,
+        sample_markdown_file: Path,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+    ) -> None:
         """Test that processing time is measured correctly."""
 
         # Add delay to processing
-        def delayed_parse(*args):
+        def delayed_parse(*args: Any) -> Mock:
             time.sleep(0.01)  # 10ms delay
             return Mock()
 

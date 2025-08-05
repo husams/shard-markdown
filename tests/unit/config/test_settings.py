@@ -15,7 +15,7 @@ from shard_markdown.config.settings import (
 class TestChromaDBConfig:
     """Test ChromaDB configuration validation."""
 
-    def test_valid_config(self):
+    def test_valid_config(self) -> None:
         """Test valid ChromaDB configuration."""
         config = ChromaDBConfig(host="localhost", port=8000, ssl=False, timeout=30)
 
@@ -24,7 +24,7 @@ class TestChromaDBConfig:
         assert config.ssl is False
         assert config.timeout == 30
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test default configuration values."""
         config = ChromaDBConfig()
 
@@ -33,7 +33,7 @@ class TestChromaDBConfig:
         assert config.ssl is False
         assert config.timeout == 30
 
-    def test_port_validation(self):
+    def test_port_validation(self) -> None:
         """Test port range validation."""
         # Valid ports
         valid_ports = [1, 8000, 65535]
@@ -47,7 +47,7 @@ class TestChromaDBConfig:
             with pytest.raises(ValidationError):
                 ChromaDBConfig(port=port)
 
-    def test_host_validation(self):
+    def test_host_validation(self) -> None:
         """Test host validation."""
         # Valid hosts
         valid_hosts = ["localhost", "127.0.0.1", "example.com", "db.internal"]
@@ -59,7 +59,7 @@ class TestChromaDBConfig:
         with pytest.raises(ValidationError):
             ChromaDBConfig(host="")
 
-    def test_timeout_validation(self):
+    def test_timeout_validation(self) -> None:
         """Test timeout validation."""
         # Valid timeouts
         valid_timeouts = [1, 30, 60, 300]
@@ -77,7 +77,7 @@ class TestChromaDBConfig:
 class TestChunkingConfig:
     """Test chunking configuration validation."""
 
-    def test_valid_config(self):
+    def test_valid_config(self) -> None:
         """Test valid chunking configuration."""
         config = ChunkingConfig(
             default_size=1000,
@@ -91,7 +91,7 @@ class TestChunkingConfig:
         assert config.method == ChunkingMethod.STRUCTURE
         assert config.respect_boundaries is True
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test default configuration values."""
         config = ChunkingConfig()
 
@@ -100,7 +100,7 @@ class TestChunkingConfig:
         assert config.method == ChunkingMethod.STRUCTURE
         assert config.respect_boundaries is True
 
-    def test_chunk_size_validation(self):
+    def test_chunk_size_validation(self) -> None:
         """Test chunk size validation."""
         # Valid sizes
         valid_sizes = [100, 500, 1000, 5000]
@@ -114,7 +114,7 @@ class TestChunkingConfig:
             with pytest.raises(ValidationError):
                 ChunkingConfig(default_size=size)
 
-    def test_overlap_validation(self):
+    def test_overlap_validation(self) -> None:
         """Test overlap validation."""
         # Valid overlaps
         config = ChunkingConfig(default_size=1000, default_overlap=200)
@@ -128,7 +128,7 @@ class TestChunkingConfig:
         with pytest.raises(ValidationError):
             ChunkingConfig(default_overlap=-100)
 
-    def test_method_validation(self):
+    def test_method_validation(self) -> None:
         """Test chunking method validation."""
         # Valid methods using enum
         valid_methods = [
@@ -141,32 +141,32 @@ class TestChunkingConfig:
             assert config.method == method
 
         # Test string method as well (should be converted to enum)
-        config = ChunkingConfig(method="structure")
+        config = ChunkingConfig(method=ChunkingMethod.STRUCTURE)
         assert config.method == ChunkingMethod.STRUCTURE
 
         # Invalid method should fail
         with pytest.raises(ValidationError):
-            ChunkingConfig(method="invalid_method")
+            ChunkingConfig(method="invalid_method")  # type: ignore[arg-type]
 
 
 class TestProcessingConfig:
     """Test processing configuration validation."""
 
-    def test_valid_config(self):
+    def test_valid_config(self) -> None:
         """Test valid processing configuration."""
         config = ProcessingConfig(batch_size=10, max_workers=4)
 
         assert config.batch_size == 10
         assert config.max_workers == 4
 
-    def test_default_values(self):
+    def test_default_values(self) -> None:
         """Test default configuration values."""
         config = ProcessingConfig()
 
         assert config.batch_size == 10
         assert config.max_workers == 4
 
-    def test_batch_size_validation(self):
+    def test_batch_size_validation(self) -> None:
         """Test batch size validation."""
         # Valid batch sizes
         valid_sizes = [1, 5, 10, 50]
@@ -180,7 +180,7 @@ class TestProcessingConfig:
             with pytest.raises(ValidationError):
                 ProcessingConfig(batch_size=size)
 
-    def test_max_workers_validation(self):
+    def test_max_workers_validation(self) -> None:
         """Test max workers validation."""
         # Valid worker counts
         valid_workers = [1, 2, 4, 8, 16]
@@ -198,7 +198,7 @@ class TestProcessingConfig:
 class TestAppConfig:
     """Test complete application configuration."""
 
-    def test_default_config(self):
+    def test_default_config(self) -> None:
         """Test default configuration values."""
         config = AppConfig()
 
@@ -213,7 +213,7 @@ class TestAppConfig:
         assert config.chunking.default_size == 1000
         assert config.processing.batch_size == 10
 
-    def test_custom_config(self):
+    def test_custom_config(self) -> None:
         """Test custom configuration."""
         config = AppConfig(
             chromadb=ChromaDBConfig(host="remote-host", port=9000),
@@ -227,7 +227,7 @@ class TestAppConfig:
         assert config.chunking.method == ChunkingMethod._FIXED
         assert config.processing.max_workers == 8
 
-    def test_nested_validation(self):
+    def test_nested_validation(self) -> None:
         """Test that nested configuration validation works."""
         # Invalid nested config should fail
         with pytest.raises(ValidationError):
@@ -244,7 +244,7 @@ class TestAppConfig:
                 ),  # Overlap > size
             )
 
-    def test_config_serialization(self):
+    def test_config_serialization(self) -> None:
         """Test configuration serialization."""
         config = AppConfig()
 
@@ -265,7 +265,7 @@ class TestAppConfig:
         parsed = json.loads(config_json)
         assert parsed["chromadb"]["host"] == "localhost"
 
-    def test_config_immutability(self):
+    def test_config_immutability(self) -> None:
         """Test configuration immutability (if implemented)."""
         config = AppConfig()
 
@@ -282,7 +282,7 @@ class TestAppConfig:
             # If config is immutable, that's fine too
             assert config.chromadb.host == original_host
 
-    def test_environment_variable_support(self):
+    def test_environment_variable_support(self) -> None:
         """Test environment variable configuration support."""
         import os
 
@@ -318,35 +318,35 @@ class TestAppConfig:
 class TestConfigValidationScenarios:
     """Test various configuration validation scenarios."""
 
-    def test_extreme_values(self):
+    def test_extreme_values(self) -> None:
         """Test configuration with extreme values."""
         # Very large chunk size
-        config = ChunkingConfig(default_size=100000)
-        assert config.default_size == 100000
+        chunking_config = ChunkingConfig(default_size=100000)
+        assert chunking_config.default_size == 100000
 
         # Very high worker count
-        config = ProcessingConfig(max_workers=100)
-        assert config.max_workers == 100
+        processing_config = ProcessingConfig(max_workers=100)
+        assert processing_config.max_workers == 100
 
         # Very large timeout
-        config = ChromaDBConfig(timeout=3600)
-        assert config.timeout == 3600
+        chromadb_config = ChromaDBConfig(timeout=3600)
+        assert chromadb_config.timeout == 3600
 
-    def test_boundary_values(self):
+    def test_boundary_values(self) -> None:
         """Test configuration with boundary values."""
         # Minimum valid chunk size
-        config = ChunkingConfig(default_size=100)
-        assert config.default_size == 100
+        chunking_config = ChunkingConfig(default_size=100)
+        assert chunking_config.default_size == 100
 
         # Maximum valid port
-        config = ChromaDBConfig(port=65535)
-        assert config.port == 65535
+        chromadb_config = ChromaDBConfig(port=65535)
+        assert chromadb_config.port == 65535
 
         # Minimum valid timeout
-        config = ChromaDBConfig(timeout=1)
-        assert config.timeout == 1
+        chromadb_config_timeout = ChromaDBConfig(timeout=1)
+        assert chromadb_config_timeout.timeout == 1
 
-    def test_configuration_combinations(self):
+    def test_configuration_combinations(self) -> None:
         """Test various configuration combinations."""
         # High performance configuration
         high_perf_config = AppConfig(
@@ -366,7 +366,7 @@ class TestConfigValidationScenarios:
         assert conservative_config.chunking.default_size == 500
         assert conservative_config.processing.max_workers == 1
 
-    def test_config_field_types(self):
+    def test_config_field_types(self) -> None:
         """Test that configuration fields have correct types."""
         config = AppConfig()
 
@@ -378,7 +378,7 @@ class TestConfigValidationScenarios:
         assert isinstance(config.chunking.respect_boundaries, bool)
         assert isinstance(config.processing.max_workers, int)
 
-    def test_config_validation_error_messages(self):
+    def test_config_validation_error_messages(self) -> None:
         """Test that validation errors provide helpful messages."""
         # Test port validation error
         try:

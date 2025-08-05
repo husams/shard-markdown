@@ -2,6 +2,7 @@
 
 import time
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -13,11 +14,15 @@ class TestDocumentProcessingIntegration:
     """Integration tests for document processing workflows."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig):
+    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
         """Create processor for integration testing."""
         return DocumentProcessor(chunking_config)
 
-    def test_end_to_end_processing(self, processor, sample_markdown_file):
+    def test_end_to_end_processing(
+        self,
+        processor: DocumentProcessor,
+        sample_markdown_file: Path,
+    ) -> None:
         """Test complete end-to-end document processing."""
         # This test requires real components working together
         result = processor.process_document(sample_markdown_file, "integration-test")
@@ -28,7 +33,11 @@ class TestDocumentProcessingIntegration:
         assert result.processing_time > 0
         assert result.collection_name == "integration-test"
 
-    def test_batch_processing_integration(self, processor, test_documents):
+    def test_batch_processing_integration(
+        self,
+        processor: DocumentProcessor,
+        test_documents: dict[str, Any],
+    ) -> None:
         """Test batch processing with real documents."""
         file_paths = list(test_documents.values())
 
@@ -43,7 +52,9 @@ class TestDocumentProcessingIntegration:
         assert result.collection_name == "batch-integration-test"
         assert result.processing_speed > 0
 
-    def test_complex_markdown_structure(self, processor, temp_dir):
+    def test_complex_markdown_structure(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test processing of complex markdown documents."""
         # Create a complex markdown document
         complex_content = """
@@ -111,7 +122,9 @@ Final thoughts and summary.
         assert result.chunks_created >= 3  # Should create multiple chunks
         assert "complex.md" in str(result.file_path)
 
-    def test_unicode_content_processing(self, processor, temp_dir):
+    def test_unicode_content_processing(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test processing documents with Unicode content."""
         unicode_content = """
 # 文档标题 (Document Title)
@@ -148,7 +161,9 @@ def función_ejemplo():
         assert result.success is True
         assert result.chunks_created > 0
 
-    def test_large_document_processing(self, processor, temp_dir):
+    def test_large_document_processing(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test processing of large documents."""
         # Create a large document
         large_content = []
@@ -181,7 +196,9 @@ def función_ejemplo():
         assert result.chunks_created >= 10  # Should create many chunks
         assert result.processing_time > 0
 
-    def test_empty_sections_handling(self, processor, temp_dir):
+    def test_empty_sections_handling(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling of documents with empty sections."""
         content_with_empty = """
 # Document with Empty Sections
@@ -211,7 +228,9 @@ Final section with content.
         assert result.success is True
         assert result.chunks_created > 0
 
-    def test_frontmatter_processing(self, processor, temp_dir):
+    def test_frontmatter_processing(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test processing documents with YAML frontmatter."""
         frontmatter_content = """---
 title: "Document with Frontmatter"
@@ -245,7 +264,9 @@ More content to process.
         assert result.success is True
         assert result.chunks_created > 0
 
-    def test_code_heavy_document(self, processor, temp_dir):
+    def test_code_heavy_document(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test processing documents with lots of code blocks."""
         code_heavy_content = """
 # Code-Heavy Document
@@ -348,7 +369,9 @@ features:
         assert result.success is True
         assert result.chunks_created > 0
 
-    def test_performance_timing(self, processor, test_documents):
+    def test_performance_timing(
+        self, processor: DocumentProcessor, test_documents: dict[str, Any]
+    ) -> None:
         """Test processing performance and timing."""
         file_paths = list(test_documents.values())
 
@@ -362,7 +385,9 @@ features:
         assert result.total_processing_time <= (end_time - start_time)
         assert result.processing_speed > 0  # chunks per second
 
-    def test_concurrent_processing_safety(self, processor, test_documents):
+    def test_concurrent_processing_safety(
+        self, processor: DocumentProcessor, test_documents: dict[str, Any]
+    ) -> None:
         """Test that concurrent processing is safe and consistent."""
         file_paths = list(test_documents.values())
 
@@ -387,11 +412,13 @@ class TestDocumentProcessingErrors:
     """Test error handling in document processing."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig):
+    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
         """Create processor for error testing."""
         return DocumentProcessor(chunking_config)
 
-    def test_file_permission_errors(self, processor, temp_dir):
+    def test_file_permission_errors(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling of file permission errors."""
         # This test is platform-dependent and might not work in all environments
         try:
@@ -418,7 +445,9 @@ class TestDocumentProcessingErrors:
             except OSError:
                 pass
 
-    def test_corrupted_file_handling(self, processor, temp_dir):
+    def test_corrupted_file_handling(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling of corrupted or invalid files."""
         # Create a file with invalid UTF-8 sequences
         corrupted_file = temp_dir / "corrupted.md"
@@ -433,7 +462,9 @@ class TestDocumentProcessingErrors:
         assert result.success is False
         assert result.error is not None
 
-    def test_very_large_file_handling(self, processor, temp_dir):
+    def test_very_large_file_handling(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling of extremely large files."""
         # Create a file that's too large (simulate with size check)
         large_file = temp_dir / "huge.md"
@@ -451,7 +482,7 @@ class TestDocumentProcessingErrors:
             error_msg = result.error.lower()
             assert "too large" in error_msg or "size" in error_msg
 
-    def test_nonexistent_file_handling(self, processor):
+    def test_nonexistent_file_handling(self, processor: DocumentProcessor) -> None:
         """Test handling of non-existent files."""
         nonexistent_file = Path("does_not_exist.md")
 
@@ -461,7 +492,9 @@ class TestDocumentProcessingErrors:
         error_msg = result.error.lower()
         assert "not found" in error_msg or "does not exist" in error_msg
 
-    def test_directory_instead_of_file(self, processor, temp_dir):
+    def test_directory_instead_of_file(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling when a directory is passed instead of a file."""
         result = processor.process_document(temp_dir, "directory-test")
 
@@ -469,7 +502,9 @@ class TestDocumentProcessingErrors:
         error_msg = result.error.lower()
         assert "directory" in error_msg or "not a file" in error_msg
 
-    def test_empty_file_handling(self, processor, temp_dir):
+    def test_empty_file_handling(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling of completely empty files."""
         empty_file = temp_dir / "empty.md"
         empty_file.write_text("")
@@ -479,7 +514,9 @@ class TestDocumentProcessingErrors:
         assert result.success is False
         assert "empty" in result.error.lower()
 
-    def test_whitespace_only_file(self, processor, temp_dir):
+    def test_whitespace_only_file(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test handling of files with only whitespace."""
         whitespace_file = temp_dir / "whitespace.md"
         whitespace_file.write_text("   \n\n\t\t\n   \n")
@@ -498,11 +535,15 @@ class TestDocumentProcessingMetadata:
     """Test metadata handling in document processing."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig):
+    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
         """Create processor for metadata testing."""
         return DocumentProcessor(chunking_config)
 
-    def test_metadata_extraction_and_enhancement(self, processor, sample_markdown_file):
+    def test_metadata_extraction_and_enhancement(
+        self,
+        processor: DocumentProcessor,
+        sample_markdown_file: Path,
+    ) -> None:
         """Test that metadata is properly extracted and enhanced."""
         result = processor.process_document(sample_markdown_file, "metadata-test")
 
@@ -510,7 +551,9 @@ class TestDocumentProcessingMetadata:
         # Metadata testing would depend on the actual implementation
         # This is a placeholder for comprehensive metadata tests
 
-    def test_custom_metadata_integration(self, processor, temp_dir):
+    def test_custom_metadata_integration(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
         """Test integration of custom metadata."""
         # This test would verify that custom metadata is properly
         # integrated into the processing pipeline

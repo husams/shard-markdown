@@ -1,6 +1,7 @@
 """Pytest configuration and fixtures."""
 
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -20,14 +21,14 @@ from shard_markdown.core.models import (
 
 
 @pytest.fixture
-def temp_dir():
+def temp_dir() -> Generator[Path, None, None]:
     """Create temporary directory for test files."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
 
 
 @pytest.fixture
-def sample_markdown_file(temp_dir):
+def sample_markdown_file(temp_dir: Path) -> Path:
     """Create sample markdown file for testing."""
     content = """
 # Sample Document
@@ -62,7 +63,7 @@ That's the end of our sample document.
 
 
 @pytest.fixture
-def markdown_with_frontmatter(temp_dir):
+def markdown_with_frontmatter(temp_dir: Path) -> Path:
     """Create markdown file with YAML frontmatter."""
     content = """---
 title: "Test Document"
@@ -88,7 +89,7 @@ Regular markdown content follows the frontmatter.
 
 
 @pytest.fixture
-def complex_markdown_file(temp_dir):
+def complex_markdown_file(temp_dir: Path) -> Path:
     """Create complex markdown file with various elements."""
     content = """
 # Complex Document
@@ -171,7 +172,7 @@ This concludes our complex document.
 
 
 @pytest.fixture
-def test_documents(temp_dir):
+def test_documents(temp_dir: Path) -> dict[str, Path]:
     """Create multiple test documents."""
     documents = {}
 
@@ -245,7 +246,7 @@ Thanks for reading!
 
 
 @pytest.fixture
-def chunking_config():
+def chunking_config() -> ModelsChunkingConfig:
     """Create default chunking configuration for core models."""
     return ModelsChunkingConfig(
         chunk_size=1000,
@@ -256,7 +257,7 @@ def chunking_config():
 
 
 @pytest.fixture
-def app_config():
+def app_config() -> AppConfig:
     """Create test application configuration."""
     return AppConfig(
         chromadb=ChromaDBConfig(
@@ -272,13 +273,13 @@ def app_config():
 
 
 @pytest.fixture
-def mock_chromadb_client():
+def mock_chromadb_client() -> MockChromaDBClient:
     """Create mock ChromaDB client."""
     return MockChromaDBClient()
 
 
 @pytest.fixture
-def mock_processing_result():
+def mock_processing_result() -> ProcessingResult:
     """Create mock processing result."""
     return ProcessingResult(
         file_path=Path("test.md"),
@@ -290,7 +291,7 @@ def mock_processing_result():
 
 
 @pytest.fixture
-def sample_chunks():
+def sample_chunks() -> list[DocumentChunk]:
     """Create sample document chunks."""
     return [
         DocumentChunk(
@@ -318,7 +319,7 @@ def sample_chunks():
 
 
 @pytest.fixture
-def sample_ast():
+def sample_ast() -> MarkdownAST:
     """Create sample markdown AST for testing."""
     elements = [
         MarkdownElement(type="header", text="Main Title", level=1),
@@ -342,13 +343,13 @@ def sample_ast():
 
 
 @pytest.fixture
-def cli_runner():
+def cli_runner() -> CliRunner:
     """Create CLI test runner."""
     return CliRunner()
 
 
 @pytest.fixture
-def mock_collection_manager():
+def mock_collection_manager() -> Mock:
     """Create mock collection manager."""
     manager = Mock()
     manager.collection_exists.return_value = False
@@ -363,7 +364,7 @@ def mock_collection_manager():
 
 
 @pytest.fixture
-def large_document_content():
+def large_document_content() -> str:
     """Create content for large document testing."""
     sections = []
 
@@ -385,7 +386,7 @@ def large_document_content():
 
 
 @pytest.fixture
-def performance_documents(temp_dir, large_document_content):
+def performance_documents(temp_dir: Path, large_document_content: str) -> list[Path]:
     """Create multiple large documents for performance testing."""
     documents = []
 
