@@ -9,15 +9,26 @@ import pytest
 from click.testing import CliRunner
 
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
+from shard_markdown.config.settings import AppConfig, ChromaDBConfig, ProcessingConfig
 from shard_markdown.config.settings import ChunkingConfig as SettingsChunkingConfig
 from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
 from shard_markdown.core.models import (
     DocumentChunk,
     MarkdownAST,
-    MarkdownElement,
     ProcessingResult,
 )
+
+# Import test utilities for shared fixtures
+from tests.utils.helpers import (
+    DataGenerator,
+    FileHelper,
+    MockHelper,
+)
+
+
+# =============================================================================
+# Core Test Fixtures
+# =============================================================================
 
 
 @pytest.fixture
@@ -28,227 +39,20 @@ def temp_dir() -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def sample_markdown_file(temp_dir: Path) -> Path:
-    """Create sample markdown file for testing."""
-    content = """
-# Sample Document
+def cli_runner() -> CliRunner:
+    """Create CLI test runner."""
+    return CliRunner()
 
-This is a sample markdown document for testing purposes.
 
-## Section 1
-
-Here's some content in section 1.
-
-### Subsection 1.1
-
-More detailed content here.
-
-## Section 2
-
-Different content in section 2.
-
-```python
-def example_function():
-    return "Hello, World!"
-```
-
-## Conclusion
-
-That's the end of our sample document.
-"""
-
-    file_path = temp_dir / "sample.md"
-    file_path.write_text(content.strip())
-    return file_path
-
-
-@pytest.fixture
-def markdown_with_frontmatter(temp_dir: Path) -> Path:
-    """Create markdown file with YAML frontmatter."""
-    content = """---
-title: "Test Document"
-author: "Test Author"
-tags:
-  - test
-  - markdown
-date: "2024-01-01"
----
-
-# Test Document with Frontmatter
-
-This document has YAML frontmatter.
-
-## Content Section
-
-Regular markdown content follows the frontmatter.
-"""
-
-    file_path = temp_dir / "frontmatter.md"
-    file_path.write_text(content.strip())
-    return file_path
-
-
-@pytest.fixture
-def complex_markdown_file(temp_dir: Path) -> Path:
-    """Create complex markdown file with various elements."""
-    content = """
-# Complex Document
-
-This document has multiple types of content.
-
-## Lists
-
-### Unordered List
-- Item 1
-- Item 2
-  - Nested item
-  - Another nested item
-- Item 3
-
-### Ordered List
-1. First item
-2. Second item
-3. Third item
-
-## Code Blocks
-
-### Python Code
-```python
-def calculate_sum(a, b):
-    \"\"\"Calculate sum of two numbers.\"\"\"
-    return a + b
-
-result = calculate_sum(5, 3)
-print(f"Result: {result}")
-```
-
-### JavaScript Code
-```javascript
-function greet(name) {
-    return `Hello, ${name}!`;
-}
-
-console.log(greet("World"));
-```
-
-## Tables
-
-| Name | Age | City |
-|------|-----|------|
-| Alice | 30 | New York |
-| Bob | 25 | London |
-| Charlie | 35 | Tokyo |
-
-## Blockquotes
-
-> This is a blockquote.
-> It can span multiple lines.
->
-> And have multiple paragraphs.
-
-## Links and Images
-
-Here's a [link to example.com](https://example.com).
-
-![Sample Image](https://example.com/image.jpg)
-
-## Emphasis
-
-This text has **bold** and *italic* formatting.
-You can also use __bold__ and _italic_ alternatives.
-
-## Horizontal Rule
-
----
-
-## Final Section
-
-This concludes our complex document.
-"""
-
-    file_path = temp_dir / "complex.md"
-    file_path.write_text(content.strip())
-    return file_path
-
-
-@pytest.fixture
-def test_documents(temp_dir: Path) -> dict[str, Path]:
-    """Create multiple test documents."""
-    documents = {}
-
-    # Document 1: Simple
-    simple_content = """
-# Simple Document
-
-Just a simple document with basic content.
-
-## One Section
-
-Some content here.
-"""
-    simple_path = temp_dir / "simple.md"
-    simple_path.write_text(simple_content.strip())
-    documents["simple"] = simple_path
-
-    # Document 2: Technical
-    technical_content = """
-# Technical Documentation
-
-## Installation
-
-```bash
-pip install example-package
-```
-
-## Usage
-
-```python
-import example
-result = example.process()
-```
-
-## Configuration
-
-- Setting 1: Description
-- Setting 2: Description
-"""
-    technical_path = temp_dir / "technical.md"
-    technical_path.write_text(technical_content.strip())
-    documents["technical"] = technical_path
-
-    # Document 3: Blog post style
-    blog_content = """
-# My Blog Post
-
-Published on January 1, 2024
-
-## Introduction
-
-This is a blog post about something interesting.
-
-## Main Content
-
-Here's the main content of the blog post.
-
-### Subsection
-
-More detailed information.
-
-## Conclusion
-
-Thanks for reading!
-"""
-    blog_path = temp_dir / "blog.md"
-    blog_path.write_text(blog_content.strip())
-    documents["blog"] = blog_path
-
-    return documents
+# =============================================================================
+# Configuration Fixtures
+# =============================================================================
 
 
 @pytest.fixture
 def chunking_config() -> ModelsChunkingConfig:
     """Create default chunking configuration for core models."""
-    return ModelsChunkingConfig(
+    return MockHelper.create_mock_chunking_config(
         chunk_size=300,
         overlap=50,
         method="structure",
@@ -273,143 +77,56 @@ def app_config() -> AppConfig:
 
 
 @pytest.fixture
-def mock_chromadb_client() -> MockChromaDBClient:
-    """Create mock ChromaDB client."""
-    return MockChromaDBClient()
+def test_processing_config() -> ProcessingConfig:
+    """Create test processing configuration with sensible defaults for testing.
 
-
-@pytest.fixture
-def mock_processing_result() -> ProcessingResult:
-    """Create mock processing result."""
-    return ProcessingResult(
-        file_path=Path("test.md"),
-        success=True,
-        chunks_created=3,
-        processing_time=1.5,
-        collection_name="test-collection",
+    This factory provides a ProcessingConfig optimized for testing scenarios
+    while maintaining backward compatibility.
+    """
+    return MockHelper.create_mock_processing_config(
+        batch_size=1,  # Process one file at a time for predictable tests
+        max_workers=1,  # Single worker to avoid concurrency issues in tests
+        max_file_size=1_000_000,  # 1MB limit for test files
+        recursive=False,
+        pattern="*.md",
+        include_frontmatter=True,
+        include_path_metadata=True,
+        skip_empty_files=True,
+        strict_validation=False,
+        encoding="utf-8",
+        encoding_fallback="latin-1",
+        enable_encoding_detection=True,
     )
 
 
 @pytest.fixture
-def sample_chunks() -> list[DocumentChunk]:
-    """Create sample document chunks."""
-    return [
-        DocumentChunk(
-            id="chunk_1",
-            content="# Header 1\n\nSome content here.",
-            metadata={"chunk_index": 0, "section": "Header 1"},
-            start_position=0,
-            end_position=30,
-        ),
-        DocumentChunk(
-            id="chunk_2",
-            content="## Header 2\n\nMore content.",
-            metadata={"chunk_index": 1, "section": "Header 2"},
-            start_position=31,
-            end_position=60,
-        ),
-        DocumentChunk(
-            id="chunk_3",
-            content="### Header 3\n\nFinal content.",
-            metadata={"chunk_index": 2, "section": "Header 3"},
-            start_position=61,
-            end_position=90,
-        ),
-    ]
-
-
-@pytest.fixture
-def sample_ast() -> MarkdownAST:
-    """Create sample markdown AST for testing."""
-    elements = [
-        MarkdownElement(type="header", text="Main Title", level=1),
-        MarkdownElement(type="paragraph", text="This is the introduction paragraph."),
-        MarkdownElement(type="header", text="Section 1", level=2),
-        MarkdownElement(type="paragraph", text="Content for section 1."),
-        MarkdownElement(type="header", text="Section 2", level=2),
-        MarkdownElement(type="paragraph", text="Content for section 2."),
-        MarkdownElement(
-            type="code_block",
-            text="def hello():\n    return 'Hello, World!'",
-            language="python",
-        ),
-    ]
-
-    return MarkdownAST(
-        elements=elements,
-        frontmatter={"title": "Sample Document", "author": "Test Author"},
-        metadata={"word_count": 50, "reading_time": 1},
+def minimal_processing_config() -> ProcessingConfig:
+    """Create minimal processing configuration for backward compatibility tests."""
+    return ProcessingConfig(
+        batch_size=5,
+        max_workers=2,
+        recursive=True,
+        # All other fields should use defaults
     )
 
 
 @pytest.fixture
-def cli_runner() -> CliRunner:
-    """Create CLI test runner."""
-    return CliRunner()
-
-
-@pytest.fixture
-def mock_collection_manager() -> Mock:
-    """Create mock collection manager."""
-    manager = Mock()
-    manager.collection_exists.return_value = False
-    manager.create_collection.return_value = True
-    manager.list_collections.return_value = []
-    manager.get_collection_info.return_value = {
-        "name": "test-collection",
-        "count": 0,
-        "metadata": {},
-    }
-    return manager
-
-
-@pytest.fixture
-def large_document_content() -> str:
-    """Create content for large document testing."""
-    sections = []
-
-    sections.append("# Large Document Test\n\n")
-    sections.append("This is a large document created for testing purposes.\n\n")
-
-    for i in range(50):
-        sections.append(f"## Section {i + 1}\n\n")
-        sections.append(f"This is the content for section {i + 1}. " * 10 + "\n\n")
-
-        if i % 5 == 0:
-            sections.append("```python\n")
-            sections.append(f"# Code example for section {i + 1}\n")
-            sections.append(f"def function_{i + 1}():\n")
-            sections.append(f'    return "Section {i + 1} result"\n')
-            sections.append("```\n\n")
-
-    return "".join(sections)
-
-
-@pytest.fixture
-def performance_documents(temp_dir: Path, large_document_content: str) -> list[Path]:
-    """Create multiple large documents for performance testing."""
-    documents = []
-
-    for i in range(20):
-        doc_path = temp_dir / f"perf_doc_{i:02d}.md"
-        doc_path.write_text(large_document_content)
-        documents.append(doc_path)
-
-    return documents
-
-
-@pytest.fixture
-def benchmark_config() -> dict:
-    """Create benchmark configuration for performance tests."""
-    return {
-        "min_rounds": 5,
-        "max_time": 1.0,
-        "disable_gc": False,
-        "warmup": False,
-        "sort": "min",
-        "group": "group",
-        "timer": "time.perf_counter",
-    }
+def production_processing_config() -> ProcessingConfig:
+    """Create production-like processing configuration for integration tests."""
+    return ProcessingConfig(
+        batch_size=10,  # Default production batch size
+        max_workers=4,  # Default production worker count
+        max_file_size=10_000_000,  # Default 10MB limit
+        recursive=True,
+        pattern="**/*.md",
+        include_frontmatter=True,
+        include_path_metadata=True,
+        skip_empty_files=True,
+        strict_validation=False,
+        encoding="utf-8",
+        encoding_fallback="latin-1",
+        enable_encoding_detection=True,
+    )
 
 
 @pytest.fixture
@@ -435,68 +152,140 @@ logging:
     return config_path
 
 
+# =============================================================================
+# File Creation Fixtures
+# =============================================================================
+
+
 @pytest.fixture
-def sample_markdown_content() -> str:
-    """Provide sample markdown content for testing."""
-    return """# Sample Document
+def sample_markdown_file(temp_dir: Path) -> Path:
+    """Create sample markdown file for testing."""
+    content = """# Sample Document
 
 This is a sample markdown document for testing purposes.
 
 ## Section 1
 
-Here's some content in section 1 with enough text to make it meaningful for
-chunking tests.
+Here's some content in section 1.
 
 ### Subsection 1.1
 
-More detailed content here that provides additional context and information.
+More detailed content here.
 
 ## Section 2
 
-Different content in section 2 with various formatting elements.
+Different content in section 2.
 
 ```python
 def example_function():
     return "Hello, World!"
 ```
 
-### Code Examples
-
-Here are some code examples:
-
-```javascript
-function greet(name) {
-    return `Hello, ${name}!`;
-}
-```
-
 ## Conclusion
 
-That's the end of our sample document with enough content for testing.
+That's the end of our sample document.
 """
+    return FileHelper.create_markdown_file(temp_dir, "sample.md", content.strip())
+
+
+@pytest.fixture
+def markdown_with_frontmatter(temp_dir: Path) -> Path:
+    """Create markdown file with YAML frontmatter."""
+    return FileHelper.create_frontmatter_file(temp_dir, "frontmatter.md")
+
+
+@pytest.fixture
+def complex_markdown_file(temp_dir: Path) -> Path:
+    """Create complex markdown file with various elements."""
+    templates = DataGenerator.generate_markdown_content_templates()
+    return FileHelper.create_markdown_file(temp_dir, "complex.md", templates["complex"])
+
+
+@pytest.fixture
+def unicode_markdown_file(temp_dir: Path) -> Path:
+    """Create markdown file with Unicode content."""
+    return FileHelper.create_unicode_markdown_file(temp_dir, "unicode.md")
+
+
+@pytest.fixture
+def empty_markdown_file(temp_dir: Path) -> Path:
+    """Create empty markdown file."""
+    return FileHelper.create_empty_file(temp_dir, "empty.md")
+
+
+@pytest.fixture
+def whitespace_markdown_file(temp_dir: Path) -> Path:
+    """Create markdown file with only whitespace."""
+    return FileHelper.create_whitespace_file(temp_dir, "whitespace.md")
+
+
+@pytest.fixture
+def large_markdown_file(temp_dir: Path) -> Path:
+    """Create large markdown file for performance testing."""
+    return FileHelper.create_large_markdown_file(
+        temp_dir, "large.md", num_sections=50, content_multiplier=10
+    )
+
+
+@pytest.fixture
+def test_documents(temp_dir: Path) -> dict[str, Path]:
+    """Create multiple test documents with different content types."""
+    documents = {}
+    templates = DataGenerator.generate_markdown_content_templates()
+
+    for doc_type, content in templates.items():
+        file_path = FileHelper.create_markdown_file(temp_dir, f"{doc_type}.md", content)
+        documents[doc_type] = file_path
+
+    return documents
+
+
+@pytest.fixture
+def performance_documents(temp_dir: Path) -> list[Path]:
+    """Create multiple documents for performance testing."""
+    return DataGenerator.generate_performance_test_files(
+        temp_dir, count=20, size_per_file=5000
+    )
+
+
+# =============================================================================
+# Mock Object Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def mock_chromadb_client() -> MockChromaDBClient:
+    """Create mock ChromaDB client."""
+    return MockChromaDBClient()
+
+
+@pytest.fixture
+def mock_collection_manager() -> Mock:
+    """Create mock collection manager."""
+    return MockHelper.create_mock_collection_manager()
 
 
 @pytest.fixture
 def mock_processor() -> Mock:
     """Create mock document processor."""
     processor = Mock()
-    processor.process_file.return_value = ProcessingResult(
-        file_path=Path("test.md"),
+    processor.process_file.return_value = MockHelper.create_mock_processing_result(
+        file_path="test.md",
         success=True,
         chunks_created=5,
         processing_time=2.5,
         collection_name="test-collection",
     )
     processor.process_directory.return_value = [
-        ProcessingResult(
-            file_path=Path("doc1.md"),
+        MockHelper.create_mock_processing_result(
+            file_path="doc1.md",
             success=True,
             chunks_created=3,
             processing_time=1.2,
             collection_name="test-collection",
         ),
-        ProcessingResult(
-            file_path=Path("doc2.md"),
+        MockHelper.create_mock_processing_result(
+            file_path="doc2.md",
             success=True,
             chunks_created=4,
             processing_time=1.8,
@@ -504,3 +293,132 @@ def mock_processor() -> Mock:
         ),
     ]
     return processor
+
+
+# =============================================================================
+# Data Model Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def mock_processing_result() -> ProcessingResult:
+    """Create mock processing result."""
+    return MockHelper.create_mock_processing_result(
+        file_path=Path("test.md"),
+        success=True,
+        chunks_created=3,
+        processing_time=1.5,
+        collection_name="test-collection",
+    )
+
+
+@pytest.fixture
+def sample_chunks() -> list[DocumentChunk]:
+    """Create sample document chunks."""
+    return DataGenerator.generate_test_chunks(count=3)
+
+
+@pytest.fixture
+def sample_ast() -> MarkdownAST:
+    """Create sample markdown AST for testing."""
+    return MockHelper.create_mock_markdown_ast()
+
+
+@pytest.fixture
+def sample_markdown_content() -> str:
+    """Provide sample markdown content for testing."""
+    templates = DataGenerator.generate_markdown_content_templates()
+    return templates["technical"]  # Use technical template as default
+
+
+# =============================================================================
+# Performance Testing Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def large_document_content() -> str:
+    """Create content for large document testing."""
+    sections = []
+
+    sections.append("# Large Document Test\n\n")
+    sections.append("This is a large document created for testing purposes.\n\n")
+
+    for i in range(50):
+        sections.append(f"## Section {i + 1}\n\n")
+        sections.append(f"This is the content for section {i + 1}. " * 10 + "\n\n")
+
+        if i % 5 == 0:
+            sections.append("```python\n")
+            sections.append(f"# Code example for section {i + 1}\n")
+            sections.append(f"def function_{i + 1}():\n")
+            sections.append(f'    return "Section {i + 1} result"\n')
+            sections.append("```\n\n")
+
+    return "".join(sections)
+
+
+@pytest.fixture
+def benchmark_config() -> dict:
+    """Create benchmark configuration for performance tests."""
+    return {
+        "min_rounds": 5,
+        "max_time": 1.0,
+        "disable_gc": False,
+        "warmup": False,
+        "sort": "min",
+        "group": "group",
+        "timer": "time.perf_counter",
+    }
+
+
+# =============================================================================
+# Size and Edge Case Testing Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def file_at_size_limit(temp_dir: Path) -> Path:
+    """Create file exactly at a specific size limit for testing."""
+    return FileHelper.create_file_at_size(temp_dir, "size_limit.md", 1000)
+
+
+@pytest.fixture
+def file_over_size_limit(temp_dir: Path) -> Path:
+    """Create file over a specific size limit for testing."""
+    return FileHelper.create_file_at_size(temp_dir, "over_limit.md", 1001)
+
+
+@pytest.fixture
+def binary_file(temp_dir: Path) -> Path:
+    """Create binary file for error testing."""
+    return FileHelper.create_binary_file(temp_dir, "binary.md")
+
+
+# =============================================================================
+# Parameterized Testing Fixtures
+# =============================================================================
+
+
+@pytest.fixture(params=[50, 100, 500, 1000, 2000])
+def chunk_sizes(request) -> int:
+    """Parametrized fixture for different chunk sizes."""
+    return request.param
+
+
+@pytest.fixture(params=["structure", "fixed", "semantic"])
+def chunking_methods(request) -> str:
+    """Parametrized fixture for different chunking methods."""
+    return request.param
+
+
+@pytest.fixture(params=[1, 2, 4, 8])
+def worker_counts(request) -> int:
+    """Parametrized fixture for different worker counts."""
+    return request.param
+
+
+@pytest.fixture(params=["utf-8", "latin-1", "ascii"])
+def encodings(request) -> str:
+    """Parametrized fixture for different encodings."""
+    return request.param

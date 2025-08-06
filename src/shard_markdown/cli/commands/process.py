@@ -16,6 +16,7 @@ from rich.table import Table
 
 from ...chromadb.collections import CollectionManager
 from ...chromadb.factory import create_chromadb_client
+from ...config import load_config
 from ...core.models import BatchResult, ChunkingConfig, ProcessingResult
 from ...core.processor import DocumentProcessor
 from ...utils.errors import ShardMarkdownError
@@ -58,6 +59,27 @@ console = Console()
 )
 @click.option("--recursive", "-r", is_flag=True, help="Process directories recursively")
 @click.option(
+    "--pattern",
+    default="*.md",
+    help="File pattern for recursive processing [default: *.md]",
+)
+@click.option(
+    "--include-frontmatter",
+    is_flag=True,
+    help="Include YAML frontmatter in processing",
+)
+@click.option(
+    "--include-path-metadata",
+    is_flag=True,
+    default=True,
+    help="Include file path metadata in chunks",
+)
+@click.option(
+    "--continue-on-error",
+    is_flag=True,
+    help="Continue processing other files if one fails",
+)
+@click.option(
     "--create-collection",
     is_flag=True,
     help="Create collection if it doesn't exist",
@@ -96,6 +118,10 @@ def process(  # noqa: C901
     chunk_overlap: int,
     chunk_method: str,
     recursive: bool,
+    pattern: str,
+    include_frontmatter: bool,
+    include_path_metadata: bool,
+    continue_on_error: bool,
     create_collection: bool,
     clear_collection: bool,
     dry_run: bool,
@@ -119,23 +145,43 @@ def process(  # noqa: C901
       # Process directory recursively
       shard-md process -c all-docs --recursive ./docs/
 
+      # Process with file pattern filtering
+      shard-md process -c docs --recursive --pattern "*.md" ./content/
+
+      # Include frontmatter and continue on errors
+      shard-md process -c docs --include-frontmatter --continue-on-error *.md
+
       # Create new collection and clear it first
       shard-md process -c new-docs --create-collection --clear-collection *.md
 
       # Use mock ChromaDB for testing
       shard-md process -c test-docs --use-mock *.md
     """
-    config = ctx.obj["config"]
-    verbose = ctx.obj.get("verbose", 0)
+    # Handle context setup - this may be None during testing
+    if ctx.obj is None:
+        # Load default config for testing scenarios
+        config = load_config()
+        verbose = 0
+    else:
+        config = ctx.obj.get("config")
+        if config is None:
+            # Fallback to loading config if not found in context
+            config = load_config()
+        verbose = ctx.obj.get("verbose", 0)
 
     try:
         # Validate and prepare
         validated_paths = _validate_and_prepare(
-            input_paths, chunk_size, chunk_overlap, collection, recursive
+            input_paths, chunk_size, chunk_overlap, collection, recursive, pattern
         )
         if dry_run:
             _show_dry_run_preview(
-                validated_paths, collection, chunk_size, chunk_overlap
+                validated_paths,
+                collection,
+                chunk_size,
+                chunk_overlap,
+                pattern,
+                include_frontmatter,
             )
             return
 
@@ -143,7 +189,7 @@ def process(  # noqa: C901
             f"[blue]Processing {len(validated_paths)} markdown files...[/blue]"
         )
 
-        # Setup ChromaDB and collection
+        # Setup ChromaDB and collection with retry logic
         chroma_client, collection_obj = _setup_chromadb_and_collection(
             config, use_mock, collection, clear_collection, create_collection
         )
@@ -151,7 +197,11 @@ def process(  # noqa: C901
         # Initialize processor
         processor = DocumentProcessor(
             ChunkingConfig(
-                chunk_size=chunk_size, overlap=chunk_overlap, method=chunk_method
+                chunk_size=chunk_size,
+                overlap=chunk_overlap,
+                method=chunk_method,
+                include_frontmatter=include_frontmatter,
+                include_path_metadata=include_path_metadata,
             )
         )
 
@@ -164,6 +214,7 @@ def process(  # noqa: C901
             collection_obj,
             max_workers,
             verbose,
+            continue_on_error,
         )
 
     except ShardMarkdownError as e:
@@ -178,11 +229,12 @@ def _validate_and_prepare(
     chunk_overlap: int,
     collection: str,
     recursive: bool,
+    pattern: str,
 ) -> list[Path]:
     """Validate parameters and prepare input paths."""
     validate_chunk_parameters(chunk_size, chunk_overlap)
     validate_collection_name(collection)
-    return validate_input_paths(list(input_paths), recursive)
+    return validate_input_paths(list(input_paths), recursive, pattern)
 
 
 def _setup_chromadb_and_collection(
@@ -192,9 +244,32 @@ def _setup_chromadb_and_collection(
     clear_collection: bool,
     create_collection: bool,
 ) -> tuple:
-    """Set up ChromaDB client and collection."""
+    """Set up ChromaDB client and collection with retry logic."""
     chroma_client = create_chromadb_client(config.chromadb, use_mock=use_mock)
-    if not chroma_client.connect():
+
+    # Enhanced connection with retry logic
+    max_connection_retries = 3
+    retry_delay = 2.0
+
+    for attempt in range(max_connection_retries):
+        try:
+            if chroma_client.connect():
+                break
+        except Exception as e:
+            if attempt < max_connection_retries - 1:
+                logger.warning(
+                    f"ChromaDB connection attempt {attempt + 1} failed: {e}. "
+                    f"Retrying in {retry_delay}s..."
+                )
+                import time
+
+                time.sleep(retry_delay)
+            else:
+                raise click.ClickException(
+                    f"Failed to connect to ChromaDB after "
+                    f"{max_connection_retries} attempts: {e}"
+                ) from e
+    else:
         raise click.ClickException("Failed to connect to ChromaDB")
 
     collection_manager = CollectionManager(chroma_client)
@@ -236,8 +311,9 @@ def _process_files_with_progress(
     collection_obj: Any,
     max_workers: int,
     verbose: int,
+    continue_on_error: bool,
 ) -> None:
-    """Process files with progress tracking."""
+    """Process files with progress tracking and error handling."""
     progress_config = [
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -255,6 +331,7 @@ def _process_files_with_progress(
                 chroma_client,
                 collection_obj,
                 progress,
+                continue_on_error,
             )
         else:
             _process_batch_files(
@@ -266,6 +343,7 @@ def _process_files_with_progress(
                 max_workers,
                 verbose,
                 progress,
+                continue_on_error,
             )
 
 
@@ -276,31 +354,52 @@ def _process_single_file(
     chroma_client: Any,
     collection_obj: Any,
     progress: Any,
+    continue_on_error: bool,
 ) -> None:
-    """Process a single file."""
+    """Process a single file with error handling."""
     task = progress.add_task("Processing document...", total=1)
-    result = processor.process_document(file_path, collection)
-    progress.update(task, advance=1)
 
-    if not result.success:
-        console.print(f"[red]Processing failed: {result.error}[/red]")
-        return
+    try:
+        result = processor.process_document(file_path, collection)
+        progress.update(task, advance=1)
 
-    # Get and insert chunks
-    content = processor._read_file(file_path)
-    ast = processor.parser.parse(content)
-    chunks = processor._enhance_chunks(
-        processor.chunker.chunk_document(ast),
-        processor.metadata_extractor.extract_file_metadata(file_path),
-        processor.metadata_extractor.extract_document_metadata(ast),
-        file_path,
-    )
+        if not result.success:
+            error_msg = f"Processing failed: {result.error}"
+            if continue_on_error:
+                console.print(f"[yellow]Warning: {error_msg}[/yellow]")
+                return
+            else:
+                console.print(f"[red]{error_msg}[/red]")
+                return
 
-    insert_result = chroma_client.bulk_insert(collection_obj, chunks)
-    if insert_result.success:
-        _display_single_result(result, insert_result)
-    else:
-        console.print(f"[red]Failed to insert chunks: {insert_result.error}[/red]")
+        # Get and insert chunks
+        content = processor._read_file(file_path)
+        ast = processor.parser.parse(content)
+        chunks = processor._enhance_chunks(
+            processor.chunker.chunk_document(ast),
+            processor.metadata_extractor.extract_file_metadata(file_path),
+            processor.metadata_extractor.extract_document_metadata(ast),
+            file_path,
+        )
+
+        insert_result = chroma_client.bulk_insert(collection_obj, chunks)
+        if insert_result.success:
+            _display_single_result(result, insert_result)
+        else:
+            error_msg = f"Failed to insert chunks: {insert_result.error}"
+            if continue_on_error:
+                console.print(f"[yellow]Warning: {error_msg}[/yellow]")
+            else:
+                console.print(f"[red]{error_msg}[/red]")
+
+    except Exception as e:
+        error_msg = f"Unexpected error processing {file_path}: {e}"
+        if continue_on_error:
+            console.print(f"[yellow]Warning: {error_msg}[/yellow]")
+            progress.update(task, advance=1)
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+            raise
 
 
 def _process_batch_files(
@@ -312,43 +411,60 @@ def _process_batch_files(
     max_workers: int,
     verbose: int,
     progress: Any,
+    continue_on_error: bool,
 ) -> None:
-    """Process multiple files in batch."""
-    batch_result = processor.process_batch(
-        validated_paths, collection, max_workers=max_workers
-    )
-
-    # Collect all chunks from successful results
-    all_chunks = []
-    for result in batch_result.results:
-        if result.success:
-            try:
-                content = processor._read_file(result.file_path)
-                ast = processor.parser.parse(content)
-                chunks = processor.chunker.chunk_document(ast)
-
-                metadata_pair = (
-                    processor.metadata_extractor.extract_file_metadata(
-                        result.file_path
-                    ),
-                    processor.metadata_extractor.extract_document_metadata(ast),
-                )
-                enhanced_chunks = processor._enhance_chunks(
-                    chunks, metadata_pair[0], metadata_pair[1], result.file_path
-                )
-                all_chunks.extend(enhanced_chunks)
-            except Exception as e:
-                logger.error(f"Failed to get chunks for {result.file_path}: {e}")
-
-    if all_chunks:
-        insert_task = progress.add_task(
-            f"Inserting {len(all_chunks)} chunks...", total=1
+    """Process multiple files in batch with error handling."""
+    try:
+        batch_result = processor.process_batch(
+            validated_paths, collection, max_workers=max_workers
         )
-        insert_result = chroma_client.bulk_insert(collection_obj, all_chunks)
-        progress.update(insert_task, advance=1)
-        _display_batch_results(batch_result, insert_result, verbose)
-    else:
-        console.print("[red]No chunks to insert[/red]")
+
+        # Collect all chunks from successful results
+        all_chunks = []
+        for result in batch_result.results:
+            if result.success:
+                try:
+                    content = processor._read_file(result.file_path)
+                    ast = processor.parser.parse(content)
+                    chunks = processor.chunker.chunk_document(ast)
+
+                    metadata_pair = (
+                        processor.metadata_extractor.extract_file_metadata(
+                            result.file_path
+                        ),
+                        processor.metadata_extractor.extract_document_metadata(ast),
+                    )
+                    enhanced_chunks = processor._enhance_chunks(
+                        chunks, metadata_pair[0], metadata_pair[1], result.file_path
+                    )
+                    all_chunks.extend(enhanced_chunks)
+                except Exception as e:
+                    error_msg = f"Failed to get chunks for {result.file_path}: {e}"
+                    if continue_on_error:
+                        logger.warning(error_msg)
+                    else:
+                        logger.error(error_msg)
+
+        if all_chunks:
+            insert_task = progress.add_task(
+                f"Inserting {len(all_chunks)} chunks...", total=1
+            )
+            insert_result = chroma_client.bulk_insert(collection_obj, all_chunks)
+            progress.update(insert_task, advance=1)
+            _display_batch_results(batch_result, insert_result, verbose)
+        else:
+            if continue_on_error:
+                console.print("[yellow]Warning: No chunks to insert[/yellow]")
+            else:
+                console.print("[red]No chunks to insert[/red]")
+
+    except Exception as e:
+        error_msg = f"Batch processing failed: {e}"
+        if continue_on_error:
+            console.print(f"[yellow]Warning: {error_msg}[/yellow]")
+        else:
+            console.print(f"[red]{error_msg}[/red]")
+            raise
 
 
 def _handle_shard_error(e: ShardMarkdownError, verbose: int) -> None:
@@ -370,7 +486,12 @@ def _handle_unexpected_error(e: Exception, verbose: int) -> None:
 
 
 def _show_dry_run_preview(
-    paths: list[Path], collection: str, chunk_size: int, chunk_overlap: int
+    paths: list[Path],
+    collection: str,
+    chunk_size: int,
+    chunk_overlap: int,
+    pattern: str,
+    include_frontmatter: bool,
 ) -> None:
     """Display dry run preview of what would be processed."""
     table = Table(title="Dry Run Preview")
@@ -380,6 +501,8 @@ def _show_dry_run_preview(
     table.add_row("Collection", collection)
     table.add_row("Chunk Size", str(chunk_size))
     table.add_row("Chunk Overlap", str(chunk_overlap))
+    table.add_row("File Pattern", pattern)
+    table.add_row("Include Frontmatter", str(include_frontmatter))
     table.add_row("Files to Process", str(len(paths)))
 
     console.print(table)
@@ -390,6 +513,8 @@ def _show_dry_run_preview(
 
     if len(paths) > 10:
         console.print(f"  ... and {len(paths) - 10} more files")
+
+    console.print(f"[green]Would process {len(paths)} files[/green]")
 
 
 def _display_single_result(

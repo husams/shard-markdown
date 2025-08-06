@@ -78,5 +78,16 @@ class BaseChunker(ABC):
                 if next_char_idx < len(content) and content[next_char_idx] in " \n":
                     return content[next_char_idx:].lstrip()
 
+        # Check if we're in the middle of a code block - if so, avoid overlap
+        # to prevent code block fragmentation
+        overlap_text = content[-self.config.overlap :]
+        if "```" in overlap_text and overlap_text.count("```") % 2 == 1:
+            # We're in the middle of a code block, find the start of the code block
+            # and don't include it in overlap
+            code_start = content.rfind("```", 0, len(content) - self.config.overlap)
+            if code_start != -1:
+                # Return overlap that ends before the code block
+                return content[code_start - min(100, code_start) : code_start].rstrip()
+
         # Fallback to character-based overlap
         return content[-self.config.overlap :]

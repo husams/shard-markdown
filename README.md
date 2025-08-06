@@ -156,13 +156,13 @@ Process markdown files into ChromaDB collections:
 shard-md process --collection my-docs document.md
 
 # Advanced processing
-shard-md process \\
-  --collection technical-docs \\
-  --chunk-size 1500 \\
-  --chunk-overlap 300 \\
-  --chunk-method structure \\
-  --recursive \\
-  --create-collection \\
+shard-md process \
+  --collection technical-docs \
+  --chunk-size 1500 \
+  --chunk-overlap 300 \
+  --chunk-method structure \
+  --recursive \
+  --create-collection \
   docs/
 
 # Dry run (preview what would be processed)
@@ -295,6 +295,39 @@ pytest -m integration
 
 ### Code Quality
 
+We provide a comprehensive verification script that runs all necessary checks before committing:
+
+```bash
+# Run all checks (recommended before commits/PRs)
+python scripts/verify.py
+
+# Fix formatting and linting issues automatically
+python scripts/verify.py --fix
+
+# Skip slow tests
+python scripts/verify.py --fast
+
+# Include coverage validation
+python scripts/verify.py --coverage
+
+# Exit early on first failure
+python scripts/verify.py --exit-early
+
+# Show detailed output for debugging
+python scripts/verify.py --verbose
+```
+
+The verification script runs:
+
+- **Code formatting** (`ruff format`)
+- **Linting** (`ruff check`)
+- **Type checking** (`mypy`)
+- **Security scanning** (`bandit` - if installed)
+- **Test suite** (`pytest`)
+- **Coverage validation** (when `--coverage` is used)
+
+You can also run individual checks:
+
 ```bash
 # Format code
 ruff format src/ tests/
@@ -317,8 +350,9 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 3. Install development dependencies: `uv pip install -e ".[dev]"`
 4. Install pre-commit hooks: `pre-commit install`
 5. Make your changes
-6. Run tests: `pytest`
-7. Submit a pull request
+6. **Run verification checks**: `python scripts/verify.py --fix`
+7. Run tests: `pytest`
+8. Submit a pull request
 
 ## License
 

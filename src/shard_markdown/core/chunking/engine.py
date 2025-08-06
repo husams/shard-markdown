@@ -102,20 +102,40 @@ class ChunkingEngine:
                 context={"empty_chunk_indices": empty_chunks},
             )
 
-        # Check for oversized chunks (allow some tolerance)
-        max_allowed_size = self.config.chunk_size * 1.5
+        # Check for oversized chunks (allow some tolerance for structure preservation)
+        # Use a more generous tolerance for structure-aware chunking
+        tolerance_multiplier = 2.0 if self.config.method == "structure" else 1.5
+        max_allowed_size = int(self.config.chunk_size * tolerance_multiplier)
+
         oversized_chunks = [
-            i for i, chunk in enumerate(chunks) if len(chunk.content) > max_allowed_size
+            (i, len(chunk.content))
+            for i, chunk in enumerate(chunks)
+            if len(chunk.content) > max_allowed_size
         ]
 
         if oversized_chunks:
+            # Log details about oversized chunks for debugging
+            for idx, size in oversized_chunks:
+                logger.warning(
+                    "Chunk %d exceeds size limit: %d > %d (configured: %d)",
+                    idx,
+                    size,
+                    max_allowed_size,
+                    self.config.chunk_size,
+                )
+
+            oversized_indices = [idx for idx, _ in oversized_chunks]
+            error_msg = (
+                f"Generated chunks exceed size limits at positions: {oversized_indices}"
+            )
             raise ProcessingError(
-                f"Generated chunks exceed size limits at positions: {oversized_chunks}",
+                error_msg,
                 error_code=1313,
                 context={
-                    "oversized_chunk_indices": oversized_chunks,
+                    "oversized_chunk_details": oversized_chunks,
                     "max_allowed_size": max_allowed_size,
                     "configured_size": self.config.chunk_size,
+                    "tolerance_multiplier": tolerance_multiplier,
                 },
             )
 

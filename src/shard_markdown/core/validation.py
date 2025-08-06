@@ -73,7 +73,6 @@ class ContentValidator:
         "\x00\x00",  # Null byte sequences
         "\xff\xfe",  # UTF-16 LE BOM
         "\xfe\xff",  # UTF-16 BE BOM
-        "\xef\xbb\xbf",  # UTF-8 BOM that wasn't stripped
         # PDF/binary signatures
         "%PDF",
         "\x89PNG",
@@ -94,6 +93,44 @@ class ContentValidator:
         "\x85",  # 0x85 - invalid UTF-8 start byte
     }
 
+    # Binary file signatures to detect early
+    BINARY_SIGNATURES = [
+        # Image formats
+        b"\x89PNG",  # PNG
+        b"\xff\xd8\xff",  # JPEG
+        b"GIF8",  # GIF
+        b"\x42\x4d",  # BMP
+        b"\x00\x00\x01\x00",  # ICO
+        b"\x49\x49\x2a\x00",  # TIFF (little endian)
+        b"\x4d\x4d\x00\x2a",  # TIFF (big endian)
+        b"RIFF",  # WebP (starts with RIFF)
+        # Document formats
+        b"%PDF",  # PDF
+        b"\xd0\xcf\x11\xe0",  # Microsoft Office
+        b"PK\x03\x04",  # ZIP-based formats (DOCX, XLSX, etc)
+        # Archive formats
+        b"\x1f\x8b",  # GZIP
+        b"\x50\x4b",  # ZIP
+        b"\x52\x61\x72",  # RAR
+        b"7z\xbc\xaf",  # 7-Zip
+        # Executable formats
+        b"MZ",  # PE/EXE
+        b"\x7fELF",  # ELF
+        b"\xca\xfe\xba\xbe",  # Mach-O
+        b"\xfe\xed\xfa",  # Mach-O
+        # Media formats
+        b"ID3",  # MP3
+        b"OggS",  # Ogg
+        b"\x00\x00\x00\x20ftypM4A",  # M4A
+        b"\x00\x00\x00\x18ftypmp42",  # MP4
+        # Other binary formats
+        b"\x00\x00\x02\x00",  # CUR (cursor)
+        b"\x46\x4c\x56",  # FLV
+        b"\x1a\x45\xdf\xa3",  # EBML (used by MKV, WebM)
+        # Note: UTF-8 BOM removed from binary signatures
+        # as it should be handled as text after decoding
+    ]
+
     def __init__(self, config: ValidationConfig | None = None) -> None:
         """Initialize content validator.
 
@@ -101,6 +138,73 @@ class ContentValidator:
             config: Validation configuration
         """
         self.config = config or ValidationConfig()
+
+    def detect_binary_content(self, content_bytes: bytes) -> bool:
+        """Detect if content is binary based on file signatures.
+
+        Args:
+            content_bytes: Raw file content as bytes
+
+        Returns:
+            True if content appears to be binary data
+        """
+        if not content_bytes:
+            return False
+
+        # Skip BOM detection - BOM files should be handled as text
+        # Check for known binary file signatures (excluding UTF-8 BOM)
+        for signature in self.BINARY_SIGNATURES:
+            if content_bytes.startswith(signature):
+                return True
+
+        # Special case: if the content is just UTF-8 BOM or BOM + whitespace,
+        # don't treat as binary (will be handled as empty after decoding)
+        if content_bytes.startswith(b"\xef\xbb\xbf"):
+            # Check if it's just BOM + whitespace
+            try:
+                decoded = content_bytes.decode("utf-8")
+                # Remove BOM and check if only whitespace remains
+                content_without_bom = decoded.lstrip("\ufeff")
+                if not content_without_bom.strip():  # Just BOM and/or whitespace
+                    return False
+            except UnicodeDecodeError:
+                pass  # If can't decode, continue with binary checks
+
+        # Check for high ratio of null bytes (common in binary files)
+        null_count = content_bytes.count(b"\x00")
+        if len(content_bytes) > 0 and (null_count / len(content_bytes)) > 0.01:
+            return True
+
+        # Check for high ratio of bytes outside printable ASCII range
+        # But be more lenient for small files that might just be whitespace
+        non_printable_count = sum(
+            1 for byte in content_bytes if byte < 32 or byte > 126
+        )
+        if (
+            len(content_bytes) > 100
+            and (non_printable_count / len(content_bytes)) > 0.3
+        ):
+            return True
+
+        return False
+
+    def _is_effectively_empty(self, content: str) -> bool:
+        """Check if content is effectively empty after removing BOM and whitespace.
+
+        Args:
+            content: String content to check
+
+        Returns:
+            True if content is empty or contains only BOM/whitespace
+        """
+        if not content:
+            return True
+
+        # Remove UTF-8 BOM if present
+        content_without_bom = content.lstrip("\ufeff")
+
+        # Check if only whitespace remains
+        return not content_without_bom.strip()
 
     def validate_content(self, content: str, file_path: Path) -> ValidationResult:
         """Validate decoded content for processing safety.
@@ -115,8 +219,12 @@ class ContentValidator:
         if not self.config.enable_content_validation:
             return ValidationResult(is_valid=True)
 
-        if not content:
-            return ValidationResult(is_valid=True)  # Empty content is valid
+        # Fix empty content handling - should be invalid for processing
+        if self._is_effectively_empty(content):
+            return ValidationResult(
+                is_valid=False,
+                error="File is empty or contains no processable content",
+            )
 
         warnings = []
         confidence = 1.0
@@ -128,12 +236,39 @@ class ContentValidator:
             confidence *= 0.9
 
         try:
-            # Check for control character problems
+            # Early binary content detection using file signatures
+            # (if we can access raw bytes)
+            try:
+                raw_bytes = file_path.read_bytes() if file_path.exists() else None
+                if raw_bytes and self.detect_binary_content(raw_bytes):
+                    return ValidationResult(
+                        is_valid=False,
+                        error=(
+                            "File appears to contain binary data "
+                            "(unsupported content type)"
+                        ),
+                        warnings=warnings,
+                        confidence=confidence,
+                    )
+            except (OSError, PermissionError):
+                # If we can't read the file, continue with string-based validation
+                pass
+
+            # Check for control character problems (with improved binary detection)
             control_check = self._check_control_characters(sample_content)
             if not control_check.is_valid:
+                # Enhance error message to mention binary content for high
+                # control char ratio
+                error = control_check.error
+                if error is not None and "control characters" in error.lower():
+                    error = (
+                        "File contains binary-like content with excessive "
+                        f"control characters ({error.split('(')[1]}"
+                    )
+
                 return ValidationResult(
                     is_valid=False,
-                    error=control_check.error,
+                    error=error,
                     warnings=warnings,
                     confidence=confidence,
                 )
@@ -152,7 +287,7 @@ class ContentValidator:
                     warnings.extend(artifact_check.warnings)
                 confidence *= artifact_check.confidence
 
-            # Check printable character ratio
+            # Check printable character ratio (enhanced for binary detection)
             printable_check = self._check_printable_ratio(sample_content)
             if not printable_check.is_valid:
                 return ValidationResult(
@@ -339,9 +474,10 @@ class ContentValidator:
         printable_count = 0
         for char in content:
             # Consider printable: letters, digits, punctuation, whitespace
+            # Also consider UTF-8 BOM as printable for this check
             if (
                 char.isprintable()
-                or char in {" ", "\t", "\n", "\r"}
+                or char in {" ", "\t", "\n", "\r", "\ufeff"}  # Include BOM
                 or ord(char) in {0x0A, 0x0D, 0x09}  # LF, CR, TAB
             ):
                 printable_count += 1
@@ -351,8 +487,11 @@ class ContentValidator:
         if printable_ratio < self.config.min_printable_ratio:
             return ValidationResult(
                 is_valid=False,
-                error=f"Too few printable characters: {printable_ratio:.2%} "
-                f"(min: {self.config.min_printable_ratio:.2%})",
+                error=(
+                    "File appears to contain binary data with too few "
+                    f"printable characters: {printable_ratio:.2%} "
+                    f"(min: {self.config.min_printable_ratio:.2%})"
+                ),
             )
 
         return ValidationResult(is_valid=True)
@@ -370,7 +509,10 @@ class ContentValidator:
         if re.search(r"(.)\1{50,}", content):
             return ValidationResult(
                 is_valid=False,
-                error="Detected long sequences of repeated bytes (likely binary data)",
+                error=(
+                    "File appears to contain binary data with long sequences "
+                    "of repeated bytes"
+                ),
             )
 
         # Look for patterns that suggest base64 or hex encoding
@@ -380,7 +522,7 @@ class ContentValidator:
             if matches > 3:  # Multiple long base64-like sequences
                 return ValidationResult(
                     is_valid=False,
-                    error="Content appears to contain encoded binary data",
+                    error="File appears to contain encoded binary data",
                 )
 
         return ValidationResult(is_valid=True)

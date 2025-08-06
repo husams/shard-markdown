@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class MarkdownElement(BaseModel):
@@ -131,14 +131,68 @@ class ChunkingConfig(BaseModel):
     """Configuration for document chunking."""
 
     chunk_size: int = Field(
-        default=1000, description="Maximum chunk size in characters"
+        default=1000,
+        ge=50,  # Reduced minimum for better flexibility
+        le=50000,  # Increased maximum for large documents
+        description="Maximum chunk size in characters",
     )
-    overlap: int = Field(default=200, description="Overlap between chunks")
-    method: str = Field(default="structure", description="Chunking method")
+    overlap: int = Field(
+        default=200,
+        ge=0,
+        le=5000,  # Increased maximum overlap
+        description="Overlap between chunks",
+    )
+    method: str = Field(
+        default="structure", description="Chunking method (structure, fixed)"
+    )
     respect_boundaries: bool = Field(
         default=True, description="Respect structure boundaries"
     )
-    max_tokens: int | None = Field(default=None, description="Maximum tokens per chunk")
+    max_tokens: int | None = Field(
+        default=None,
+        ge=1,
+        le=100000,
+        description="Maximum tokens per chunk",
+    )
+    include_frontmatter: bool = Field(
+        default=False, description="Include YAML frontmatter in chunks"
+    )
+    include_path_metadata: bool = Field(
+        default=True, description="Include file path metadata in chunks"
+    )
+
+    @field_validator("overlap")
+    @classmethod
+    def validate_overlap(cls, v: int, info: Any) -> int:
+        """Validate overlap is less than chunk size."""
+        if info.data and "chunk_size" in info.data:
+            chunk_size = info.data["chunk_size"]
+            if v >= chunk_size:
+                raise ValueError(
+                    f"Overlap ({v}) must be less than chunk size ({chunk_size})"
+                )
+            # Warn if overlap is more than 50% of chunk size
+            if v > chunk_size * 0.5:
+                import warnings
+
+                warnings.warn(
+                    f"Large overlap ({v}) is more than 50% of chunk size "
+                    f"({chunk_size}). This may cause excessive duplication.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+        return v
+
+    @field_validator("method")
+    @classmethod
+    def validate_method(cls, v: str) -> str:
+        """Validate chunking method."""
+        valid_methods = {"structure", "fixed"}
+        if v not in valid_methods:
+            raise ValueError(
+                f"Invalid chunking method '{v}'. Must be one of: {valid_methods}"
+            )
+        return v
 
 
 class InsertResult(BaseModel):

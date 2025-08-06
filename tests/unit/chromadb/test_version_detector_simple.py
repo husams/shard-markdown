@@ -1,7 +1,7 @@
 """Simple tests for ChromaDBVersionDetector to get basic coverage."""
 
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, patch
 
 import httpx
 
@@ -37,11 +37,13 @@ class TestBasicVersionDetector:
     @patch("httpx.Client")
     def test_make_request_success(self, mock_client_class):
         """Test successful HTTP request."""
-        mock_client = Mock()
-        mock_response = Mock()
+        # Use MagicMock to automatically support context manager protocol
+        mock_client = MagicMock()
+        mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_response.text = "OK"
         mock_client.get.return_value = mock_response
+        # MagicMock automatically handles __enter__ and __exit__
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
         mock_client_class.return_value = mock_client
@@ -55,8 +57,10 @@ class TestBasicVersionDetector:
     @patch("httpx.Client")
     def test_make_request_failure(self, mock_client_class):
         """Test HTTP request failure."""
-        mock_client = Mock()
+        # Use MagicMock for proper context manager support
+        mock_client = MagicMock()
         mock_client.get.side_effect = httpx.RequestError("Connection failed")
+        # MagicMock automatically handles context manager protocol
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
         mock_client_class.return_value = mock_client
@@ -72,10 +76,12 @@ class TestBasicVersionDetector:
     @patch("httpx.Client")
     def test_test_endpoint(self, mock_client_class):
         """Test endpoint testing."""
-        mock_client = Mock()
-        mock_response = Mock()
+        # Use MagicMock for proper context manager support
+        mock_client = MagicMock()
+        mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_client.get.return_value = mock_response
+        # MagicMock automatically handles context manager protocol
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
         mock_client_class.return_value = mock_client
@@ -88,11 +94,13 @@ class TestBasicVersionDetector:
     @patch("httpx.Client")
     def test_get_version_info_success(self, mock_client_class):
         """Test successful version info retrieval."""
-        mock_client = Mock()
-        mock_response = Mock()
+        # Use MagicMock for proper context manager support
+        mock_client = MagicMock()
+        mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_response.text = '{"version": "1.0.15"}'
         mock_client.get.return_value = mock_response
+        # MagicMock automatically handles context manager protocol
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
         mock_client_class.return_value = mock_client
@@ -105,11 +113,13 @@ class TestBasicVersionDetector:
     @patch("httpx.Client")
     def test_get_version_info_invalid_json(self, mock_client_class):
         """Test version info with invalid JSON response."""
-        mock_client = Mock()
-        mock_response = Mock()
+        # Use MagicMock for proper context manager support
+        mock_client = MagicMock()
+        mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
         mock_response.text = "invalid json"
         mock_client.get.return_value = mock_response
+        # MagicMock automatically handles context manager protocol
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
         mock_client_class.return_value = mock_client
@@ -139,7 +149,7 @@ class TestBasicVersionDetector:
     @patch("shard_markdown.chromadb.version_detector.ChromaDBVersionDetector")
     def test_detect_chromadb_version_function(self, mock_detector_class):
         """Test the detect_chromadb_version convenience function."""
-        mock_detector = Mock()
+        mock_detector = MagicMock()
         mock_info = APIVersionInfo(
             version="v2",
             heartbeat_endpoint="http://localhost:8000/api/v2/heartbeat",

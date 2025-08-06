@@ -34,6 +34,7 @@ class ChromaDBVersionDetector:
         timeout: float = 30.0,
         max_retries: int = 5,
         retry_delay: float = 2.0,
+        connection_retry_delay: float = 1.0,
     ) -> None:
         """Initialize the version detector.
 
@@ -43,12 +44,14 @@ class ChromaDBVersionDetector:
             timeout: Connection timeout in seconds
             max_retries: Maximum retry attempts
             retry_delay: Delay between retries in seconds
+            connection_retry_delay: Initial delay for connection retries
         """
         self.host = host
         self.port = port
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.connection_retry_delay = connection_retry_delay
         self.base_url = f"http://{host}:{port}"
 
         # Cache for detected version info
@@ -56,8 +59,8 @@ class ChromaDBVersionDetector:
         self._cache_timestamp: float = 0
         self._cache_ttl: float = 300.0  # 5 minutes
 
-    def _make_request(self, url: str) -> tuple[bool, str | None]:
-        """Make HTTP request with retries.
+    def _make_request_with_backoff(self, url: str) -> tuple[bool, str | None]:
+        """Make HTTP request with exponential backoff retry logic.
 
         Args:
             url: URL to request
@@ -65,19 +68,43 @@ class ChromaDBVersionDetector:
         Returns:
             Tuple of (success, response_text)
         """
+        current_delay = self.connection_retry_delay
+
         for attempt in range(self.max_retries):
             try:
                 with httpx.Client(timeout=self.timeout) as client:
                     response = client.get(url)
                     response.raise_for_status()
                     return True, response.text
+            except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+                # Connection-specific errors - likely ChromaDB not ready yet
+                if attempt < self.max_retries - 1:
+                    logger.debug(
+                        f"Connection to {url} failed "
+                        f"(attempt {attempt + 1}/{self.max_retries}): {e}. "
+                        f"Retrying in {current_delay:.1f}s..."
+                    )
+                    time.sleep(current_delay)
+                    # Exponential backoff with jitter
+                    current_delay = min(current_delay * 1.5, 10.0)
+                else:
+                    logger.debug(
+                        f"Connection to {url} failed after "
+                        f"{self.max_retries} attempts: {e}"
+                    )
+            except (httpx.HTTPStatusError, httpx.RequestError) as e:
+                # HTTP errors - API might not exist at this endpoint
+                logger.debug(f"HTTP request to {url} failed: {e}")
+                break
             except Exception as e:
                 if attempt < self.max_retries - 1:
                     logger.debug(
                         f"Request to {url} failed "
-                        f"(attempt {attempt + 1}/{self.max_retries}): {e}"
+                        f"(attempt {attempt + 1}/{self.max_retries}): {e}. "
+                        f"Retrying in {current_delay:.1f}s..."
                     )
-                    time.sleep(self.retry_delay)
+                    time.sleep(current_delay)
+                    current_delay = min(current_delay * 1.2, 8.0)
                 else:
                     logger.debug(
                         f"Request to {url} failed after "
@@ -85,6 +112,17 @@ class ChromaDBVersionDetector:
                     )
 
         return False, None
+
+    def _make_request(self, url: str) -> tuple[bool, str | None]:
+        """Make HTTP request with retries (backward compatibility).
+
+        Args:
+            url: URL to request
+
+        Returns:
+            Tuple of (success, response_text)
+        """
+        return self._make_request_with_backoff(url)
 
     def _test_endpoint(self, endpoint: str) -> bool:
         """Test if an endpoint is available.
@@ -96,7 +134,7 @@ class ChromaDBVersionDetector:
             True if endpoint is available
         """
         url = urljoin(self.base_url, endpoint)
-        success, _ = self._make_request(url)
+        success, _ = self._make_request_with_backoff(url)
         return success
 
     def _get_version_info(self, version_endpoint: str) -> str | None:
@@ -109,7 +147,7 @@ class ChromaDBVersionDetector:
             ChromaDB version string or None
         """
         url = urljoin(self.base_url, version_endpoint)
-        success, response_text = self._make_request(url)
+        success, response_text = self._make_request_with_backoff(url)
 
         if not success or not response_text:
             return None
@@ -154,7 +192,7 @@ class ChromaDBVersionDetector:
         logger.info(f"Detecting ChromaDB API version at {self.base_url}")
         detection_start = time.time()
 
-        # Test endpoints in order of preference
+        # Test endpoints in order of preference with enhanced retry logic
         test_cases = [
             # v2 API (ChromaDB 1.0+)
             {
@@ -234,8 +272,40 @@ class ChromaDBVersionDetector:
             except ChromaDBConnectionError:
                 return False
 
-        success, _ = self._make_request(version_info.heartbeat_endpoint)
+        success, _ = self._make_request_with_backoff(version_info.heartbeat_endpoint)
         return success
+
+    def wait_for_connection(
+        self,
+        max_wait_time: float = 120.0,
+        check_interval: float = 2.0,
+    ) -> APIVersionInfo | None:
+        """Wait for ChromaDB to become available with periodic checks.
+
+        Args:
+            max_wait_time: Maximum time to wait in seconds
+            check_interval: Interval between checks in seconds
+
+        Returns:
+            API version info if connection established, None otherwise
+        """
+        start_time = time.time()
+
+        logger.info(
+            f"Waiting for ChromaDB to become available (max {max_wait_time}s)..."
+        )
+
+        while (time.time() - start_time) < max_wait_time:
+            try:
+                version_info = self.detect_api_version(use_cache=False)
+                logger.info(f"ChromaDB connected after {time.time() - start_time:.1f}s")
+                return version_info
+            except ChromaDBConnectionError:
+                logger.debug(f"ChromaDB not ready, retrying in {check_interval}s...")
+                time.sleep(check_interval)
+
+        logger.warning(f"ChromaDB did not become available within {max_wait_time}s")
+        return None
 
     def get_recommended_client_settings(
         self, version_info: APIVersionInfo | None = None
@@ -329,3 +399,26 @@ def test_chromadb_connection(
     except Exception as e:
         logger.debug(f"ChromaDB connection test failed: {e}")
         return False
+
+
+def wait_for_chromadb(
+    host: str = "localhost",
+    port: int = 8000,
+    max_wait_time: float = 120.0,
+    timeout: float = 10.0,
+) -> APIVersionInfo | None:
+    """Wait for ChromaDB to become available.
+
+    Args:
+        host: ChromaDB host
+        port: ChromaDB port
+        max_wait_time: Maximum time to wait in seconds
+        timeout: Connection timeout per attempt
+
+    Returns:
+        API version info if connection established, None otherwise
+    """
+    detector = ChromaDBVersionDetector(
+        host=host, port=port, timeout=timeout, max_retries=3
+    )
+    return detector.wait_for_connection(max_wait_time=max_wait_time)

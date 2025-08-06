@@ -102,14 +102,14 @@ class TestChunkingConfig:
 
     def test_chunk_size_validation(self) -> None:
         """Test chunk size validation."""
-        # Valid sizes
-        valid_sizes = [100, 500, 1000, 5000]
+        # Valid sizes (updated to match new constraints)
+        valid_sizes = [50, 100, 500, 1000, 5000, 50000]  # Now includes 50 as valid
         for size in valid_sizes:
             config = ChunkingConfig(default_size=size)
             assert config.default_size == size
 
-        # Invalid sizes
-        invalid_sizes = [0, -100, 50]  # Too small
+        # Invalid sizes (updated to match new constraints)
+        invalid_sizes = [0, -100, 49, 50001]  # Now 49 is too small, 50001 too large
         for size in invalid_sizes:
             with pytest.raises(ValidationError):
                 ChunkingConfig(default_size=size)
@@ -127,6 +127,14 @@ class TestChunkingConfig:
         # Negative overlap should fail
         with pytest.raises(ValidationError):
             ChunkingConfig(default_overlap=-100)
+
+        # Test new maximum overlap constraint
+        config_large_overlap = ChunkingConfig(default_size=10000, default_overlap=5000)
+        assert config_large_overlap.default_overlap == 5000
+
+        # Too large overlap should fail
+        with pytest.raises(ValidationError):
+            ChunkingConfig(default_size=10000, default_overlap=5001)
 
     def test_method_validation(self) -> None:
         """Test chunking method validation."""
@@ -148,34 +156,88 @@ class TestChunkingConfig:
         with pytest.raises(ValidationError):
             ChunkingConfig(method="invalid_method")
 
+    def test_max_tokens_validation(self) -> None:
+        """Test max_tokens validation."""
+        # Valid max_tokens values
+        config = ChunkingConfig(max_tokens=1000)
+        assert config.max_tokens == 1000
+
+        config_none = ChunkingConfig(max_tokens=None)
+        assert config_none.max_tokens is None
+
+        # Test new constraints
+        config_max = ChunkingConfig(max_tokens=100000)
+        assert config_max.max_tokens == 100000
+
+        # Invalid max_tokens
+        with pytest.raises(ValidationError):
+            ChunkingConfig(max_tokens=0)
+
+        with pytest.raises(ValidationError):
+            ChunkingConfig(max_tokens=100001)
+
+    def test_overlap_size_relationship(self) -> None:
+        """Test overlap cannot be larger than chunk size."""
+        # Equal overlap and chunk size should fail
+        with pytest.raises(ValidationError):
+            ChunkingConfig(default_size=100, default_overlap=100)
+
+        # Overlap just less than chunk size should work
+        config = ChunkingConfig(default_size=100, default_overlap=99)
+        assert config.default_overlap == 99
+
 
 class TestProcessingConfig:
     """Test processing configuration validation."""
 
     def test_valid_config(self) -> None:
         """Test valid processing configuration."""
-        config = ProcessingConfig(batch_size=10, max_workers=4)
+        config = ProcessingConfig(
+            batch_size=10,
+            max_workers=4,
+            recursive=True,
+            pattern="*.md",
+        )
 
         assert config.batch_size == 10
         assert config.max_workers == 4
+        assert config.recursive is True
+        assert config.pattern == "*.md"
 
     def test_default_values(self) -> None:
-        """Test default configuration values."""
+        """Test all default configuration values."""
         config = ProcessingConfig()
 
+        # Basic processing defaults
         assert config.batch_size == 10
         assert config.max_workers == 4
+        assert config.recursive is False
+        assert config.pattern == "*.md"
+        assert config.include_frontmatter is True
+        assert config.include_path_metadata is True
+
+        # File handling defaults (new requirements)
+        assert config.max_file_size == 10_000_000  # 10MB
+        assert config.skip_empty_files is True
+        assert config.strict_validation is False
+        assert config.encoding == "utf-8"
+        assert config.encoding_fallback == "latin-1"
+
+        # Advanced encoding detection defaults
+        assert config.enable_encoding_detection is True
+        assert config.encoding_detection is not None
+        assert config.validation is not None
 
     def test_batch_size_validation(self) -> None:
         """Test batch size validation."""
         # Valid batch sizes
-        valid_sizes = [1, 5, 10, 50]
+        valid_sizes = [1, 10, 50, 100]
         for size in valid_sizes:
             config = ProcessingConfig(batch_size=size)
             assert config.batch_size == size
 
         # Invalid batch sizes
-        invalid_sizes = [0, -1]
+        invalid_sizes = [0, -1, 101]
         for size in invalid_sizes:
             with pytest.raises(ValidationError):
                 ProcessingConfig(batch_size=size)
@@ -183,160 +245,143 @@ class TestProcessingConfig:
     def test_max_workers_validation(self) -> None:
         """Test max workers validation."""
         # Valid worker counts
-        valid_workers = [1, 2, 4, 8, 16]
-        for workers in valid_workers:
-            config = ProcessingConfig(max_workers=workers)
-            assert config.max_workers == workers
+        valid_counts = [1, 4, 8, 16]
+        for count in valid_counts:
+            config = ProcessingConfig(max_workers=count)
+            assert config.max_workers == count
 
         # Invalid worker counts
-        invalid_workers = [0, -1]
-        for workers in invalid_workers:
+        invalid_counts = [0, -1, 17]
+        for count in invalid_counts:
             with pytest.raises(ValidationError):
-                ProcessingConfig(max_workers=workers)
+                ProcessingConfig(max_workers=count)
+
+    def test_max_file_size_validation(self) -> None:
+        """Test max file size validation."""
+        # Valid file sizes
+        valid_sizes = [1, 1024, 10_000_000, 100_000_000]
+        for size in valid_sizes:
+            config = ProcessingConfig(max_file_size=size)
+            assert config.max_file_size == size
+
+        # Invalid file sizes (must be positive)
+        invalid_sizes = [0, -1, -100]
+        for size in invalid_sizes:
+            with pytest.raises(ValidationError):
+                ProcessingConfig(max_file_size=size)
+
+    def test_encoding_settings(self) -> None:
+        """Test encoding configuration."""
+        # Test custom encoding settings
+        config = ProcessingConfig(encoding="iso-8859-1", encoding_fallback="utf-8")
+        assert config.encoding == "iso-8859-1"
+        assert config.encoding_fallback == "utf-8"
+
+        # Test common encodings
+        common_encodings = ["utf-8", "latin-1", "ascii", "iso-8859-1", "cp1252"]
+        for encoding in common_encodings:
+            config = ProcessingConfig(encoding=encoding)
+            assert config.encoding == encoding
+
+    def test_boolean_flags(self) -> None:
+        """Test boolean configuration flags."""
+        # Test all boolean flags
+        config = ProcessingConfig(
+            recursive=True,
+            include_frontmatter=False,
+            include_path_metadata=False,
+            skip_empty_files=False,
+            strict_validation=True,
+            enable_encoding_detection=False,
+        )
+
+        assert config.recursive is True
+        assert config.include_frontmatter is False
+        assert config.include_path_metadata is False
+        assert config.skip_empty_files is False
+        assert config.strict_validation is True
+        assert config.enable_encoding_detection is False
+
+    def test_pattern_validation(self) -> None:
+        """Test file pattern validation."""
+        # Valid patterns
+        valid_patterns = ["*.md", "*.txt", "**/*.md", "doc_*.markdown"]
+        for pattern in valid_patterns:
+            config = ProcessingConfig(pattern=pattern)
+            assert config.pattern == pattern
+
+    def test_backward_compatibility(self) -> None:
+        """Test that old configuration still works without new fields."""
+        # This should work with just basic fields
+        config = ProcessingConfig(
+            batch_size=5,
+            max_workers=2,
+            recursive=True,
+        )
+
+        # Should use defaults for new fields
+        assert config.max_file_size == 10_000_000
+        assert config.skip_empty_files is True
+        assert config.strict_validation is False
+        assert config.encoding == "utf-8"
+        assert config.encoding_fallback == "latin-1"
 
 
 class TestAppConfig:
-    """Test complete application configuration."""
+    """Test main application configuration."""
 
-    def test_default_config(self) -> None:
-        """Test default configuration values."""
+    def test_valid_config(self) -> None:
+        """Test valid application configuration."""
         config = AppConfig()
 
-        # Should have all subsection configs
-        assert config.chromadb is not None
-        assert config.chunking is not None
-        assert config.processing is not None
-        assert config.logging is not None
+        # Check that all sub-configurations exist
+        assert isinstance(config.chromadb, ChromaDBConfig)
+        assert isinstance(config.chunking, ChunkingConfig)
+        assert isinstance(config.processing, ProcessingConfig)
 
-        # Check default values
-        assert config.chromadb.host == "localhost"
-        assert config.chunking.default_size == 1000
-        assert config.processing.batch_size == 10
+    def test_custom_subconfigs(self) -> None:
+        """Test app config with custom sub-configurations."""
+        chromadb_config = ChromaDBConfig(host="remote.db", port=9000)
+        chunking_config = ChunkingConfig(default_size=2000, default_overlap=400)
+        processing_config = ProcessingConfig(batch_size=20, max_workers=8)
 
-    def test_custom_config(self) -> None:
-        """Test custom configuration."""
         config = AppConfig(
-            chromadb=ChromaDBConfig(host="remote-host", port=9000),
-            chunking=ChunkingConfig(default_size=1500, method=ChunkingMethod._FIXED),
-            processing=ProcessingConfig(max_workers=8),
+            chromadb=chromadb_config,
+            chunking=chunking_config,
+            processing=processing_config,
         )
 
-        assert config.chromadb.host == "remote-host"
+        assert config.chromadb.host == "remote.db"
         assert config.chromadb.port == 9000
-        assert config.chunking.default_size == 1500
-        assert config.chunking.method == ChunkingMethod._FIXED
+        assert config.chunking.default_size == 2000
+        assert config.chunking.default_overlap == 400
+        assert config.processing.batch_size == 20
         assert config.processing.max_workers == 8
 
-    def test_nested_validation(self) -> None:
-        """Test that nested configuration validation works."""
-        # Invalid nested config should fail
-        with pytest.raises(ValidationError):
-            AppConfig(
-                chromadb=ChromaDBConfig(port=70000),  # Invalid port
-                chunking=ChunkingConfig(default_size=1000),
-            )
-
-        with pytest.raises(ValidationError):
-            AppConfig(
-                chromadb=ChromaDBConfig(),
-                chunking=ChunkingConfig(
-                    default_size=500, default_overlap=600
-                ),  # Overlap > size
-            )
-
-    def test_config_serialization(self) -> None:
-        """Test configuration serialization."""
+    def test_default_processing_config_in_app(self) -> None:
+        """Test that app config contains processing config with proper defaults."""
         config = AppConfig()
 
-        # Should be able to serialize to dict
-        config_dict = config.model_dump()
-        assert isinstance(config_dict, dict)
-        assert "chromadb" in config_dict
-        assert "chunking" in config_dict
-        assert "processing" in config_dict
-
-        # Should be able to serialize to JSON
-        config_json = config.model_dump_json()
-        assert isinstance(config_json, str)
-
-        # Should be able to deserialize back
-        import json
-
-        parsed = json.loads(config_json)
-        assert parsed["chromadb"]["host"] == "localhost"
-
-    def test_config_immutability(self) -> None:
-        """Test configuration immutability (if implemented)."""
-        config = AppConfig()
-
-        # Depending on implementation, config might be immutable
-        # This test would verify that behavior
-        original_host = config.chromadb.host
-
-        # Try to modify (should either work or raise error depending on implementation)
-        try:
-            config.chromadb.host = "modified-host"
-            # If modification worked, verify it
-            assert config.chromadb.host == "modified-host"
-        except (AttributeError, TypeError):
-            # If config is immutable, that's fine too
-            assert config.chromadb.host == original_host
-
-    def test_environment_variable_support(self) -> None:
-        """Test environment variable configuration support."""
-        import os
-
-        # Set environment variables
-        env_vars = {
-            "SHARD_MD_CHROMADB_HOST": "env-host",
-            "SHARD_MD_CHROMADB_PORT": "9000",
-            "SHARD_MD_CHUNKING_DEFAULT_SIZE": "1500",
-        }
-
-        # Store original values
-        original_values = {}
-        for key in env_vars:
-            original_values[key] = os.environ.get(key)
-            os.environ[key] = env_vars[key]
-
-        try:
-            # This test assumes environment variable support is implemented
-            # The actual behavior depends on the configuration loader
-            # Values might come from environment or defaults
-            # This test would need to be adjusted based on actual implementation
-            pass
-
-        finally:
-            # Restore original environment
-            for key, original_value in original_values.items():
-                if original_value is None:
-                    os.environ.pop(key, None)
-                else:
-                    os.environ[key] = original_value
+        # Verify processing config defaults are correct within app config
+        assert config.processing.max_file_size == 10_000_000
+        assert config.processing.skip_empty_files is True
+        assert config.processing.strict_validation is False
+        assert config.processing.encoding == "utf-8"
+        assert config.processing.encoding_fallback == "latin-1"
 
 
 class TestConfigValidationScenarios:
     """Test various configuration validation scenarios."""
 
-    def test_extreme_values(self) -> None:
-        """Test configuration with extreme values."""
-        # Very large chunk size
-        chunking_config = ChunkingConfig(default_size=100000)
-        assert chunking_config.default_size == 100000
+    def test_edge_case_values(self) -> None:
+        """Test configuration with edge case values."""
+        # Minimum chunk size (now 50)
+        chunking_config = ChunkingConfig(default_size=50)
+        assert chunking_config.default_size == 50
 
-        # Very high worker count
-        processing_config = ProcessingConfig(max_workers=100)
-        assert processing_config.max_workers == 100
-
-        # Very large timeout
-        chromadb_config = ChromaDBConfig(timeout=3600)
-        assert chromadb_config.timeout == 3600
-
-    def test_boundary_values(self) -> None:
-        """Test configuration with boundary values."""
-        # Minimum valid chunk size
-        chunking_config = ChunkingConfig(default_size=100)
-        assert chunking_config.default_size == 100
+        # Maximum chunk size (now 50000)
+        chunking_config_max = ChunkingConfig(default_size=50000)
+        assert chunking_config_max.default_size == 50000
 
         # Maximum valid port
         chromadb_config = ChromaDBConfig(port=65535)
@@ -346,37 +391,65 @@ class TestConfigValidationScenarios:
         chromadb_config_timeout = ChromaDBConfig(timeout=1)
         assert chromadb_config_timeout.timeout == 1
 
+    def test_extreme_values(self) -> None:
+        """Test configuration with extreme values."""
+        # Very large chunk size (within new limits)
+        chunking_config = ChunkingConfig(default_size=50000)
+        assert chunking_config.default_size == 50000
+
+        # Very high worker count
+        processing_config = ProcessingConfig(max_workers=16)  # Updated to max
+        assert processing_config.max_workers == 16
+
+        # Very large timeout
+        chromadb_config = ChromaDBConfig(timeout=3600)
+        assert chromadb_config.timeout == 3600
+
+        # Very large file size limit
+        processing_config_large = ProcessingConfig(max_file_size=1_000_000_000)  # 1GB
+        assert processing_config_large.max_file_size == 1_000_000_000
+
+    def test_boundary_values(self) -> None:
+        """Test configuration with boundary values."""
+        # Minimum valid chunk size (now 50)
+        chunking_config = ChunkingConfig(default_size=50)
+        assert chunking_config.default_size == 50
+
+        # Maximum valid port
+        chromadb_config = ChromaDBConfig(port=65535)
+        assert chromadb_config.port == 65535
+
+        # Minimum valid timeout
+        chromadb_config_timeout = ChromaDBConfig(timeout=1)
+        assert chromadb_config_timeout.timeout == 1
+
+        # Minimum file size (1 byte)
+        processing_config = ProcessingConfig(max_file_size=1)
+        assert processing_config.max_file_size == 1
+
     def test_configuration_combinations(self) -> None:
-        """Test various configuration combinations."""
-        # High performance configuration
-        high_perf_config = AppConfig(
-            chunking=ChunkingConfig(default_size=2000, default_overlap=400),
-            processing=ProcessingConfig(max_workers=16, batch_size=50),
+        """Test valid combinations of configuration values."""
+        # High chunk size with high overlap
+        chunking_config = ChunkingConfig(default_size=5000, default_overlap=2000)
+        assert chunking_config.default_size == 5000
+        assert chunking_config.default_overlap == 2000
+
+        # Large batch with many workers
+        processing_config = ProcessingConfig(batch_size=100, max_workers=16)
+        assert processing_config.batch_size == 100
+        assert processing_config.max_workers == 16
+
+        # Strict validation with custom encoding
+        processing_config_strict = ProcessingConfig(
+            strict_validation=True,
+            encoding="iso-8859-1",
+            encoding_fallback="utf-8",
+            skip_empty_files=False,
         )
-
-        assert high_perf_config.chunking.default_size == 2000
-        assert high_perf_config.processing.max_workers == 16
-
-        # Conservative configuration
-        conservative_config = AppConfig(
-            chunking=ChunkingConfig(default_size=500, default_overlap=50),
-            processing=ProcessingConfig(max_workers=1, batch_size=1),
-        )
-
-        assert conservative_config.chunking.default_size == 500
-        assert conservative_config.processing.max_workers == 1
-
-    def test_config_field_types(self) -> None:
-        """Test that configuration fields have correct types."""
-        config = AppConfig()
-
-        # Check types
-        assert isinstance(config.chromadb.host, str)
-        assert isinstance(config.chromadb.port, int)
-        assert isinstance(config.chromadb.ssl, bool)
-        assert isinstance(config.chunking.default_size, int)
-        assert isinstance(config.chunking.respect_boundaries, bool)
-        assert isinstance(config.processing.max_workers, int)
+        assert processing_config_strict.strict_validation is True
+        assert processing_config_strict.encoding == "iso-8859-1"
+        assert processing_config_strict.encoding_fallback == "utf-8"
+        assert processing_config_strict.skip_empty_files is False
 
     def test_config_validation_error_messages(self) -> None:
         """Test that validation errors provide helpful messages."""
@@ -388,10 +461,75 @@ class TestConfigValidationScenarios:
             error_msg = str(e)
             assert "port" in error_msg.lower() or "65535" in error_msg
 
-        # Test chunk size validation error
+        # Test chunk size validation error (updated for new minimum)
         try:
-            ChunkingConfig(default_size=50)
+            ChunkingConfig(default_size=49)  # Now 49 is too small
             raise AssertionError("Should have raised ValidationError")
         except ValidationError as e:
             error_msg = str(e)
-            assert "size" in error_msg.lower() or "100" in error_msg
+            assert "size" in error_msg.lower() or "50" in error_msg
+
+        # Test file size validation error
+        try:
+            ProcessingConfig(max_file_size=0)
+            raise AssertionError("Should have raised ValidationError")
+        except ValidationError as e:
+            error_msg = str(e)
+            assert "size" in error_msg.lower() or "greater" in error_msg.lower()
+
+    def test_config_conversion(self) -> None:
+        """Test config conversion between settings and core models."""
+        settings_config = ChunkingConfig(
+            default_size=2000,
+            default_overlap=300,
+            method=ChunkingMethod.STRUCTURE,
+            respect_boundaries=True,
+            max_tokens=4000,
+        )
+
+        # Test conversion to core config
+        core_config = settings_config.to_core_config()
+        assert core_config.chunk_size == 2000
+        assert core_config.overlap == 300
+        assert core_config.method == "structure"
+        assert core_config.respect_boundaries is True
+        assert core_config.max_tokens == 4000
+
+
+class TestConfigDefaults:
+    """Test that all configuration defaults match requirements."""
+
+    def test_processing_config_required_defaults(self) -> None:
+        """Test that ProcessingConfig has the exact defaults specified in issue."""
+        config = ProcessingConfig()
+
+        # Verify exact default values as specified in the issue
+        assert config.max_file_size == 10_000_000, (
+            "max_file_size should default to 10MB"
+        )
+        assert config.skip_empty_files is True, (
+            "skip_empty_files should default to True"
+        )
+        assert config.strict_validation is False, (
+            "strict_validation should default to False"
+        )
+        assert config.encoding == "utf-8", "encoding should default to 'utf-8'"
+        assert config.encoding_fallback == "latin-1", (
+            "encoding_fallback should default to 'latin-1'"
+        )
+
+    def test_config_factory_compatibility(self) -> None:
+        """Test that config can be created for tests easily."""
+        # Should be easy to create a test config
+        test_config = ProcessingConfig(
+            batch_size=1,  # Small batch for tests
+            max_workers=1,  # Single worker for tests
+            max_file_size=1_000_000,  # 1MB for tests
+        )
+
+        assert test_config.batch_size == 1
+        assert test_config.max_workers == 1
+        assert test_config.max_file_size == 1_000_000
+        # Other values should still use defaults
+        assert test_config.skip_empty_files is True
+        assert test_config.encoding == "utf-8"

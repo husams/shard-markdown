@@ -2,12 +2,16 @@
 
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from ..core.encoding import EncodingDetectorConfig
 from ..core.validation import ValidationConfig
+
+
+if TYPE_CHECKING:
+    from ..core.models import ChunkingConfig as CoreChunkingConfig
 
 
 class ChunkingMethod(str, Enum):
@@ -41,14 +45,14 @@ class ChunkingConfig(BaseModel):
 
     default_size: int = Field(
         default=1000,
-        ge=100,
-        le=10000,
+        ge=50,  # Reduced minimum for better flexibility
+        le=50000,  # Increased maximum for large documents
         description="Default chunk size in characters",
     )
     default_overlap: int = Field(
         default=200,
         ge=0,
-        le=1000,
+        le=5000,  # Increased maximum overlap
         description="Default overlap between chunks",
     )
     method: ChunkingMethod = Field(
@@ -58,16 +62,46 @@ class ChunkingConfig(BaseModel):
         default=True, description="Respect markdown structure boundaries"
     )
     max_tokens: int | None = Field(
-        default=None, ge=1, description="Maximum tokens per chunk"
+        default=None, ge=1, le=100000, description="Maximum tokens per chunk"
     )
 
     @field_validator("default_overlap")
     @classmethod
     def validate_overlap(cls, v: int, info: Any) -> int:
         """Validate overlap is less than chunk size."""
-        if info.data and "default_size" in info.data and v >= info.data["default_size"]:
-            raise ValueError("Overlap must be less than chunk size")
+        if info.data and "default_size" in info.data:
+            default_size = info.data["default_size"]
+            if v >= default_size:
+                raise ValueError(
+                    f"Overlap ({v}) must be less than chunk size ({default_size})"
+                )
+            # Warn if overlap is more than 50% of chunk size
+            if v > default_size * 0.5:
+                import warnings
+
+                warnings.warn(
+                    f"Large overlap ({v}) is more than 50% of chunk size "
+                    f"({default_size}). This may cause excessive duplication.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         return v
+
+    def to_core_config(self) -> "CoreChunkingConfig":
+        """Convert to core ChunkingConfig model.
+
+        Returns:
+            CoreChunkingConfig instance with mapped fields
+        """
+        from ..core.models import ChunkingConfig as CoreChunkingConfig
+
+        return CoreChunkingConfig(
+            chunk_size=self.default_size,
+            overlap=self.default_overlap,
+            method=self.method.value,
+            respect_boundaries=self.respect_boundaries,
+            max_tokens=self.max_tokens,
+        )
 
 
 class ProcessingConfig(BaseModel):

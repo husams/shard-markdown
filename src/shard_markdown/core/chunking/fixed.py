@@ -86,8 +86,9 @@ class FixedSizeChunker(BaseChunker):
             elif element.type == "paragraph":
                 text_parts.append(element.text)
             elif element.type == "code_block":
-                lang = element.language or ""
-                text_parts.append(f"```{lang}\n{element.text}\n```")
+                # Code block element.text already contains the complete markdown
+                # representation with backticks
+                text_parts.append(element.text)
             elif element.type == "list":
                 if element.items:
                     items = "\n".join(f"- {item}" for item in element.items)

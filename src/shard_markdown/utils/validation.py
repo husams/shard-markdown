@@ -1,18 +1,20 @@
 """Input validation utilities."""
 
+import fnmatch
 from pathlib import Path
 
 from .errors import FileSystemError, InputValidationError
 
 
 def validate_input_paths(  # noqa: C901
-    paths: list[str], recursive: bool = False
+    paths: list[str], recursive: bool = False, pattern: str = "*.md"
 ) -> list[Path]:
     """Validate input file paths and collect markdown files.
 
     Args:
         paths: List of file/directory path strings
         recursive: Whether to process directories recursively
+        pattern: File pattern for filtering (e.g., "*.md", "**/*.txt")
 
     Returns:
         List of validated markdown file paths
@@ -39,25 +41,42 @@ def validate_input_paths(  # noqa: C901
                     context={"path": str(path), "operation": "path_validation"},
                 )
 
+            # Platform-specific readable check
+            if not _is_path_readable(path):
+                raise InputValidationError(
+                    f"Path is not readable: {path}",
+                    error_code=1001,
+                    context={"path": str(path), "operation": "path_readable_check"},
+                )
+
             if path.is_file():
-                if not path.suffix.lower() == ".md":
+                # Check if file matches pattern
+                if _matches_pattern(path.name, pattern):
+                    validated_paths.append(path)
+                elif pattern == "*.md" and not path.suffix.lower() == ".md":
+                    # Backward compatibility: if using default pattern,
+                    # show specific error
                     raise InputValidationError(
                         f"File is not a markdown file: {path}",
                         error_code=1002,
                         context={"path": str(path), "suffix": path.suffix},
                     )
-                validated_paths.append(path)
 
             elif path.is_dir():
                 if recursive:
-                    md_files = list(path.rglob("*.md"))
-                    if not md_files:
+                    collected_files = _collect_files_from_directory(path, pattern)
+                    if not collected_files:
                         raise InputValidationError(
-                            f"No markdown files found in directory: {path}",
+                            f"No files matching pattern '{pattern}' found "
+                            f"in directory: {path}",
                             error_code=1003,
-                            context={"path": str(path), "recursive": True},
+                            context={
+                                "path": str(path),
+                                "recursive": True,
+                                "pattern": pattern,
+                            },
                         )
-                    validated_paths.extend(md_files)
+                    validated_paths.extend(collected_files)
                 else:
                     raise InputValidationError(
                         f"Path is directory but recursive flag not set: {path}",
@@ -75,12 +94,104 @@ def validate_input_paths(  # noqa: C901
 
     if not validated_paths:
         raise InputValidationError(
-            "No valid markdown files found",
+            f"No valid files matching pattern '{pattern}' found",
             error_code=1005,
-            context={"input_paths": paths, "recursive": recursive},
+            context={"input_paths": paths, "recursive": recursive, "pattern": pattern},
         )
 
-    return validated_paths
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_paths = []
+    for path in validated_paths:
+        if path not in seen:
+            seen.add(path)
+            unique_paths.append(path)
+
+    return unique_paths
+
+
+def _is_path_readable(path: Path) -> bool:
+    """Check if path is readable with platform-specific handling.
+
+    Args:
+        path: Path to check
+
+    Returns:
+        True if path is readable
+    """
+    try:
+        if path.is_file():
+            # Try to read a small amount to test readability
+            with path.open("rb") as f:
+                f.read(1)
+            return True
+        elif path.is_dir():
+            # Try to list directory contents
+            list(path.iterdir())
+            return True
+        return False
+    except (OSError, PermissionError):
+        return False
+
+
+def _matches_pattern(filename: str, pattern: str) -> bool:
+    """Check if filename matches the given pattern.
+
+    Args:
+        filename: Name of the file to check
+        pattern: Pattern to match against
+
+    Returns:
+        True if filename matches pattern
+    """
+    return fnmatch.fnmatch(filename.lower(), pattern.lower())
+
+
+def _collect_files_from_directory(directory: Path, pattern: str) -> list[Path]:
+    """Collect files from directory matching pattern.
+
+    Args:
+        directory: Directory to search in
+        pattern: File pattern to match
+
+    Returns:
+        List of matching file paths
+    """
+    collected_files = []
+
+    try:
+        # Handle glob-style patterns with **
+        if "**" in pattern:
+            # Use rglob for recursive patterns
+            for file_path in directory.rglob("*"):
+                if file_path.is_file() and _matches_pattern(
+                    file_path.name, pattern.split("/")[-1]
+                ):
+                    collected_files.append(file_path)
+        else:
+            # Use glob for simple patterns
+            for file_path in directory.glob("*"):
+                if file_path.is_file() and _matches_pattern(file_path.name, pattern):
+                    collected_files.append(file_path)
+
+            # Also check subdirectories recursively
+            for subdir in directory.glob("*"):
+                if subdir.is_dir() and _is_path_readable(subdir):
+                    try:
+                        for file_path in subdir.rglob("*"):
+                            if file_path.is_file() and _matches_pattern(
+                                file_path.name, pattern
+                            ):
+                                collected_files.append(file_path)
+                    except (OSError, PermissionError):
+                        # Skip directories we can't access
+                        continue
+
+    except (OSError, PermissionError):
+        # Return what we could collect
+        pass
+
+    return collected_files
 
 
 def validate_chunk_parameters(chunk_size: int, chunk_overlap: int) -> None:

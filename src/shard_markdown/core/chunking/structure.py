@@ -31,9 +31,9 @@ class StructureAwareChunker(BaseChunker):
         for element in ast.elements:
             element_text = self._element_to_text(element)
 
-            # Never split code blocks
+            # Handle code blocks specially - they should never be split
             if element.type == "code_block":
-                # If adding this code block would exceed size, create current
+                # If adding this code block would exceed size, finalize current
                 # chunk first
                 if (
                     len(current_chunk) + len(element_text) > self.config.chunk_size
@@ -47,14 +47,15 @@ class StructureAwareChunker(BaseChunker):
                     )
                     chunks.append(chunk)
 
-                    # Start new chunk with overlap
+                    # Start new chunk with overlap from previous chunk
                     overlap_content = self._get_overlap_content(current_chunk)
                     current_chunk = overlap_content
                     current_start = chunk.end_position - len(overlap_content)
 
+                # Add the complete code block to current chunk
                 current_chunk += element_text
 
-            # Check if adding this element exceeds chunk size
+            # For other elements, check if adding would exceed size
             elif (
                 len(current_chunk) + len(element_text) > self.config.chunk_size
                 and current_chunk.strip()
@@ -73,6 +74,7 @@ class StructureAwareChunker(BaseChunker):
                 current_chunk = overlap_content + element_text
                 current_start = chunk.end_position - len(overlap_content)
             else:
+                # Element fits in current chunk
                 current_chunk += element_text
 
             # Update structural context for headers
@@ -107,8 +109,9 @@ class StructureAwareChunker(BaseChunker):
         elif element.type == "paragraph":
             return f"{element.text}\n\n"
         elif element.type == "code_block":
-            lang = element.language or ""
-            return f"```{lang}\n{element.text}\n```\n\n"
+            # Code block element.text already contains the complete markdown
+            # representation with backticks, so just add spacing
+            return f"{element.text}\n\n"
         elif element.type == "list":
             if element.items:
                 items = "\n".join(f"- {item}" for item in element.items)

@@ -47,6 +47,7 @@ chromadb = [
 
 [project.scripts]
 shard-md = "shard_markdown.cli.main:cli"
+shard-md-verify = "scripts.verify:main"
 
 [project.urls]
 Homepage = "https://github.com/shard-markdown/shard-markdown"

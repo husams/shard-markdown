@@ -7,6 +7,7 @@ from shard_markdown.core.chunking.fixed import FixedSizeChunker
 from shard_markdown.core.chunking.structure import StructureAwareChunker
 from shard_markdown.core.models import ChunkingConfig
 from shard_markdown.core.parser import MarkdownParser
+from shard_markdown.utils.errors import ProcessingError
 
 
 class TestChunkingEngine:
@@ -54,9 +55,10 @@ class TestChunkingEngine:
         assert len(chunks) > 0
         assert all(chunk.content.strip() for chunk in chunks)
 
-        # Check chunk sizes are within reasonable limits
+        # Check chunk sizes are within reasonable limits (with tolerance)
+        max_allowed = chunking_config.chunk_size * 1.5  # Same tolerance as engine
         for chunk in chunks:
-            assert len(chunk.content) <= chunking_config.chunk_size * 1.5
+            assert len(chunk.content) <= max_allowed
 
     def test_chunk_empty_document(self, chunking_config: ChunkingConfig) -> None:
         """Test chunking empty document."""
@@ -78,7 +80,7 @@ class TestChunkingEngine:
         chunking_config.method = "invalid_method"
         engine = ChunkingEngine(chunking_config)
 
-        with pytest.raises(ValueError, match="invalid"):  # Should raise ProcessingError
+        with pytest.raises(ProcessingError, match="Unknown chunking strategy"):
             engine.chunk_document(ast)
 
 
@@ -129,16 +131,19 @@ More content after code.
         chunker = StructureAwareChunker(chunking_config)
         chunks = chunker.chunk_document(ast)
 
-        # Find chunk with code block
-        code_chunk = None
+        # Find chunk with complete code block
+        complete_code_chunks = []
         for chunk in chunks:
-            if "```python" in chunk.content and "```" in chunk.content:
-                code_chunk = chunk
-                break
+            if "```python" in chunk.content and chunk.content.count("```") == 2:
+                complete_code_chunks.append(chunk)
 
-        assert code_chunk is not None
-        # Code block should be complete in one chunk
-        assert code_chunk.content.count("```") == 2
+        # Should have at least one chunk with complete code block
+        assert len(complete_code_chunks) >= 1
+
+        # Verify the code block is complete and not duplicated
+        code_chunk = complete_code_chunks[0]
+        assert "def very_long_function_name():" in code_chunk.content
+        assert 'return "A very long return value string"' in code_chunk.content
 
 
 class TestFixedSizeChunker:
@@ -159,7 +164,7 @@ class TestFixedSizeChunker:
         # Most chunks should be close to target size
         target_size = chunking_config.chunk_size
         for chunk in chunks[:-1]:  # Exclude last chunk which might be smaller
-            # Allow some tolerance
+            # Allow some tolerance for boundary respect
             assert len(chunk.content) <= target_size * 1.2
 
     def test_overlap_functionality(

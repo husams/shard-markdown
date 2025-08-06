@@ -490,8 +490,10 @@ class EncodingDetector:
         for pattern in corruption_patterns:
             artifact_count += content.count(pattern)
 
-        # If more than 1% of reasonable-length content is artifacts, likely corrupted
-        if len(content) > 100 and (artifact_count / len(content)) > 0.01:
-            return True
+        # For longer content, use density-based detection
+        if len(content) > 100:
+            # If more than 5% of content is artifacts, likely corrupted
+            return (artifact_count / len(content)) > 0.05
 
-        return artifact_count > 3  # Arbitrary threshold for shorter content
+        # For shorter content, use count-based detection
+        return artifact_count > 1

@@ -4,6 +4,7 @@ import hashlib
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 from ..config.settings import ProcessingConfig
 from ..utils.errors import FileSystemError, ProcessingError
@@ -68,6 +69,35 @@ class DocumentProcessor:
         start_time = time.time()
 
         try:
+            # Early binary content detection before attempting to read as text
+            if self.validator and file_path.exists():
+                try:
+                    # Quick binary detection check using first few bytes
+                    with open(file_path, "rb") as f:
+                        sample_bytes = f.read(1024)  # Read first 1KB
+
+                    if self.validator.detect_binary_content(sample_bytes):
+                        error_msg = (
+                            "File appears to contain binary data "
+                            "(unsupported content type)"
+                        )
+                        if self.config.strict_validation:
+                            raise FileSystemError(error_msg, error_code=1209)
+                        else:
+                            # In graceful mode, binary files should fail
+                            # (not succeed with 0 chunks)
+                            return ProcessingResult(
+                                file_path=file_path,
+                                success=False,
+                                error=error_msg,
+                                chunks_created=0,
+                                processing_time=time.time() - start_time,
+                                collection_name=collection_name,
+                            )
+                except (OSError, PermissionError):
+                    # If we can't read the file, continue with normal processing
+                    pass
+
             # Read file content
             content = self._read_file(file_path)
 
@@ -144,16 +174,26 @@ class DocumentProcessor:
                     error=str(e),
                 )
             else:
-                # In graceful mode, check if this is a corruption error
-                if "corrupted encoding" in str(e).lower():
-                    # Corrupted files should fail even in graceful mode
+                # In graceful mode, handle different error types appropriately
+                error_str = str(e).lower()
+                if any(
+                    keyword in error_str
+                    for keyword in [
+                        "corrupted encoding",
+                        "binary data",
+                        "unsupported content type",
+                        "control characters",
+                        "printable characters",
+                    ]
+                ):
+                    # Binary/corrupted files should fail even in graceful mode
                     return ProcessingResult(
                         file_path=file_path,
                         success=False,
                         chunks_created=0,
                         processing_time=time.time() - start_time,
                         collection_name=collection_name,
-                        error="File contains corrupted encoding",
+                        error=str(e),
                     )
                 else:
                     # Other file system errors: return success with 0 chunks
@@ -248,7 +288,7 @@ class DocumentProcessor:
             collection_name=collection_name,
         )
 
-    def get_encoding_stats(self) -> dict[str, any]:
+    def get_encoding_stats(self) -> dict[str, Any]:
         """Get encoding detection statistics if available.
 
         Returns:
@@ -344,12 +384,41 @@ class DocumentProcessor:
                             },
                         )
                     else:
-                        # In graceful mode, log warning and return empty content
-                        logger.warning(
-                            f"Content validation failed for {file_path} "
-                            f"(graceful mode): {validation_result.error}"
+                        # In graceful mode, binary/corrupted files should fail
+                        # but other validation issues should return empty content
+                        error_str = (
+                            validation_result.error.lower()
+                            if validation_result.error
+                            else ""
                         )
-                        return ""
+                        if any(
+                            keyword in error_str
+                            for keyword in [
+                                "binary data",
+                                "control characters",
+                                "printable characters",
+                                "repeated bytes",
+                                "encoded binary data",
+                            ]
+                        ):
+                            # Binary content should fail even in graceful mode
+                            raise FileSystemError(
+                                f"Binary content detected: {validation_result.error}",
+                                error_code=1209,
+                                context={
+                                    "file_path": str(file_path),
+                                    "validation_error": validation_result.error,
+                                    "confidence": validation_result.confidence,
+                                },
+                            )
+                        else:
+                            # Other validation issues: log warning and return
+                            # empty content
+                            logger.warning(
+                                f"Content validation failed for {file_path} "
+                                f"(graceful mode): {validation_result.error}"
+                            )
+                            return ""
 
             # Handle whitespace-only content
             if not content.strip():
