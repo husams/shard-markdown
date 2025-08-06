@@ -91,6 +91,22 @@ class ProcessingConfig(BaseModel):
     include_path_metadata: bool = Field(
         default=True, description="Include file path information"
     )
+    # File handling configuration
+    max_file_size: int = Field(
+        default=10_000_000,  # 10MB default
+        ge=1,
+        description="Maximum file size in bytes",
+    )
+    skip_empty_files: bool = Field(
+        default=True, description="Skip empty or whitespace-only files"
+    )
+    strict_validation: bool = Field(
+        default=False, description="Use strict validation for file processing"
+    )
+    encoding: str = Field(default="utf-8", description="Default file encoding")
+    encoding_fallback: str = Field(
+        default="latin-1", description="Fallback encoding when default fails"
+    )
 
 
 class LoggingConfig(BaseModel):

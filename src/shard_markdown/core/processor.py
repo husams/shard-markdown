@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
+from ..config.settings import ProcessingConfig
 from ..utils.errors import FileSystemError, ProcessingError
 from ..utils.logging import get_logger
 from .chunking.engine import ChunkingEngine
@@ -20,13 +21,19 @@ logger = get_logger(__name__)
 class DocumentProcessor:
     """Main document processing coordinator."""
 
-    def __init__(self, chunking_config: ChunkingConfig) -> None:
+    def __init__(
+        self,
+        chunking_config: ChunkingConfig,
+        processing_config: ProcessingConfig | None = None,
+    ) -> None:
         """Initialize processor with configuration.
 
         Args:
             chunking_config: Configuration for chunking
+            processing_config: Configuration for file processing
         """
         self.chunking_config = chunking_config
+        self.config = processing_config or ProcessingConfig()
         self.parser = MarkdownParser()
         self.chunker = ChunkingEngine(chunking_config)
         self.metadata_extractor = MetadataExtractor()
@@ -50,6 +57,17 @@ class DocumentProcessor:
 
             # Read and validate file
             content = self._read_file(file_path)
+
+            # Handle empty content
+            if not content:
+                return ProcessingResult(
+                    file_path=file_path,
+                    success=True,
+                    chunks_created=0,
+                    processing_time=time.time() - start_time,
+                    collection_name=collection_name,
+                    error=None,
+                )
 
             # Parse markdown
             ast = self.parser.parse(content)
@@ -192,78 +210,99 @@ class DocumentProcessor:
             collection_name=collection_name,
         )
 
-    def _read_file(self, file_path: Path) -> str:
-        """Read file content with encoding detection.
+    def _read_file(self, file_path: Path, encoding: str | None = None) -> str:
+        """Read file with comprehensive error handling.
 
         Args:
             file_path: Path to file
+            encoding: File encoding to use
 
         Returns:
-            File content as string
+            File content as string (empty string for non-existent or empty files)
 
         Raises:
-            FileSystemError: If file cannot be read
+            ProcessingError: For directories or other processing issues
+            FileSystemError: For permission or encoding errors
         """
-        # Check file size (limit to 100MB)
         try:
+            # Check if path exists
+            if not file_path.exists():
+                logger.warning(f"File not found: {file_path}")
+                return ""  # Return empty string for non-existent files
+
+            # Check if it's a file (not directory)
+            if file_path.is_dir():
+                raise ProcessingError(
+                    f"Path is a directory, not a file: {file_path}",
+                    error_code=1301,
+                    context={"file_path": str(file_path)},
+                )
+
+            # Check file size
             file_size = file_path.stat().st_size
-            if file_size > 100 * 1024 * 1024:
-                raise FileSystemError(
-                    f"File too large: {file_path} ({file_size} bytes)",
+            if file_size == 0:
+                logger.info(f"Empty file: {file_path}")
+                return ""  # Return empty string for empty files
+
+            if file_size > self.config.max_file_size:
+                raise ProcessingError(
+                    f"File too large: {file_size} bytes "
+                    f"(max: {self.config.max_file_size})",
                     error_code=1202,
                     context={"file_path": str(file_path), "file_size": file_size},
                 )
-        except OSError as e:
-            raise FileSystemError(
-                f"Cannot access file: {file_path}",
-                error_code=1201,
-                context={"file_path": str(file_path)},
-                cause=e,
-            ) from e
 
-        # Try multiple encodings
-        encodings = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
+            # Determine encodings to try
+            encoding = encoding or self.config.encoding
+            encodings = [encoding]
+            if (
+                self.config.encoding_fallback
+                and self.config.encoding_fallback != encoding
+            ):
+                encodings.append(self.config.encoding_fallback)
 
-        for encoding in encodings:
-            try:
-                with open(file_path, encoding=encoding) as f:
-                    content = f.read()
-
-                # Validate content is not empty
-                if not content.strip():
-                    raise ProcessingError(
-                        f"File is empty or contains only whitespace: {file_path}",
-                        error_code=1301,
-                        context={"file_path": str(file_path)},
-                    )
-
-                return content
-
-            except UnicodeDecodeError:
-                if encoding == encodings[-1]:  # Last encoding failed
+            # Read file content
+            content = ""
+            for enc in encodings:
+                try:
+                    with open(file_path, encoding=enc) as f:
+                        content = f.read()
+                    break  # Successfully read
+                except PermissionError:
                     raise FileSystemError(
-                        f"Cannot decode file with any supported encoding: {file_path}",
-                        error_code=1203,
-                        context={
-                            "file_path": str(file_path),
-                            "encodings_tried": encodings,
-                        },
+                        f"Permission denied: {file_path}",
+                        error_code=1206,
+                        context={"file_path": str(file_path)},
                     ) from None
-                continue
-            except OSError as e:
-                raise FileSystemError(
-                    f"Error reading file: {file_path}",
-                    error_code=1206,
-                    context={"file_path": str(file_path)},
-                    cause=e,
-                ) from e
+                except UnicodeDecodeError:
+                    if enc == encodings[-1]:  # Last encoding failed
+                        raise FileSystemError(
+                            f"Cannot decode file with supported encodings: {file_path}",
+                            error_code=1203,
+                            context={
+                                "file_path": str(file_path),
+                                "encodings_tried": encodings,
+                            },
+                        ) from None
+                    continue
 
-        # This should never be reached, but mypy needs it
-        raise FileSystemError(
-            f"Failed to read file: {file_path}",
-            error_code=1299,
-            context={"file_path": str(file_path)},
-        )
+            # Handle whitespace-only content
+            if not content.strip():
+                if self.config.skip_empty_files:
+                    logger.info(f"Skipping whitespace-only file: {file_path}")
+                    return ""
+                # Otherwise process as normal (might want to preserve formatting)
+
+            return content
+
+        except Exception as e:
+            if isinstance(e, ProcessingError | FileSystemError):
+                raise
+            raise FileSystemError(
+                f"Unexpected error reading {file_path}: {e}",
+                error_code=1299,
+                context={"file_path": str(file_path)},
+            ) from e
 
     def _enhance_chunks(
         self,
