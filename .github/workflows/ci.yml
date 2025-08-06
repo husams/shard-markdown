@@ -197,7 +197,7 @@ jobs:
         run: uv python install ${{ env.PYTHON_VERSION }}
 
       - name: Install build dependencies
-        run: uv sync --dev
+        run: uv sync --dev --extra chromadb
 
       - name: Build package
         run: uv build
