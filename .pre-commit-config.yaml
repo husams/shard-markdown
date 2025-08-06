@@ -25,9 +25,9 @@ repos:
     rev: v5.0.0
     hooks:
       - id: trailing-whitespace
-        exclude: ^docs/
+        exclude: ^docs/|^\.github/|^\.claude/.+|^\.mcp\.json$
       - id: end-of-file-fixer
-        exclude: ^docs/|^\.github/|\.mcp\.json$
+        exclude: ^docs/|^\.github/|^\.claude/.+|^\.mcp\.json$
       - id: check-yaml
         exclude: ^docs/
       - id: check-toml
