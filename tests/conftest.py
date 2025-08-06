@@ -249,8 +249,8 @@ Thanks for reading!
 def chunking_config() -> ModelsChunkingConfig:
     """Create default chunking configuration for core models."""
     return ModelsChunkingConfig(
-        chunk_size=1000,
-        overlap=200,
+        chunk_size=300,
+        overlap=50,
         method="structure",
         respect_boundaries=True,
     )
@@ -265,8 +265,8 @@ def app_config() -> AppConfig:
             port=8000,
         ),
         chunking=SettingsChunkingConfig(
-            default_size=1000,
-            default_overlap=200,
+            default_size=300,
+            default_overlap=50,
             method="structure",
         ),
     )
@@ -421,8 +421,8 @@ chromadb:
   port: 8000
 
 chunking:
-  default_size: 1000
-  default_overlap: 200
+  default_size: 300
+  default_overlap: 50
   method: structure
 
 logging:

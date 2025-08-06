@@ -1,0 +1,614 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.10, pytest-8.4.1, pluggy-1.6.0
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/husam/workspace/tools/shard-markdown
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.9.0, asyncio-1.1.0, cov-6.2.1, mock-3.14.1, benchmark-5.1.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 301 items
+
+tests/e2e/test_cli_workflows.py FFF...FF.FF.F..F..F.FF                   [  7%]
+tests/integration/test_document_processing.py ..F.......FFFFFFF..        [ 13%]
+tests/performance/test_benchmarks.py ..F...F.F.FF                        [ 17%]
+tests/unit/chromadb/test_client.py .F......................              [ 25%]
+tests/unit/chromadb/test_collection_manager.py ......................... [ 33%]
+.....                                                                    [ 35%]
+tests/unit/chromadb/test_version_detector_simple.py ..FFFFF.F..          [ 39%]
+tests/unit/cli/test_main.py .......F...........F...                      [ 46%]
+tests/unit/cli/test_process_command.py F..FFF.FFFFF....FFFF.F.F          [ 54%]
+tests/unit/config/test_settings.py ....................F....             [ 63%]
+tests/unit/core/test_models.py ......................................    [ 75%]
+tests/unit/core/test_processor.py .FFFFFFF..FFF..FFFFF                   [ 82%]
+tests/unit/test_chunking.py ....F.F..                                    [ 85%]
+tests/unit/test_parser.py ...F..F                                        [ 87%]
+tests/unit/utils/test_errors.py .......................                  [ 95%]
+tests/unit/utils/test_logging.py FF.......F....                          [100%]
+
+=================================== FAILURES ===================================
+_______ TestBasicCLIWorkflows.test_complete_document_processing_workflow _______
+tests/e2e/test_cli_workflows.py:41: in test_complete_document_processing_workflow
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Process output: Processing 1 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+_____________ TestBasicCLIWorkflows.test_batch_processing_workflow _____________
+tests/e2e/test_cli_workflows.py:90: in test_batch_processing_workflow
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Batch process output: Processing 3 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+__________ TestBasicCLIWorkflows.test_recursive_directory_processing ___________
+tests/e2e/test_cli_workflows.py:114: in test_recursive_directory_processing
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Recursive process output: Usage: cli process [OPTIONS] INPUT_PATHS...
+Try 'cli process --help' for help.
+
+Error: No such option: --pattern
+
+___________ TestAdvancedCLIWorkflows.test_custom_chunking_strategies ___________
+tests/e2e/test_cli_workflows.py:241: in test_custom_chunking_strategies
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Chunking structure output: Processing 1 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+_________ TestAdvancedCLIWorkflows.test_metadata_preservation_workflow _________
+tests/e2e/test_cli_workflows.py:279: in test_metadata_preservation_workflow
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Metadata processing output: Usage: cli process [OPTIONS] INPUT_PATHS...
+Try 'cli process --help' for help.
+
+Error: No such option: --include-frontmatter
+
+_________ TestAdvancedCLIWorkflows.test_concurrent_processing_workflow _________
+tests/e2e/test_cli_workflows.py:336: in test_concurrent_processing_workflow
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Workers 1: 0.00s
+Concurrent 1 output: Processing 3 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+_______ TestAdvancedCLIWorkflows.test_large_document_processing_workflow _______
+tests/e2e/test_cli_workflows.py:375: in test_large_document_processing_workflow
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Large document output: Processing 1 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+____________ TestAdvancedCLIWorkflows.test_config_override_workflow ____________
+tests/e2e/test_cli_workflows.py:450: in test_config_override_workflow
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Config override output: Processing 1 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+_____________ TestAdvancedCLIWorkflows.test_file_pattern_filtering _____________
+tests/e2e/test_cli_workflows.py:549: in test_file_pattern_filtering
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Pattern filtering output: Usage: cli process [OPTIONS] INPUT_PATHS...
+Try 'cli process --help' for help.
+
+Error: No such option: --pattern
+
+____________ TestCLIErrorScenarios.test_permission_denied_scenarios ____________
+tests/e2e/test_cli_workflows.py:641: in test_permission_denied_scenarios
+    assert any(
+E   assert False
+E    +  where False = any(<generator object TestCLIErrorScenarios.test_permission_denied_scenarios.<locals>.<genexpr> at 0x105bf9970>)
+----------------------------- Captured stdout call -----------------------------
+Permission denied output: Usage: cli process [OPTIONS] INPUT_PATHS...
+Try 'cli process --help' for help.
+
+Error: Invalid value for 'INPUT_PATHS...': Path '/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpmxtmf9d1/restricted' is not readable.
+
+__________ TestCLIPerformance.test_large_batch_processing_performance __________
+tests/e2e/test_cli_workflows.py:749: in test_large_batch_processing_performance
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Performance test output: Processing 50 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+Processing time: 0.00 seconds
+__________ TestCLIPerformance.test_memory_usage_with_large_documents ___________
+tests/e2e/test_cli_workflows.py:780: in test_memory_usage_with_large_documents
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result SystemExit(1)>.exit_code
+----------------------------- Captured stdout call -----------------------------
+Large document output: Processing 1 markdown files...
+Error: Cannot connect to ChromaDB server: localhost:8000
+Aborted!
+
+______ TestDocumentProcessingIntegration.test_complex_markdown_structure _______
+tests/integration/test_document_processing.py:122: in test_complex_markdown_structure
+    assert result.chunks_created >= 3  # Should create multiple chunks
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert 1 >= 3
+E    +  where 1 = ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpypv37uxv/complex.md'), succe...3795051574707, collection_name='complex-test', error=None, timestamp=datetime.datetime(2025, 8, 5, 21, 12, 39, 124253)).chunks_created
+___________ TestDocumentProcessingErrors.test_file_permission_errors ___________
+src/shard_markdown/core/processor.py:229: in _read_file
+    with open(file_path, encoding=encoding) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   PermissionError: [Errno 13] Permission denied: '/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpciji0tq5/restricted.md'
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_document_processing.py:430: in test_file_permission_errors
+    result = processor.process_document(restricted_file, "test-permissions")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:254: in _read_file
+    raise FileSystemError(
+E   shard_markdown.utils.errors.FileSystemError: Error reading file: /var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpciji0tq5/restricted.md
+__________ TestDocumentProcessingErrors.test_corrupted_file_handling ___________
+tests/integration/test_document_processing.py:463: in test_corrupted_file_handling
+    assert result.success is False
+E   AssertionError: assert True is False
+E    +  where True = ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpd4ofroxq/corrupted.md'), suc...04925537109, collection_name='corrupted-test', error=None, timestamp=datetime.datetime(2025, 8, 5, 21, 12, 39, 161338)).success
+__________ TestDocumentProcessingErrors.test_very_large_file_handling __________
+tests/integration/test_document_processing.py:482: in test_very_large_file_handling
+    assert result.success is False
+E   AssertionError: assert True is False
+E    +  where True = ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpvnu72335/huge.md'), success=...5735626220703125, collection_name='huge-test', error=None, timestamp=datetime.datetime(2025, 8, 5, 21, 12, 39, 163686)).success
+_________ TestDocumentProcessingErrors.test_nonexistent_file_handling __________
+src/shard_markdown/core/processor.py:209: in _read_file
+    file_size = file_path.stat().st_size
+                ^^^^^^^^^^^^^^^^
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/pathlib.py:840: in stat
+    return os.stat(self, follow_symlinks=follow_symlinks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: 'does_not_exist.md'
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_document_processing.py:491: in test_nonexistent_file_handling
+    result = processor.process_document(nonexistent_file, "nonexistent-test")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:217: in _read_file
+    raise FileSystemError(
+E   shard_markdown.utils.errors.FileSystemError: Cannot access file: does_not_exist.md
+_________ TestDocumentProcessingErrors.test_directory_instead_of_file __________
+src/shard_markdown/core/processor.py:229: in _read_file
+    with open(file_path, encoding=encoding) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   IsADirectoryError: [Errno 21] Is a directory: '/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp1x37_qnj'
+
+The above exception was the direct cause of the following exception:
+tests/integration/test_document_processing.py:502: in test_directory_instead_of_file
+    result = processor.process_document(temp_dir, "directory-test")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:254: in _read_file
+    raise FileSystemError(
+E   shard_markdown.utils.errors.FileSystemError: Error reading file: /var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp1x37_qnj
+____________ TestDocumentProcessingErrors.test_empty_file_handling _____________
+tests/integration/test_document_processing.py:516: in test_empty_file_handling
+    result = processor.process_document(empty_file, "empty-test")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:234: in _read_file
+    raise ProcessingError(
+E   shard_markdown.utils.errors.ProcessingError: File is empty or contains only whitespace: /var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpn0kixpa2/empty.md
+____________ TestDocumentProcessingErrors.test_whitespace_only_file ____________
+tests/integration/test_document_processing.py:528: in test_whitespace_only_file
+    result = processor.process_document(whitespace_file, "whitespace-test")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:234: in _read_file
+    raise ProcessingError(
+E   shard_markdown.utils.errors.ProcessingError: File is empty or contains only whitespace: /var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmphsykvzv7/whitespace.md
+_____ TestProcessingBenchmarks.test_chunking_performance_by_size[500-100] ______
+tests/performance/test_benchmarks.py:152: in test_chunking_performance_by_size
+    result = processor.process_document(doc_path, f"chunk-size-{chunk_size}")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:62: in process_document
+    chunks = self.chunker.chunk_document(ast)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/chunking/engine.py:60: in chunk_document
+    self._validate_chunks(chunks)
+src/shard_markdown/core/chunking/engine.py:112: in _validate_chunks
+    raise ProcessingError(
+E   shard_markdown.utils.errors.ProcessingError: Generated chunks exceed size limits at positions: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 95, 97, 99]
+_____________ TestProcessingBenchmarks.test_memory_usage_benchmark _____________
+tests/performance/test_benchmarks.py:212: in test_memory_usage_benchmark
+    result = processor.process_document(large_file, "memory-test")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:62: in process_document
+    chunks = self.chunker.chunk_document(ast)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/chunking/engine.py:60: in chunk_document
+    self._validate_chunks(chunks)
+src/shard_markdown/core/chunking/engine.py:112: in _validate_chunks
+    raise ProcessingError(
+E   shard_markdown.utils.errors.ProcessingError: Generated chunks exceed size limits at positions: [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 63, 65, 67, 69, 71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 95, 97, 99, 101, 103, 105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 127, 129, 131, 133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157, 159, 161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 185, 187, 189, 191, 193, 195, 197, 199, 201, 203, 205, 207, 209, 211, 213, 215, 217, 219, 221, 223, 225, 227, 229, 231, 233, 235, 237, 239, 241, 243, 245, 247, 249, 251, 253, 255, 257, 259, 261, 263, 265, 267, 269, 271, 273, 275, 277, 279, 281, 283, 285, 287, 289, 291, 293, 295, 297, 299, 301, 303, 305, 307, 309, 311, 313, 315, 317, 319, 321, 323, 325, 327, 329, 331, 333, 335, 337, 339, 341, 343, 345, 347, 349, 351, 353, 355, 357, 359, 361, 363, 365, 367, 369, 371, 373, 375, 377, 379, 381, 383, 385, 387, 389, 391, 393, 395, 397, 399]
+_______ TestProcessingBenchmarks.test_concurrent_processing_scalability ________
+tests/performance/test_benchmarks.py:350: in test_concurrent_processing_scalability
+    assert efficiency_ratio > 0.5, (
+E   AssertionError: Efficiency degraded too much: 0.12
+E   assert 0.12409296422717954 > 0.5
+----------------------------- Captured stdout call -----------------------------
+
+Concurrent Processing Scalability Results:
+  Workers: 1
+    Processing time: 0.064s
+    Efficiency: 310.375 files/second/worker
+  Workers: 2
+    Processing time: 0.064s
+    Efficiency: 155.872 files/second/worker
+  Workers: 4
+    Processing time: 0.065s
+    Efficiency: 77.277 files/second/worker
+  Workers: 8
+    Processing time: 0.065s
+    Efficiency: 38.515 files/second/worker
+_______________ TestMemoryEfficiency.test_memory_leak_detection ________________
+tests/performance/test_benchmarks.py:473: in test_memory_leak_detection
+    result = processor.process_document(doc_path, f"leak-test-{i}")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:62: in process_document
+    chunks = self.chunker.chunk_document(ast)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/chunking/engine.py:44: in chunk_document
+    strategy_name = self.config.method
+                    ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'method'
+____________ TestMemoryEfficiency.test_large_file_memory_efficiency ____________
+tests/performance/test_benchmarks.py:522: in test_large_file_memory_efficiency
+    result = processor.process_document(large_file, "large-file-memory-test")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:62: in process_document
+    chunks = self.chunker.chunk_document(ast)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/chunking/engine.py:44: in chunk_document
+    strategy_name = self.config.method
+                    ^^^^^^^^^^^^^^^^^^
+E   AttributeError: 'dict' object has no attribute 'method'
+___________________ TestChromaDBClient.test_connect_success ____________________
+tests/unit/chromadb/test_client.py:74: in test_connect_success
+    result = client.connect()
+             ^^^^^^^^^^^^^^^^
+src/shard_markdown/chromadb/client.py:58: in connect
+    self._version_info = self.version_detector.detect_api_version()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/chromadb/version_detector.py:220: in detect_api_version
+    raise ChromaDBConnectionError(error_msg)
+E   shard_markdown.utils.errors.ChromaDBConnectionError: No compatible ChromaDB API endpoints found at http://localhost:8000. Tested v2, v1, and root APIs. Please check that ChromaDB is running and accessible.
+----------------------------- Captured stderr call -----------------------------
+[22:12:57] ERROR    No compatible ChromaDB API endpoints found at
+                    http://localhost:8000. Tested v2, v1, and root APIs. Please
+                    check that ChromaDB is running and accessible.
+------------------------------ Captured log call -------------------------------
+ERROR    shard_markdown.shard_markdown.chromadb.version_detector:version_detector.py:219 No compatible ChromaDB API endpoints found at http://localhost:8000. Tested v2, v1, and root APIs. Please check that ChromaDB is running and accessible.
+______________ TestBasicVersionDetector.test_make_request_success ______________
+tests/unit/chromadb/test_version_detector_simple.py:45: in test_make_request_success
+    mock_client.__enter__.return_value = mock_client
+    ^^^^^^^^^^^^^^^^^^^^^
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/unittest/mock.py:662: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __enter__
+______________ TestBasicVersionDetector.test_make_request_failure ______________
+tests/unit/chromadb/test_version_detector_simple.py:60: in test_make_request_failure
+    mock_client.__enter__.return_value = mock_client
+    ^^^^^^^^^^^^^^^^^^^^^
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/unittest/mock.py:662: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __enter__
+_________________ TestBasicVersionDetector.test_test_endpoint __________________
+tests/unit/chromadb/test_version_detector_simple.py:79: in test_test_endpoint
+    mock_client.__enter__.return_value = mock_client
+    ^^^^^^^^^^^^^^^^^^^^^
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/unittest/mock.py:662: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __enter__
+____________ TestBasicVersionDetector.test_get_version_info_success ____________
+tests/unit/chromadb/test_version_detector_simple.py:96: in test_get_version_info_success
+    mock_client.__enter__.return_value = mock_client
+    ^^^^^^^^^^^^^^^^^^^^^
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/unittest/mock.py:662: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __enter__
+_________ TestBasicVersionDetector.test_get_version_info_invalid_json __________
+tests/unit/chromadb/test_version_detector_simple.py:113: in test_get_version_info_invalid_json
+    mock_client.__enter__.return_value = mock_client
+    ^^^^^^^^^^^^^^^^^^^^^
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/unittest/mock.py:662: in __getattr__
+    raise AttributeError(name)
+E   AttributeError: __enter__
+________ TestBasicVersionDetector.test_detect_chromadb_version_function ________
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/unittest/mock.py:949: in assert_called_with
+    raise AssertionError(_error_message()) from cause
+E   AssertionError: expected call not found.
+E   Expected: ChromaDBVersionDetector(host='test-host', port=9000)
+E     Actual: ChromaDBVersionDetector(host='test-host', port=9000, timeout=30.0, max_retries=5)
+
+During handling of the above exception, another exception occurred:
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/unittest/mock.py:961: in assert_called_once_with
+    return self.assert_called_with(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: expected call not found.
+E   Expected: ChromaDBVersionDetector(host='test-host', port=9000)
+E     Actual: ChromaDBVersionDetector(host='test-host', port=9000, timeout=30.0, max_retries=5)
+E
+E   pytest introspection follows:
+E
+E   Kwargs:
+E   assert {'host': 'tes...imeout': 30.0} == {'host': 'tes... 'port': 9000}
+E
+E     Omitting 2 identical items, use -vv to show
+E     Left contains 2 more items:
+E     {'max_retries': 5, 'timeout': 30.0}
+E     Use -v to get more diff
+
+During handling of the above exception, another exception occurred:
+tests/unit/chromadb/test_version_detector_simple.py:154: in test_detect_chromadb_version_function
+    mock_detector_class.assert_called_once_with(host="test-host", port=9000)
+E   AssertionError: expected call not found.
+E   Expected: ChromaDBVersionDetector(host='test-host', port=9000)
+E     Actual: ChromaDBVersionDetector(host='test-host', port=9000, timeout=30.0, max_retries=5)
+E
+E   pytest introspection follows:
+E
+E   Kwargs:
+E   assert {'host': 'tes...imeout': 30.0} == {'host': 'tes... 'port': 9000}
+E
+E     Omitting 2 identical items, use -vv to show
+E     Left contains 2 more items:
+E     {'max_retries': 5, 'timeout': 30.0}
+E     Use -v to get more diff
+__________________ TestCLIMain.test_cli_config_loading_error ___________________
+tests/unit/cli/test_main.py:105: in test_cli_config_loading_error
+    assert "Error initializing" in result.output
+E   AssertionError: assert 'Error initializing' in ''
+E    +  where '' = <Result Exception('Config error')>.output
+_______________ TestCLIErrorHandling.test_logging_error_handling _______________
+tests/unit/cli/test_main.py:278: in test_logging_error_handling
+    assert "Error initializing shard-md" in result.output
+E   AssertionError: assert 'Error initializing shard-md' in ''
+E    +  where '' = <Result Exception('Logging error')>.output
+________________ TestProcessCommand.test_process_command_basic _________________
+tests/unit/cli/test_process_command.py:65: in test_process_command_basic
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+________ TestProcessCommand.test_process_command_custom_chunk_settings _________
+tests/unit/cli/test_process_command.py:120: in test_process_command_custom_chunk_settings
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+_______________ TestProcessCommand.test_process_command_dry_run ________________
+tests/unit/cli/test_process_command.py:141: in test_process_command_dry_run
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+______________ TestProcessCommand.test_process_command_recursive _______________
+tests/unit/cli/test_process_command.py:172: in test_process_command_recursive
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+__________ TestProcessCommand.test_process_command_create_collection ___________
+tests/unit/cli/test_process_command.py:232: in test_process_command_create_collection
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+__________ TestProcessCommand.test_process_command_failed_processing ___________
+tests/unit/cli/test_process_command.py:255: in test_process_command_failed_processing
+    assert "failed" in result.output.lower() or "error" in result.output.lower()
+E   assert ('failed' in '' or 'error' in '')
+E    +  where '' = <built-in method lower of str object at 0x102c1c8b0>()
+E    +    where <built-in method lower of str object at 0x102c1c8b0> = ''.lower
+E    +      where '' = <Result TypeError("'NoneType' object is not subscriptable")>.output
+E    +  and   '' = <built-in method lower of str object at 0x102c1c8b0>()
+E    +    where <built-in method lower of str object at 0x102c1c8b0> = ''.lower
+E    +      where '' = <Result TypeError("'NoneType' object is not subscriptable")>.output
+______ TestProcessCommand.test_process_command_chromadb_connection_error _______
+tests/unit/cli/test_process_command.py:274: in test_process_command_chromadb_connection_error
+    assert (
+E   assert ('connection' in '' or 'failed' in '')
+E    +  where '' = <built-in method lower of str object at 0x102c1c8b0>()
+E    +    where <built-in method lower of str object at 0x102c1c8b0> = ''.lower
+E    +      where '' = <Result TypeError("'NoneType' object is not subscriptable")>.output
+E    +  and   '' = <built-in method lower of str object at 0x102c1c8b0>()
+E    +    where <built-in method lower of str object at 0x102c1c8b0> = ''.lower
+E    +      where '' = <Result TypeError("'NoneType' object is not subscriptable")>.output
+___________ TestProcessCommand.test_process_command_validation_error ___________
+tests/unit/cli/test_process_command.py:296: in test_process_command_validation_error
+    assert "invalid" in result.output.lower()
+E   assert 'invalid' in ''
+E    +  where '' = <built-in method lower of str object at 0x102c1c8b0>()
+E    +    where <built-in method lower of str object at 0x102c1c8b0> = ''.lower
+E    +      where '' = <Result TypeError("'NoneType' object is not subscriptable")>.output
+___________ TestProcessCommand.test_process_command_progress_display ___________
+tests/unit/cli/test_process_command.py:321: in test_process_command_progress_display
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+_ TestProcessCommand.test_process_command_chunk_parameter_combinations[500-100] _
+tests/unit/cli/test_process_command.py:439: in test_process_command_chunk_parameter_combinations
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+_ TestProcessCommand.test_process_command_chunk_parameter_combinations[1000-200] _
+tests/unit/cli/test_process_command.py:439: in test_process_command_chunk_parameter_combinations
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+_ TestProcessCommand.test_process_command_chunk_parameter_combinations[1500-300] _
+tests/unit/cli/test_process_command.py:439: in test_process_command_chunk_parameter_combinations
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+_ TestProcessCommand.test_process_command_chunk_parameter_combinations[2000-400] _
+tests/unit/cli/test_process_command.py:439: in test_process_command_chunk_parameter_combinations
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+_ TestProcessCommandEdgeCases.test_process_command_with_special_characters_in_path _
+tests/unit/cli/test_process_command.py:495: in test_process_command_with_special_characters_in_path
+    assert result.exit_code == 0
+E   assert 1 == 0
+E    +  where 1 = <Result TypeError("'NoneType' object is not subscriptable")>.exit_code
+_____ TestProcessCommandEdgeCases.test_process_command_empty_markdown_file _____
+tests/unit/cli/test_process_command.py:531: in test_process_command_empty_markdown_file
+    assert "empty" in result.output.lower() or "failed" in result.output.lower()
+E   assert ('empty' in '' or 'failed' in '')
+E    +  where '' = <built-in method lower of str object at 0x102c1c8b0>()
+E    +    where <built-in method lower of str object at 0x102c1c8b0> = ''.lower
+E    +      where '' = <Result TypeError("'NoneType' object is not subscriptable")>.output
+E    +  and   '' = <built-in method lower of str object at 0x102c1c8b0>()
+E    +    where <built-in method lower of str object at 0x102c1c8b0> = ''.lower
+E    +      where '' = <Result TypeError("'NoneType' object is not subscriptable")>.output
+______________ TestConfigValidationScenarios.test_extreme_values _______________
+tests/unit/config/test_settings.py:324: in test_extreme_values
+    chunking_config = ChunkingConfig(default_size=100000)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   pydantic_core._pydantic_core.ValidationError: 1 validation error for ChunkingConfig
+E   default_size
+E     Input should be less than or equal to 10000 [type=less_than_equal, input_value=100000, input_type=int]
+E       For further information visit https://errors.pydantic.dev/2.9/v/less_than_equal
+_____________ TestDocumentProcessor.test_process_document_success ______________
+tests/unit/core/test_processor.py:75: in test_process_document_success
+    assert result.chunks_created == len(sample_chunks)
+E   AssertionError: assert 1 == 3
+E    +  where 1 = ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpowp8a8ix/sample.md'), succes...8641357422, collection_name='test-collection', error=None, timestamp=datetime.datetime(2025, 8, 5, 21, 12, 57, 638465)).chunks_created
+E    +  and   3 = len([DocumentChunk(id='chunk_1', content='# Header 1\n\nSome content here.', metadata={'chunk_index': 0, 'section': 'Heade...# Header 3\n\nFinal content.', metadata={'chunk_index': 2, 'section': 'Header 3'}, start_position=61, end_position=90)])
+__________ TestDocumentProcessor.test_process_document_file_not_found __________
+src/shard_markdown/core/processor.py:209: in _read_file
+    file_size = file_path.stat().st_size
+                ^^^^^^^^^^^^^^^^
+../../../.local/share/uv/python/cpython-3.12.10-macos-aarch64-none/lib/python3.12/pathlib.py:840: in stat
+    return os.stat(self, follow_symlinks=follow_symlinks)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   FileNotFoundError: [Errno 2] No such file or directory: 'nonexistent.md'
+
+The above exception was the direct cause of the following exception:
+tests/unit/core/test_processor.py:91: in test_process_document_file_not_found
+    result = processor.process_document(non_existent_file, "test-collection")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:217: in _read_file
+    raise FileSystemError(
+E   shard_markdown.utils.errors.FileSystemError: Cannot access file: nonexistent.md
+____________ TestDocumentProcessor.test_process_document_empty_file ____________
+tests/unit/core/test_processor.py:108: in test_process_document_empty_file
+    result = processor.process_document(empty_file, "test-collection")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:234: in _read_file
+    raise ProcessingError(
+E   shard_markdown.utils.errors.ProcessingError: File is empty or contains only whitespace: /var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpkii42cun/empty.md
+____________ TestDocumentProcessor.test_process_document_large_file ____________
+tests/unit/core/test_processor.py:123: in test_process_document_large_file
+    result = processor.process_document(large_file, "test-collection")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:52: in process_document
+    content = self._read_file(file_path)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/shard_markdown/core/processor.py:211: in _read_file
+    raise FileSystemError(
+E   shard_markdown.utils.errors.FileSystemError: File too large: /var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp5716jdfn/large.md (157286400 bytes)
+_______ TestDocumentProcessor.test_process_document_no_chunks_generated ________
+tests/unit/core/test_processor.py:145: in test_process_document_no_chunks_generated
+    assert result.success is False
+E   AssertionError: assert True is False
+E    +  where True = ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpl5qw5i_h/sample.md'), succes...6575927734, collection_name='test-collection', error=None, timestamp=datetime.datetime(2025, 8, 5, 21, 12, 57, 658672)).success
+__________ TestDocumentProcessor.test_process_document_parsing_error ___________
+tests/unit/core/test_processor.py:160: in test_process_document_parsing_error
+    assert result.success is False
+E   AssertionError: assert True is False
+E    +  where True = ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpe3ck2klb/sample.md'), succes...0368652344, collection_name='test-collection', error=None, timestamp=datetime.datetime(2025, 8, 5, 21, 12, 57, 661623)).success
+__________ TestDocumentProcessor.test_process_document_encoding_error __________
+tests/unit/core/test_processor.py:174: in test_process_document_encoding_error
+    assert result.success is False
+E   AssertionError: assert True is False
+E    +  where True = ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpx4_vjaga/invalid_encoding.md...6108398438, collection_name='test-collection', error=None, timestamp=datetime.datetime(2025, 8, 5, 21, 12, 57, 664253)).success
+__________________ TestDocumentProcessor.test_enhance_chunks ___________________
+tests/unit/core/test_processor.py:236: in test_enhance_chunks
+    assert "enhanced" in chunk.metadata
+E   AssertionError: assert 'enhanced' in {'chunk_index': 0, 'chunk_position_percent': 0.0, 'file_type': 'markdown', 'is_first_chunk': True, ...}
+E    +  where {'chunk_index': 0, 'chunk_position_percent': 0.0, 'file_type': 'markdown', 'is_first_chunk': True, ...} = DocumentChunk(id='afd26b6433f47e3c_0000', content='# Header 1\n\nSome content here.', metadata={'file_type': 'markdown...': 0.0, 'processed_at': '2025-08-05T21:12:57.667714', 'processor_version': '0.1.0'}, start_position=0, end_position=30).metadata
+_____________ TestDocumentProcessor.test_batch_processing_success ______________
+tests/unit/core/test_processor.py:266: in test_batch_processing_success
+    assert result.total_chunks == len(file_paths) * len(sample_chunks)
+E   AssertionError: assert 3 == (3 * 3)
+E    +  where 3 = BatchResult(results=[ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp068dk2c...iles=3, failed_files=0, total_chunks=3, total_processing_time=0.0014071464538574219, collection_name='test-collection').total_chunks
+E    +  and   3 = len([PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp068dk2cs/simple.md'), PosixPath('/var/folders/07/p__xl...0000gn/T/tmp068dk2cs/technical.md'), PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp068dk2cs/blog.md')])
+E    +  and   3 = len([DocumentChunk(id='chunk_1', content='# Header 1\n\nSome content here.', metadata={'chunk_index': 0, 'section': 'Heade...# Header 3\n\nFinal content.', metadata={'chunk_index': 2, 'section': 'Header 3'}, start_position=61, end_position=90)])
+_________ TestDocumentProcessor.test_batch_processing_partial_failure __________
+tests/unit/core/test_processor.py:298: in test_batch_processing_partial_failure
+    assert (
+E   AssertionError: assert 2 == 0
+E    +  where 2 = BatchResult(results=[ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpycubcom...iles=2, failed_files=0, total_chunks=2, total_processing_time=0.0008671283721923828, collection_name='test-collection').successful_files
+____ TestDocumentProcessor.test_batch_processing_different_worker_counts[1] ____
+tests/unit/core/test_processor.py:375: in test_batch_processing_different_worker_counts
+    assert result.total_chunks == len(file_paths) * len(sample_chunks)
+E   AssertionError: assert 3 == (3 * 3)
+E    +  where 3 = BatchResult(results=[ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp1n4y7ac...iles=3, failed_files=0, total_chunks=3, total_processing_time=0.0012028217315673828, collection_name='test-collection').total_chunks
+E    +  and   3 = len([PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp1n4y7ack/simple.md'), PosixPath('/var/folders/07/p__xl...0000gn/T/tmp1n4y7ack/technical.md'), PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp1n4y7ack/blog.md')])
+E    +  and   3 = len([DocumentChunk(id='chunk_1', content='# Header 1\n\nSome content here.', metadata={'chunk_index': 0, 'section': 'Heade...# Header 3\n\nFinal content.', metadata={'chunk_index': 2, 'section': 'Header 3'}, start_position=61, end_position=90)])
+____ TestDocumentProcessor.test_batch_processing_different_worker_counts[2] ____
+tests/unit/core/test_processor.py:375: in test_batch_processing_different_worker_counts
+    assert result.total_chunks == len(file_paths) * len(sample_chunks)
+E   AssertionError: assert 3 == (3 * 3)
+E    +  where 3 = BatchResult(results=[ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpfs9bh8_...iles=3, failed_files=0, total_chunks=3, total_processing_time=0.0012748241424560547, collection_name='test-collection').total_chunks
+E    +  and   3 = len([PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpfs9bh8_g/simple.md'), PosixPath('/var/folders/07/p__xl...0000gn/T/tmpfs9bh8_g/technical.md'), PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpfs9bh8_g/blog.md')])
+E    +  and   3 = len([DocumentChunk(id='chunk_1', content='# Header 1\n\nSome content here.', metadata={'chunk_index': 0, 'section': 'Heade...# Header 3\n\nFinal content.', metadata={'chunk_index': 2, 'section': 'Header 3'}, start_position=61, end_position=90)])
+____ TestDocumentProcessor.test_batch_processing_different_worker_counts[4] ____
+tests/unit/core/test_processor.py:375: in test_batch_processing_different_worker_counts
+    assert result.total_chunks == len(file_paths) * len(sample_chunks)
+E   AssertionError: assert 3 == (3 * 3)
+E    +  where 3 = BatchResult(results=[ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpo9080xd...files=3, failed_files=0, total_chunks=3, total_processing_time=0.001497030258178711, collection_name='test-collection').total_chunks
+E    +  and   3 = len([PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpo9080xdt/simple.md'), PosixPath('/var/folders/07/p__xl...0000gn/T/tmpo9080xdt/technical.md'), PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpo9080xdt/blog.md')])
+E    +  and   3 = len([DocumentChunk(id='chunk_1', content='# Header 1\n\nSome content here.', metadata={'chunk_index': 0, 'section': 'Heade...# Header 3\n\nFinal content.', metadata={'chunk_index': 2, 'section': 'Header 3'}, start_position=61, end_position=90)])
+____ TestDocumentProcessor.test_batch_processing_different_worker_counts[8] ____
+tests/unit/core/test_processor.py:375: in test_batch_processing_different_worker_counts
+    assert result.total_chunks == len(file_paths) * len(sample_chunks)
+E   AssertionError: assert 3 == (3 * 3)
+E    +  where 3 = BatchResult(results=[ProcessingResult(file_path=PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmphar0dqj..._files=3, failed_files=0, total_chunks=3, total_processing_time=0.00150299072265625, collection_name='test-collection').total_chunks
+E    +  and   3 = len([PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmphar0dqjz/simple.md'), PosixPath('/var/folders/07/p__xl...0000gn/T/tmphar0dqjz/technical.md'), PosixPath('/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmphar0dqjz/blog.md')])
+E    +  and   3 = len([DocumentChunk(id='chunk_1', content='# Header 1\n\nSome content here.', metadata={'chunk_index': 0, 'section': 'Heade...# Header 3\n\nFinal content.', metadata={'chunk_index': 2, 'section': '

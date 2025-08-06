@@ -16,6 +16,16 @@
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
+    },
+    "chroma": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--directory",
+        "/Users/husam/workspace/mcp-servers/chroma-mcp",
+        "chroma-mcp-server"
+      ],
+      "env": {}
     }
   }
 }

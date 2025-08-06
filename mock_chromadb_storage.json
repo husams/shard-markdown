@@ -300,5 +300,106 @@
         "id": "17c51e3f91ea6d3d_0001"
       }
     }
+  },
+  "test-collection": {
+    "metadata": {},
+    "documents": {
+      "a0209fca1ccc4471_0000": {
+        "document": "# Test Document\n\nTest content.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpihx_kw57.md",
+          "file_name": "tmpihx_kw57.md",
+          "file_stem": "tmpihx_kw57",
+          "file_suffix": ".md",
+          "file_size": 30,
+          "file_modified": "2025-08-06T16:23:24.334548",
+          "file_created": "2025-08-06T16:23:24.334548",
+          "file_hash": "c9fb08c90cd83081f71a481a6a72ff22e1372d272dbf8673a15d39213a7f1fd3",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpihx_kw57.md",
+          "title": "Test Document",
+          "total_elements": 2,
+          "header_count": 1,
+          "paragraph_count": 1,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1
+          ],
+          "max_header_level": 1,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            }
+          ],
+          "word_count": 4,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 1,
+          "processed_at": "2025-08-06T15:23:24.344041",
+          "processor_version": "0.1.0"
+        },
+        "id": "a0209fca1ccc4471_0000"
+      },
+      "981eba0bf6937a54_0000": {
+        "document": "# Test Document\n\nTest content.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpxbz8r2mh.md",
+          "file_name": "tmpxbz8r2mh.md",
+          "file_stem": "tmpxbz8r2mh",
+          "file_suffix": ".md",
+          "file_size": 30,
+          "file_modified": "2025-08-06T16:23:32.197578",
+          "file_created": "2025-08-06T16:23:32.197578",
+          "file_hash": "c9fb08c90cd83081f71a481a6a72ff22e1372d272dbf8673a15d39213a7f1fd3",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpxbz8r2mh.md",
+          "title": "Test Document",
+          "total_elements": 2,
+          "header_count": 1,
+          "paragraph_count": 1,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1
+          ],
+          "max_header_level": 1,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            }
+          ],
+          "word_count": 4,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 1,
+          "processed_at": "2025-08-06T15:23:32.205756",
+          "processor_version": "0.1.0"
+        },
+        "id": "981eba0bf6937a54_0000"
+      }
+    }
   }
 }

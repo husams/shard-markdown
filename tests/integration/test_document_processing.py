@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from shard_markdown.config.settings import ProcessingConfig
 from shard_markdown.core.models import ChunkingConfig
 from shard_markdown.core.processor import DocumentProcessor
 
@@ -464,25 +465,33 @@ class TestDocumentProcessingErrors:
         assert result.error is not None
 
     def test_very_large_file_handling(
-        self, processor: DocumentProcessor, temp_dir: Path
+        self, chunking_config: ChunkingConfig, temp_dir: Path
     ) -> None:
         """Test handling of extremely large files."""
-        # Create a file that's too large (simulate with size check)
+        # Create a processor with a very small file size limit for testing
+        config = ProcessingConfig(
+            chunking=chunking_config,
+            max_file_size=1000,  # 1KB limit
+        )
+        processor = DocumentProcessor(chunking_config, processing_config=config)
+
+        # Create a file that's too large (larger than 1KB)
         large_file = temp_dir / "huge.md"
-        large_file.write_text("# Small content")
+        # Create content larger than 1KB
+        large_content = "# Large File\n\n" + "This is a test line. " * 100
+        large_file.write_text(large_content)
 
-        # Mock the file size to appear very large
-        import os
-        from unittest.mock import patch
+        # Verify the file is actually larger than our limit
+        file_size = large_file.stat().st_size
+        assert file_size > 1000
 
-        with patch.object(os.path, "getsize", return_value=200 * 1024 * 1024):
-            result = processor.process_document(large_file, "huge-test")
+        result = processor.process_document(large_file, "huge-test")
 
-            # Should handle size limit gracefully
-            assert result.success is False
-            assert result.error is not None
-            error_msg = result.error.lower()
-            assert "too large" in error_msg or "size" in error_msg
+        # Should handle size limit gracefully
+        assert result.success is False
+        assert result.error is not None
+        error_msg = result.error.lower()
+        assert "too large" in error_msg or "size" in error_msg
 
     def test_nonexistent_file_handling(self, processor: DocumentProcessor) -> None:
         """Test handling of non-existent files."""

@@ -79,7 +79,7 @@ Report Location: .plans/validation-report-[timestamp].md
 
 EXECUTIVE SUMMARY
 - Critical Issues: [count]
-- High Priority: [count] 
+- High Priority: [count]
 - Medium Priority: [count]
 - Low Priority: [count]
 

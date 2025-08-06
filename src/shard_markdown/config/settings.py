@@ -6,6 +6,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
+from ..core.encoding import EncodingDetectorConfig
+from ..core.validation import ValidationConfig
+
 
 class ChunkingMethod(str, Enum):
     """Available chunking methods."""
@@ -106,6 +109,19 @@ class ProcessingConfig(BaseModel):
     encoding: str = Field(default="utf-8", description="Default file encoding")
     encoding_fallback: str = Field(
         default="latin-1", description="Fallback encoding when default fails"
+    )
+    # Advanced encoding detection
+    enable_encoding_detection: bool = Field(
+        default=True, description="Enable advanced encoding detection"
+    )
+    encoding_detection: EncodingDetectorConfig = Field(
+        default_factory=EncodingDetectorConfig,
+        description="Advanced encoding detection configuration",
+    )
+    # Content validation configuration
+    validation: ValidationConfig = Field(
+        default_factory=ValidationConfig,
+        description="Content validation configuration",
     )
 
 

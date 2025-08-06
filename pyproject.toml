@@ -36,6 +36,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "typing-extensions>=4.8.0",
     "ruff>=0.12.7",
+    "chardet>=5.2.0",
 ]
 
 [project.optional-dependencies]
@@ -131,7 +132,8 @@ module = [
     "pytest.*",
     "pytest_mock.*",
     "psutil.*",
-    "click.*"
+    "click.*",
+    "chardet.*",
 ]
 ignore_missing_imports = true
 
