@@ -324,6 +324,13 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Documentation
+
+- [Development Setup](docs/development-setup.md)
+- [CI/CD Configuration](docs/ci-cd-setup.md)
+- [Troubleshooting Guide](docs/troubleshooting.md)
+- [API Reference](docs/api-reference.rst)
+
 ## Support
 
 - **Documentation**: [Read the Docs](https://shard-markdown.readthedocs.io)

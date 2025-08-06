@@ -35,7 +35,7 @@ on:
     - cron: '0 6 * * *'
 
 env:
-  PYTHON_VERSION_DEFAULT: '3.11'
+  PYTHON_VERSION_DEFAULT: '3.12'
 
 jobs:
   # Code Quality and Linting
@@ -63,22 +63,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -e ".[dev]"
+          uv pip install -e ".[chromadb]"
+          uv pip install --group dev
 
-      - name: Code formatting check
+      - name: Code formatting and linting
         run: |
-          black --check --diff src/ tests/
-          echo "✅ Code formatting verified"
-
-      - name: Import sorting check
-        run: |
-          isort --check-only --diff src/ tests/
-          echo "✅ Import sorting verified"
-
-      - name: Linting
-        run: |
-          flake8 src/ tests/ --statistics
-          echo "✅ Linting completed"
+          ruff format --check src/ tests/
+          ruff check src/ tests/
+          echo "✅ Code formatting and linting verified"
 
       - name: Type checking
         run: |
@@ -91,14 +83,8 @@ jobs:
     needs: code-quality
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.12']
         os: [ubuntu-latest, windows-latest, macos-latest]
-        exclude:
-          # Reduce matrix for faster CI
-          - os: windows-latest
-            python-version: '3.8'
-          - os: macos-latest
-            python-version: '3.8'
 
     runs-on: ${{ matrix.os }}
 
@@ -120,7 +106,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -e ".[dev]"
+          uv pip install -e ".[chromadb]"
+          uv pip install --group dev
 
       - name: Run unit tests
         run: |
@@ -177,11 +164,23 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -e ".[dev,chromadb]"
+          uv pip install -e ".[chromadb]"
+          uv pip install --group dev
 
       - name: Wait for ChromaDB to be ready
         run: |
-          timeout 30 bash -c 'until curl -f http://localhost:8000/api/v1/heartbeat; do sleep 1; done'
+          echo "Waiting for ChromaDB to be ready..."
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1; then
+              echo "ChromaDB is ready!"
+              break
+            fi
+            echo "Attempt $i/30: ChromaDB not ready, waiting..."
+            sleep 2
+          done
+          
+          # Final check
+          curl -f http://localhost:8000/api/v1/heartbeat || exit 1
 
       - name: Run integration tests
         env:
@@ -220,7 +219,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -e ".[dev]"
+          uv pip install -e ".[chromadb]"
+          uv pip install --group dev
 
       - name: Create test project structure
         run: |
@@ -267,7 +267,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -e ".[dev]"
+          uv pip install -e ".[chromadb]"
+          uv pip install --group dev
 
       - name: Run performance tests
         run: |
@@ -305,7 +306,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -e ".[dev]"
+          uv pip install -e ".[chromadb]"
+          uv pip install --group dev
           uv pip install safety bandit
 
       - name: Run safety check for vulnerabilities
@@ -344,7 +346,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install uv
-          uv pip install -e ".[dev]"
+          uv pip install -e ".[chromadb]"
+          uv pip install --group dev
           uv pip install sphinx sphinx-rtd-theme
 
       - name: Check documentation links
@@ -487,23 +490,14 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
 
-  - repo: https://github.com/psf/black
-    rev: 23.9.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.0
     hooks:
-      - id: black
-        language_version: python3.11
-
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-        args: ["--profile", "black"]
-
-  - repo: https://github.com/pycqa/flake8
-    rev: 6.1.0
-    hooks:
-      - id: flake8
-        additional_dependencies: [flake8-docstrings]
+      # Run the linter
+      - id: ruff
+        args: [--fix]
+      # Run the formatter
+      - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.6.1
@@ -562,7 +556,8 @@ pip install uv
 
 # Install development dependencies
 echo "📚 Installing dependencies..."
-uv pip install -e ".[dev]"
+uv pip install -e ".[chromadb]"
+uv pip install --group dev
 
 # Install pre-commit hooks
 echo "🔗 Setting up pre-commit hooks..."
@@ -690,21 +685,14 @@ log_info "Starting test execution..."
 
 # Code quality checks
 log_info "Running code quality checks..."
-if black --check src/ tests/; then
+if ruff format --check src/ tests/; then
     log_success "Code formatting check passed"
 else
     log_error "Code formatting check failed"
     exit 1
 fi
 
-if isort --check-only src/ tests/; then
-    log_success "Import sorting check passed"
-else
-    log_error "Import sorting check failed"
-    exit 1
-fi
-
-if flake8 src/ tests/; then
+if ruff check src/ tests/; then
     log_success "Linting passed"
 else
     log_error "Linting failed"
