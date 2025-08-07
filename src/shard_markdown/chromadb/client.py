@@ -253,8 +253,8 @@ class ChromaDBClient:
             # Validate data before insertion
             self._validate_insertion_data(ids, documents, metadatas)
 
-            # Insert into collection
-            collection.add(ids=ids, documents=documents, metadatas=metadatas)
+            # Insert into collection - cast metadatas for ChromaDB compatibility
+            collection.add(ids=ids, documents=documents, metadatas=cast(Any, metadatas))
 
             processing_time = time.time() - start_time
 

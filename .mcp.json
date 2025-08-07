@@ -17,16 +17,15 @@
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
     },
-    "uvx": {
+    "chroma": {
       "type": "stdio",
-      "command": "--directory",
+      "command": "uvx",
       "args": [
-        "/Users/husam/workspace/mcp-servers/chroma-mcp",
         "chroma-mcp",
         "--client-type",
         "persistent",
         "--data-dir",
-        "/Users/husam/workspace/tools/shard-markdown/.data"
+        "./.data"
       ],
       "env": {}
     }

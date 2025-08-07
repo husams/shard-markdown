@@ -107,6 +107,7 @@ class DocumentProcessor:
             RuntimeError,
             ProcessingError,
             FileSystemError,
+            Exception,  # Catch all other exceptions
         ) as e:
             processing_time = time.time() - start_time
             error_msg = str(e)
