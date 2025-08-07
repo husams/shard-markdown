@@ -1,7 +1,7 @@
 """Simple tests for ChromaDBVersionDetector to get basic coverage."""
 
 import time
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import httpx
 
@@ -34,10 +34,10 @@ class TestBasicVersionDetector:
         assert detector.port == 9000
         assert detector.base_url == "http://custom-host:9000"
 
-    @patch("httpx.Client")
+    @patch("shard_markdown.chromadb.version_detector.httpx.Client")
     def test_make_request_success(self, mock_client_class):
         """Test successful HTTP request."""
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
         mock_response.text = "OK"
@@ -52,10 +52,10 @@ class TestBasicVersionDetector:
         assert success is True
         assert content == "OK"
 
-    @patch("httpx.Client")
+    @patch("shard_markdown.chromadb.version_detector.httpx.Client")
     def test_make_request_failure(self, mock_client_class):
         """Test HTTP request failure."""
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_client.get.side_effect = httpx.RequestError("Connection failed")
         mock_client.__enter__.return_value = mock_client
         mock_client.__exit__.return_value = None
@@ -69,10 +69,10 @@ class TestBasicVersionDetector:
         assert success is False
         assert content is None
 
-    @patch("httpx.Client")
+    @patch("shard_markdown.chromadb.version_detector.httpx.Client")
     def test_test_endpoint(self, mock_client_class):
         """Test endpoint testing."""
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
         mock_client.get.return_value = mock_response
@@ -85,10 +85,10 @@ class TestBasicVersionDetector:
 
         assert result is True
 
-    @patch("httpx.Client")
+    @patch("shard_markdown.chromadb.version_detector.httpx.Client")
     def test_get_version_info_success(self, mock_client_class):
         """Test successful version info retrieval."""
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
         mock_response.text = '{"version": "1.0.15"}'
@@ -102,10 +102,10 @@ class TestBasicVersionDetector:
 
         assert version == "1.0.15"
 
-    @patch("httpx.Client")
+    @patch("shard_markdown.chromadb.version_detector.httpx.Client")
     def test_get_version_info_invalid_json(self, mock_client_class):
         """Test version info with invalid JSON response."""
-        mock_client = Mock()
+        mock_client = MagicMock()
         mock_response = Mock()
         mock_response.raise_for_status.return_value = None
         mock_response.text = "invalid json"
@@ -139,7 +139,7 @@ class TestBasicVersionDetector:
     @patch("shard_markdown.chromadb.version_detector.ChromaDBVersionDetector")
     def test_detect_chromadb_version_function(self, mock_detector_class):
         """Test the detect_chromadb_version convenience function."""
-        mock_detector = Mock()
+        mock_detector = MagicMock()
         mock_info = APIVersionInfo(
             version="v2",
             heartbeat_endpoint="http://localhost:8000/api/v2/heartbeat",
@@ -151,7 +151,11 @@ class TestBasicVersionDetector:
 
         result = detect_chromadb_version(host="test-host", port=9000)
 
-        mock_detector_class.assert_called_once_with(host="test-host", port=9000)
+        # Check that the detector was created with the right parameters
+        # The function has default timeout and max_retries parameters
+        mock_detector_class.assert_called_once_with(
+            host="test-host", port=9000, timeout=30.0, max_retries=5
+        )
         mock_detector.detect_api_version.assert_called_once()
         assert result == mock_info
 

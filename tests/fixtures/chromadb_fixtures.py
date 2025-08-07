@@ -11,6 +11,7 @@ import pytest
 from chromadb.api import ClientAPI
 
 from shard_markdown.chromadb.client import ChromaDBClient
+from shard_markdown.chromadb.mock_client import MockChromaDBClient
 from shard_markdown.config.settings import ChromaDBConfig
 from shard_markdown.utils.logging import get_logger
 
@@ -44,7 +45,8 @@ def retry_on_collection_error(
                 try:
                     return func(*args, **kwargs)
                 except (
-                    chromadb.errors.InvalidCollectionException,
+                    chromadb.errors.InvalidArgumentError,
+                    chromadb.errors.NotFoundError,
                     ValueError,
                     KeyError,
                 ) as e:
@@ -257,8 +259,6 @@ def chromadb_test_client(
         logger.warning(f"Failed to connect to ChromaDB, using mock: {e}")
 
     # Return mock client if real connection fails
-    from shard_markdown.chromadb.mock_client import MockChromaDBClient
-
     return MockChromaDBClient()
 
 
