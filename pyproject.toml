@@ -182,6 +182,11 @@ exclude_lines = [
     "@(abc\\.)?abstractmethod",
 ]
 
+[tool.bandit]
+# Security scanning configuration
+exclude_dirs = ["tests", "venv", ".venv", "build", "dist", "scripts"]
+# Skip subprocess-related security warnings for development tooling scripts
+skips = ["B404", "B603"]
 
 [dependency-groups]
 dev = [

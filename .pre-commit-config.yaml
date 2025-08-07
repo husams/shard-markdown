@@ -46,8 +46,8 @@ repos:
     hooks:
       - id: bandit
         language_version: python3.12
-        args: [-r, src/]
-        exclude: tests/
+        args: [-c, pyproject.toml]
+        exclude: tests/|scripts/
 
   # YAML formatting
   - repo: https://github.com/pre-commit/mirrors-prettier
