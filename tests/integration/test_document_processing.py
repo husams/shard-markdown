@@ -515,8 +515,10 @@ class TestDocumentProcessingErrors:
 
         result = processor.process_document(empty_file, "empty-test")
 
-        assert result.success is False
-        assert result.error and "empty" in result.error.lower()
+        # Empty files are now handled gracefully
+        assert result.success is True
+        assert result.chunks_created == 0
+        assert result.error is None
 
     def test_whitespace_only_file(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -527,13 +529,10 @@ class TestDocumentProcessingErrors:
 
         result = processor.process_document(whitespace_file, "whitespace-test")
 
-        # Should either succeed with no chunks or fail gracefully
-        if result.success:
-            assert result.chunks_created == 0
-        else:
-            assert result.error is not None
-            error_msg = result.error.lower()
-            assert "empty" in error_msg or "no content" in error_msg
+        # Whitespace-only files are now handled gracefully
+        assert result.success is True
+        assert result.chunks_created == 0
+        assert result.error is None
 
 
 class TestDocumentProcessingMetadata:

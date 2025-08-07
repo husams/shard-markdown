@@ -51,6 +51,17 @@ class DocumentProcessor:
             # Read and validate file
             content = self._read_file(file_path)
 
+            # Handle empty content gracefully
+            if not content:
+                logger.info("No content to process for %s", file_path)
+                return ProcessingResult(
+                    file_path=file_path,
+                    success=True,  # Consider empty files as successfully processed
+                    chunks_created=0,
+                    processing_time=time.time() - start_time,
+                    collection_name=collection_name,
+                )
+
             # Parse markdown
             ast = self.parser.parse(content)
 
@@ -90,7 +101,13 @@ class DocumentProcessor:
                 collection_name=collection_name,
             )
 
-        except (OSError, ValueError, RuntimeError) as e:
+        except (
+            OSError,
+            ValueError,
+            RuntimeError,
+            ProcessingError,
+            FileSystemError,
+        ) as e:
             processing_time = time.time() - start_time
             error_msg = str(e)
 
@@ -156,7 +173,13 @@ class DocumentProcessor:
                 path = future_to_path[future]
                 try:
                     results.append(future.result())
-                except (OSError, ValueError, RuntimeError) as e:
+                except (
+                    OSError,
+                    ValueError,
+                    RuntimeError,
+                    ProcessingError,
+                    FileSystemError,
+                ) as e:
                     logger.error("Unexpected error processing %s: %s", path, e)
                     results.append(
                         ProcessingResult(
@@ -199,20 +222,45 @@ class DocumentProcessor:
             file_path: Path to file
 
         Returns:
-            File content as string
+            File content as string (empty string for non-existent or empty files)
 
         Raises:
-            FileSystemError: If file cannot be read
+            FileSystemError: If path is a directory or file is too large
+            ProcessingError: For other critical errors
         """
+        # Check if path exists
+        if not file_path.exists():
+            logger.warning(f"File not found: {file_path}")
+            # Return empty string for non-existent files
+            # This provides graceful handling for missing files
+            return ""
+
+        # Check if it's a directory
+        if file_path.is_dir():
+            raise ProcessingError(
+                f"Path is a directory, not a file: {file_path}",
+                error_code=1204,
+                context={"file_path": str(file_path)},
+            )
+
         # Check file size (limit to 100MB)
         try:
             file_size = file_path.stat().st_size
+
+            # Handle empty files gracefully
+            if file_size == 0:
+                logger.info(f"Empty file: {file_path}")
+                return ""
+
             if file_size > 100 * 1024 * 1024:
                 raise FileSystemError(
                     f"File too large: {file_path} ({file_size} bytes)",
                     error_code=1202,
                     context={"file_path": str(file_path), "file_size": file_size},
                 )
+        except PermissionError:
+            logger.warning(f"Permission denied accessing file: {file_path}")
+            return ""  # Return empty string for permission errors
         except OSError as e:
             raise FileSystemError(
                 f"Cannot access file: {file_path}",
@@ -229,13 +277,10 @@ class DocumentProcessor:
                 with open(file_path, encoding=encoding) as f:
                     content = f.read()
 
-                # Validate content is not empty
+                # Handle files with only whitespace gracefully
                 if not content.strip():
-                    raise ProcessingError(
-                        f"File is empty or contains only whitespace: {file_path}",
-                        error_code=1301,
-                        context={"file_path": str(file_path)},
-                    )
+                    logger.info(f"File contains only whitespace: {file_path}")
+                    return ""  # Return empty string instead of raising error
 
                 return content
 
@@ -250,6 +295,9 @@ class DocumentProcessor:
                         },
                     ) from None
                 continue
+            except PermissionError:
+                logger.warning(f"Permission denied reading file: {file_path}")
+                return ""  # Return empty string for permission errors
             except OSError as e:
                 raise FileSystemError(
                     f"Error reading file: {file_path}",
