@@ -15,9 +15,8 @@ from shard_markdown.core.encoding import (
     EncodingDetectorConfig,
 )
 from shard_markdown.utils.errors import (
-    BinaryContentError,
-    CharsetDetectionError,
-    EncodingError,
+    ProcessingError,
+    ShardMarkdownError,
 )
 
 
@@ -173,7 +172,7 @@ class TestEncodingDetector:
         test_file = temp_dir / "binary_test.bin"
         test_file.write_bytes(binary_data)
 
-        with pytest.raises(BinaryContentError):
+        with pytest.raises(ProcessingError):
             detector.detect_encoding(test_file)
 
     def test_empty_file_handling(
@@ -258,7 +257,7 @@ class TestEncodingDetector:
             assert result.encoding is not None
             if result.confidence < detector.config.confidence_threshold:
                 assert result.encoding == detector.config.fallback_encoding
-        except (EncodingError, CharsetDetectionError, BinaryContentError):
+        except (ProcessingError, ShardMarkdownError):
             # These exceptions are acceptable for ambiguous content
             pass
 
@@ -290,7 +289,7 @@ class TestEncodingDetector:
             result = detector.detect_encoding(test_file)
             # If successful, should have some encoding
             assert result.encoding is not None
-        except (EncodingError, CharsetDetectionError, BinaryContentError):
+        except (ProcessingError, ShardMarkdownError):
             # These errors are acceptable for corrupted content
             pass
 

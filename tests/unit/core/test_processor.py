@@ -7,6 +7,7 @@ edge cases, and integration with ChromaDB.
 
 import tempfile
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -109,7 +110,7 @@ More content here.
 
     @patch("shard_markdown.core.processor.DocumentProcessor._chunk_document")
     def test_chunking_error_handling(
-        self, mock_chunk, processor: DocumentProcessor
+        self, mock_chunk: Any, processor: DocumentProcessor
     ) -> None:
         """Test error handling when chunking fails."""
         mock_chunk.side_effect = ProcessingError("Chunking failed", error_code=1300)

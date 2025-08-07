@@ -1,6 +1,7 @@
 """Integration tests for content validation in document processor."""
 
 from pathlib import Path
+from typing import Any
 
 from shard_markdown.config.settings import ProcessingConfig
 from shard_markdown.core.models import ChunkingConfig
@@ -56,7 +57,7 @@ class TestProcessorValidationIntegration:
         result = processor.process_document(bad_file, "test-collection")
         # Should fail in strict mode
         assert result.success is False
-        assert "Content validation failed" in result.error
+        assert result.error is not None and "Content validation failed" in result.error
         assert result.chunks_created == 0
 
     def test_validation_graceful_mode_warning(self, temp_dir: Path) -> None:
@@ -83,10 +84,10 @@ class TestProcessorValidationIntegration:
         result = processor.process_document(bad_file, "test-collection")
         # Should fail with empty content (0 chunks) in graceful mode
         assert result.success is False
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
         assert result.chunks_created == 0
 
-    def test_validation_warning_logging(self, temp_dir: Path, caplog) -> None:
+    def test_validation_warning_logging(self, temp_dir: Path, caplog: Any) -> None:
         """Test that validation warnings are logged properly."""
         # Create config that will generate warnings with normal content
         validation_config = ValidationConfig(

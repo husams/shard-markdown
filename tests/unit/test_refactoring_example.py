@@ -5,6 +5,7 @@ more maintainable using the test utilities.
 """
 
 from pathlib import Path
+from typing import Any
 
 from shard_markdown.config.settings import ProcessingConfig
 from shard_markdown.core.models import ChunkingConfig
@@ -241,7 +242,9 @@ More content in the second section.
         assert result.chunks_created > 0
         assert result.processing_time >= 0
 
-    def test_new_style_with_utilities(self, temp_dir: Path, chunking_config) -> None:
+    def test_new_style_with_utilities(
+        self, temp_dir: Path, chunking_config: Any
+    ) -> None:
         """Example of new-style test using utilities (after refactoring)."""
         # Clean configuration creation using utility
         config = MockHelper.create_mock_processing_config()

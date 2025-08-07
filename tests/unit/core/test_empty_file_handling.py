@@ -44,8 +44,11 @@ class TestEmptyFileHandling:
         result = validator.validate_content("", Path("test.md"))
 
         assert result.is_valid is False
-        assert "empty" in result.error.lower()
-        assert "no processable content" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
+        assert (
+            result.error is not None
+            and "no processable content" in result.error.lower()
+        )
 
     def test_whitespace_only_content_validation_fails(
         self, validator: ContentValidator
@@ -65,8 +68,11 @@ class TestEmptyFileHandling:
             assert result.is_valid is False, (
                 f"Should fail for: {repr(whitespace_content)}"
             )
-            assert "empty" in result.error.lower()
-            assert "no processable content" in result.error.lower()
+            assert result.error is not None and "empty" in result.error.lower()
+            assert (
+                result.error is not None
+                and "no processable content" in result.error.lower()
+            )
 
     def test_completely_empty_file_processing_fails(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -79,8 +85,11 @@ class TestEmptyFileHandling:
 
         assert result.success is False
         assert result.chunks_created == 0
-        assert "empty" in result.error.lower()
-        assert "no processable content" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
+        assert (
+            result.error is not None
+            and "no processable content" in result.error.lower()
+        )
 
     def test_whitespace_only_file_processing_fails(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -103,7 +112,7 @@ class TestEmptyFileHandling:
 
             assert result.success is False, f"Should fail for {case_name}"
             assert result.chunks_created == 0
-            assert "empty" in result.error.lower()
+            assert result.error is not None and "empty" in result.error.lower()
 
     def test_empty_file_strict_mode_fails(
         self, strict_processor: DocumentProcessor, temp_dir: Path
@@ -116,7 +125,7 @@ class TestEmptyFileHandling:
 
         assert result.success is False
         assert result.chunks_created == 0
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_empty_file_graceful_mode_fails(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -130,7 +139,7 @@ class TestEmptyFileHandling:
         # Empty files should fail consistently in both modes
         assert result.success is False
         assert result.chunks_created == 0
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_zero_byte_file_processing_fails(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -145,7 +154,7 @@ class TestEmptyFileHandling:
 
         assert result.success is False
         assert result.chunks_created == 0
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_file_with_only_bom_fails(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -160,7 +169,7 @@ class TestEmptyFileHandling:
         assert result.success is False
         assert result.chunks_created == 0
         # After decoding BOM, content should be empty
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_file_with_bom_and_whitespace_fails(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -174,7 +183,7 @@ class TestEmptyFileHandling:
 
         assert result.success is False
         assert result.chunks_created == 0
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_minimal_valid_content_succeeds(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -259,7 +268,7 @@ This document has valid content but trailing whitespace.
         # Should still fail because empty content is handled at processor level
         assert result.success is False
         assert result.chunks_created == 0
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_empty_content_error_consistency(self, validator: ContentValidator) -> None:
         """Test that empty content error messages are consistent."""

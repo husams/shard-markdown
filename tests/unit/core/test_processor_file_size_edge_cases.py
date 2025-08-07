@@ -126,7 +126,7 @@ class TestFileSizeEdgeCases:
         # Should fail due to size limit
         assert result.success is False
         assert result.error is not None
-        assert "too large" in result.error.lower()
+        assert result.error is not None and "too large" in result.error.lower()
         assert result.chunks_created == 0
 
     def test_empty_files(self, chunking_config: ChunkingConfig, temp_dir: Path) -> None:
@@ -144,7 +144,7 @@ class TestFileSizeEdgeCases:
         # Should fail as empty
         assert result.success is False
         assert result.error is not None
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_very_large_files_memory_stress(
         self, chunking_config: ChunkingConfig, temp_dir: Path
@@ -246,8 +246,10 @@ This concludes section {section_num} of our large document.
         # Should fail due to size limit, not encoding
         assert result.success is False
         assert result.error is not None
-        assert "too large" in result.error.lower()
-        assert "corrupted" not in result.error.lower()  # Size check happens first
+        assert result.error is not None and "too large" in result.error.lower()
+        assert (
+            result.error is not None and "corrupted" not in result.error.lower()
+        )  # Size check happens first
 
     @pytest.mark.parametrize("size_limit", [10, 50, 100, 500, 1000])
     def test_various_size_limits(
@@ -279,7 +281,7 @@ This concludes section {section_num} of our large document.
             # Should fail if over limit
             assert result.success is False
             assert result.error is not None
-            assert "too large" in result.error.lower()
+            assert result.error is not None and "too large" in result.error.lower()
 
     def test_unicode_size_calculation(
         self, chunking_config: ChunkingConfig, temp_dir: Path
@@ -310,7 +312,7 @@ This concludes section {section_num} of our large document.
             assert result.success is True
         else:
             assert result.success is False
-            assert "too large" in result.error.lower()
+            assert result.error is not None and "too large" in result.error.lower()
 
     def test_concurrent_large_file_processing(
         self, chunking_config: ChunkingConfig, temp_dir: Path
@@ -369,8 +371,8 @@ This concludes section {section_num} of our large document.
         # Should fail due to empty content, not size
         assert result.success is False
         assert result.error is not None
-        assert "empty" in result.error.lower()
-        assert "too large" not in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
+        assert result.error is not None and "too large" not in result.error.lower()
 
     def test_size_check_performance(
         self, chunking_config: ChunkingConfig, temp_dir: Path
@@ -404,7 +406,7 @@ This concludes section {section_num} of our large document.
 
         # Should fail quickly due to size check
         assert result.success is False
-        assert "too large" in result.error.lower()
+        assert result.error is not None and "too large" in result.error.lower()
         # Should be very fast since it only checks file size, doesn't read content
         assert processing_time < 1.0  # Should complete in under 1 second
 

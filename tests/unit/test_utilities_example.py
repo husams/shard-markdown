@@ -5,6 +5,7 @@ to write cleaner, more maintainable tests.
 """
 
 from pathlib import Path
+from typing import Any
 
 from tests.utils.helpers import (
     AssertionHelper,
@@ -193,7 +194,7 @@ class TestUtilitiesIntegration:
     """Integration tests for utilities with existing fixtures."""
 
     def test_utilities_with_existing_fixtures(
-        self, temp_dir: Path, chunking_config, sample_chunks
+        self, temp_dir: Path, chunking_config: Any, sample_chunks: Any
     ) -> None:
         """Test that utilities work well with existing fixtures."""
         # Use existing fixtures alongside new utilities
@@ -212,7 +213,7 @@ class TestUtilitiesIntegration:
         assert len(sample_chunks) >= 1
 
     def test_backward_compatibility(
-        self, sample_markdown_file: Path, mock_processing_result
+        self, sample_markdown_file: Path, mock_processing_result: Any
     ) -> None:
         """Test that new utilities don't break existing test patterns."""
         # Existing fixture usage still works

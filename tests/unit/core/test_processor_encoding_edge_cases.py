@@ -34,7 +34,7 @@ More content here.
             f.write(content)
             f.flush()
 
-            result = processor.process_file(Path(f.name))
+            result = processor.process_document(Path(f.name))
             assert result.success
             assert result.chunks_created > 0
 
@@ -55,7 +55,7 @@ More content here.
             f.flush()
 
             # This should still work due to encoding detection
-            result = processor.process_file(Path(f.name))
+            result = processor.process_document(Path(f.name))
             assert result.success or "encoding" in (result.error or "").lower()
 
     def test_mixed_encoding_fallback(self, processor: DocumentProcessor) -> None:
@@ -68,7 +68,7 @@ More content here.
             f.flush()
 
             # Should handle encoding issues gracefully
-            result = processor.process_file(Path(f.name))
+            result = processor.process_document(Path(f.name))
             # May succeed with fallback encoding or fail gracefully
             if not result.success:
                 error_lower = (result.error or "").lower()

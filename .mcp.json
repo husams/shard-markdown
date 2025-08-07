@@ -23,7 +23,11 @@
       "args": [
         "--directory",
         "/Users/husam/workspace/mcp-servers/chroma-mcp",
-        "chroma-mcp-server"
+        "chroma-mcp-server",
+        "--client-type",
+        "persistent",
+        "--data-dir",
+        "./.data"
       ],
       "env": {}
     },
