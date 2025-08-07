@@ -45,7 +45,8 @@ def retry_on_collection_error(
                 try:
                     return func(*args, **kwargs)
                 except (
-                    chromadb.errors.InvalidCollectionException,
+                    chromadb.errors.InvalidArgumentError,
+                    chromadb.errors.NotFoundError,
                     ValueError,
                     KeyError,
                 ) as e:
