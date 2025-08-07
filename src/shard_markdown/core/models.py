@@ -161,7 +161,7 @@ class ChunkingConfig(BaseModel):
         default=True, description="Include file path metadata in chunks"
     )
 
-    @field_validator("overlap")
+    @field_validator("overlap")  # type: ignore[misc]
     @classmethod
     def validate_overlap(cls, v: int, info: ValidationInfo) -> int:
         """Validate overlap is less than chunk size."""
@@ -183,7 +183,7 @@ class ChunkingConfig(BaseModel):
                 )
         return v
 
-    @field_validator("method")
+    @field_validator("method")  # type: ignore[misc]
     @classmethod
     def validate_method(cls, v: str) -> str:
         """Validate chunking method."""

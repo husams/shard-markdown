@@ -470,7 +470,6 @@ class TestDocumentProcessingErrors:
         """Test handling of extremely large files."""
         # Create a processor with a very small file size limit for testing
         config = ProcessingConfig(
-            chunking=chunking_config,
             max_file_size=1000,  # 1KB limit
         )
         processor = DocumentProcessor(chunking_config, processing_config=config)

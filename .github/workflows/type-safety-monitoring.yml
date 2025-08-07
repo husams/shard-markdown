@@ -1,0 +1,315 @@
+name: Type Safety Monitoring
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily at 2 AM UTC to catch gradual type safety degradation
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  type-safety-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Need full history for trend analysis
+          fetch-depth: 0
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev
+
+      - name: Generate Type Safety Report
+        id: type-report
+        run: |
+          echo "## Type Safety Metrics Report" > type_safety_report.md
+          echo "Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> type_safety_report.md
+          echo "" >> type_safety_report.md
+
+          # MyPy Analysis with detailed output
+          echo "### MyPy Type Checking Results" >> type_safety_report.md
+          echo '```' >> type_safety_report.md
+
+          # Run MyPy and capture metrics
+          if uv run mypy src/ --no-error-summary 2>&1 | tee mypy_output.txt; then
+            echo "✅ MyPy type checking PASSED" >> type_safety_report.md
+            echo "mypy_status=success" >> $GITHUB_OUTPUT
+          else
+            echo "❌ MyPy type checking FAILED" >> type_safety_report.md
+            echo "mypy_status=failed" >> $GITHUB_OUTPUT
+          fi
+
+          echo '```' >> type_safety_report.md
+          echo "" >> type_safety_report.md
+
+          # Count different types of issues
+          ERROR_COUNT=$(grep -c "error:" mypy_output.txt || echo "0")
+          WARNING_COUNT=$(grep -c "warning:" mypy_output.txt || echo "0")
+          NOTE_COUNT=$(grep -c "note:" mypy_output.txt || echo "0")
+
+          echo "### Issue Summary" >> type_safety_report.md
+          echo "- Errors: $ERROR_COUNT" >> type_safety_report.md
+          echo "- Warnings: $WARNING_COUNT" >> type_safety_report.md  
+          echo "- Notes: $NOTE_COUNT" >> type_safety_report.md
+          echo "" >> type_safety_report.md
+
+          # Export metrics
+          echo "error_count=$ERROR_COUNT" >> $GITHUB_OUTPUT
+          echo "warning_count=$WARNING_COUNT" >> $GITHUB_OUTPUT
+          echo "note_count=$NOTE_COUNT" >> $GITHUB_OUTPUT
+
+          # File-level analysis
+          echo "### Files with Type Issues" >> type_safety_report.md
+          echo '```' >> type_safety_report.md
+          grep -E "^[^:]+\.py:" mypy_output.txt | cut -d':' -f1 | sort | uniq -c | sort -nr >> type_safety_report.md || echo "No files with issues found" >> type_safety_report.md
+          echo '```' >> type_safety_report.md
+          echo "" >> type_safety_report.md
+
+      - name: Run Type Coverage Analysis
+        id: coverage-analysis
+        run: |
+          # Create a simple type coverage script
+          cat << 'EOF' > check_type_coverage.py
+          #!/usr/bin/env python3
+          """Simple type coverage analysis for shard-markdown."""
+
+          import ast
+          import sys
+          from pathlib import Path
+          from typing import Dict, List, Tuple
+
+          def analyze_file(file_path: Path) -> Dict[str, int]:
+              """Analyze type annotations in a Python file."""
+              try:
+                  with open(file_path, 'r', encoding='utf-8') as f:
+                      content = f.read()
+                  
+                  tree = ast.parse(content, filename=str(file_path))
+              except Exception:
+                  return {"functions": 0, "annotated_functions": 0, "classes": 0, "methods": 0, "annotated_methods": 0}
+
+              functions = 0
+              annotated_functions = 0
+              classes = 0
+              methods = 0
+              annotated_methods = 0
+
+              for node in ast.walk(tree):
+                  if isinstance(node, ast.FunctionDef):
+                      if hasattr(node, 'parent_class'):
+                          methods += 1
+                          if node.returns or any(arg.annotation for arg in node.args.args):
+                              annotated_methods += 1
+                      else:
+                          functions += 1
+                          if node.returns or any(arg.annotation for arg in node.args.args):
+                              annotated_functions += 1
+                  elif isinstance(node, ast.ClassDef):
+                      classes += 1
+                      # Mark methods in this class
+                      for item in node.body:
+                          if isinstance(item, ast.FunctionDef):
+                              item.parent_class = True
+                              methods += 1
+                              if item.returns or any(arg.annotation for arg in item.args.args):
+                                  annotated_methods += 1
+
+              return {
+                  "functions": functions,
+                  "annotated_functions": annotated_functions,
+                  "classes": classes,
+                  "methods": methods,
+                  "annotated_methods": annotated_methods
+              }
+
+          def main():
+              src_path = Path("src")
+              total_stats = {"functions": 0, "annotated_functions": 0, "classes": 0, "methods": 0, "annotated_methods": 0}
+              
+              for py_file in src_path.rglob("*.py"):
+                  stats = analyze_file(py_file)
+                  for key in total_stats:
+                      total_stats[key] += stats[key]
+              
+              # Calculate percentages
+              func_coverage = (total_stats["annotated_functions"] / max(total_stats["functions"], 1)) * 100
+              method_coverage = (total_stats["annotated_methods"] / max(total_stats["methods"], 1)) * 100
+              
+              print(f"Functions: {total_stats['functions']}, Annotated: {total_stats['annotated_functions']} ({func_coverage:.1f}%)")
+              print(f"Methods: {total_stats['methods']}, Annotated: {total_stats['annotated_methods']} ({method_coverage:.1f}%)")
+              print(f"Classes: {total_stats['classes']}")
+              
+              # Export to GitHub outputs
+              with open('type_coverage_metrics.txt', 'w') as f:
+                  f.write(f"func_coverage={func_coverage:.1f}\n")
+                  f.write(f"method_coverage={method_coverage:.1f}\n")
+                  f.write(f"total_functions={total_stats['functions']}\n")
+                  f.write(f"annotated_functions={total_stats['annotated_functions']}\n")
+                  f.write(f"total_methods={total_stats['methods']}\n")
+                  f.write(f"annotated_methods={total_stats['annotated_methods']}\n")
+
+          if __name__ == "__main__":
+              main()
+          EOF
+
+          python check_type_coverage.py
+
+          # Add results to report
+          echo "### Type Coverage Analysis" >> type_safety_report.md
+          echo '```' >> type_safety_report.md
+          python check_type_coverage.py >> type_safety_report.md
+          echo '```' >> type_safety_report.md
+
+          # Load metrics for GitHub outputs
+          source type_coverage_metrics.txt
+          echo "func_coverage=${func_coverage}" >> $GITHUB_OUTPUT
+          echo "method_coverage=${method_coverage}" >> $GITHUB_OUTPUT
+
+      - name: Historical Trend Analysis
+        if: github.event_name != 'pull_request'
+        run: |
+          # Simple trend analysis by comparing with previous runs
+          echo "### Historical Trends" >> type_safety_report.md
+
+          # Get metrics from last 10 commits on main branch
+          echo "Recent MyPy status by commit:" >> type_safety_report.md
+          echo '```' >> type_safety_report.md
+
+          for commit in $(git rev-list --max-count=5 HEAD); do
+            commit_short=$(echo $commit | cut -c1-7)
+            commit_msg=$(git log --format=%s -n 1 $commit)
+            echo "- $commit_short: $commit_msg" >> type_safety_report.md
+          done
+
+          echo '```' >> type_safety_report.md
+
+      - name: Upload Type Safety Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: type-safety-report-${{ github.run_id }}
+          path: |
+            type_safety_report.md
+            mypy_output.txt
+            type_coverage_metrics.txt
+
+      - name: Create Issue on Type Safety Regression
+        if: steps.type-report.outputs.error_count > 0 && github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const errorCount = '${{ steps.type-report.outputs.error_count }}';
+            const warningCount = '${{ steps.type-report.outputs.warning_count }}';
+
+            const title = `🔴 Type Safety Regression Detected - ${errorCount} errors`;
+            const body = `
+            ## Type Safety Alert
+
+            Automated monitoring detected type checking failures in the main branch:
+
+            - **Errors:** ${errorCount}
+            - **Warnings:** ${warningCount}
+            - **Run ID:** ${{ github.run_id }}
+            - **Commit:** ${{ github.sha }}
+
+            ### Action Required
+
+            1. Review the [type safety report](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            2. Fix all type checking errors
+            3. Ensure pre-push hooks are working correctly
+            4. Consider if type safety enforcement needs strengthening
+
+            ### Prevention
+
+            This issue indicates that type checking errors reached the main branch. Please:
+
+            - Verify pre-push hooks are installed: \`pre-commit install\`
+            - Run verification before pushing: \`python scripts/verify.py\`
+            - Check CI status before merging PRs
+
+            **Auto-generated by Type Safety Monitoring workflow**
+            `;
+
+            // Check if similar issue already exists
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'type-safety,automated'
+            });
+
+            const existingIssue = issues.data.find(issue => 
+              issue.title.includes('Type Safety Regression')
+            );
+
+            if (!existingIssue) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['bug', 'type-safety', 'automated', 'priority-high']
+              });
+            }
+
+      - name: Comment PR with Type Safety Status
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportContent = fs.readFileSync('type_safety_report.md', 'utf8');
+            const errorCount = '${{ steps.type-report.outputs.error_count }}';
+            const funcCoverage = '${{ steps.coverage-analysis.outputs.func_coverage }}';
+
+            const status = errorCount === '0' ? '✅' : '❌';
+            const summary = `${status} **Type Safety Check ${errorCount === '0' ? 'PASSED' : 'FAILED'}**`;
+
+            const comment = `
+            ## ${summary}
+
+            ### Quick Summary
+            - MyPy Errors: ${errorCount}
+            - Function Type Coverage: ${funcCoverage}%
+
+            <details>
+            <summary>Full Type Safety Report</summary>
+
+            ${reportContent}
+
+            </details>
+
+            ${errorCount > 0 ? 
+              '⚠️ **This PR introduces type checking errors. Please fix before merging.**' :
+              '✅ **Type checking passed. Good job maintaining type safety!**'
+            }
+            `;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+      - name: Type Safety Gate
+        if: steps.type-report.outputs.error_count > 0
+        run: |
+          echo "❌ Type safety gate failed with ${{ steps.type-report.outputs.error_count }} errors"
+          echo "This workflow prevents type checking regressions from reaching main branch"
+          exit 1

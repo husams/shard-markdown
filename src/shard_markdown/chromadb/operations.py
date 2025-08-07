@@ -1,6 +1,8 @@
 """ChromaDB query and retrieval operations."""
 
-from typing import Any
+from typing import Any, Literal
+
+from chromadb.api.types import QueryResult
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
@@ -55,7 +57,11 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include: list[str] = ["documents", "distances"]
+            include: list[
+                Literal[
+                    "documents", "embeddings", "metadatas", "distances", "uris", "data"
+                ]
+            ] = ["documents", "distances"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -126,7 +132,11 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include: list[str] = ["documents"]
+            include: list[
+                Literal[
+                    "documents", "embeddings", "metadatas", "distances", "uris", "data"
+                ]
+            ] = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -137,12 +147,12 @@ class ChromaDBOperations:
                 return None
 
             # Format result
-            document_data = {
+            document_data: dict[str, Any] = {
                 "id": results["ids"][0],
                 "content": results["documents"][0] if results["documents"] else "",
             }
 
-            if include_metadata and results.get("metadatas"):
+            if include_metadata and results.get("metadatas") and results["metadatas"]:
                 document_data["metadata"] = results["metadatas"][0]
 
             logger.info(
@@ -197,7 +207,11 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include: list[str] = ["documents"]
+            include: list[
+                Literal[
+                    "documents", "embeddings", "metadatas", "distances", "uris", "data"
+                ]
+            ] = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -230,7 +244,8 @@ class ChromaDBOperations:
                 if (
                     include_metadata
                     and results.get("metadatas")
-                    and i < len(results.get("metadatas", []))
+                    and results["metadatas"]
+                    and i < len(results["metadatas"])
                 ):
                     doc_data["metadata"] = results["metadatas"][i]
 
@@ -314,7 +329,7 @@ class ChromaDBOperations:
 
     def _process_query_results(
         self,
-        results: dict[str, Any],
+        results: QueryResult,
         similarity_threshold: float,
         include_metadata: bool,
     ) -> dict[str, Any]:
@@ -334,9 +349,13 @@ class ChromaDBOperations:
             return processed
 
         ids = results["ids"][0]
-        documents = results["documents"][0]
-        distances = results["distances"][0]
-        metadatas = results.get("metadatas", [[]])[0] if include_metadata else []
+        documents = results["documents"][0] if results["documents"] else []
+        distances = results["distances"][0] if results["distances"] else []
+        metadatas = (
+            results["metadatas"][0]
+            if include_metadata and results.get("metadatas") and results["metadatas"]
+            else []
+        )
 
         for i, doc_id in enumerate(ids):
             # Convert distance to similarity score (ChromaDB uses distance,

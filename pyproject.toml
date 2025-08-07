@@ -105,6 +105,7 @@ ignore = [
 "__init__.py" = ["F401"]  # Allow unused imports in __init__.py
 "test_*.py" = ["D100", "D101", "D102", "D103", "S101"]  # Relax requirements for tests
 "tests/**/*.py" = ["D100", "D101", "D102", "D103", "S101"]
+"scripts/**/*.py" = ["S607"]  # Allow partial executable paths for scripts using gh CLI
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

@@ -18,7 +18,7 @@ def mock_config() -> ChromaDBConfig:
         host="localhost",
         port=8000,
         ssl=False,
-        timeout=5.0,
+        timeout=5,
         auth_token=None,
     )
 

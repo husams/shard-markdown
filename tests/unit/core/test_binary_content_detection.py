@@ -139,6 +139,7 @@ The end.
 
         assert result.success is False
         assert result.chunks_created == 0
+        assert result.error is not None
         assert "binary data" in result.error.lower()
         assert "unsupported content type" in result.error.lower()
 
@@ -155,6 +156,7 @@ The end.
 
         assert result.success is False
         assert result.chunks_created == 0
+        assert result.error is not None
         assert "binary data" in result.error.lower()
         assert "unsupported content type" in result.error.lower()
 
@@ -171,6 +173,7 @@ The end.
 
         assert result.success is False
         assert result.chunks_created == 0
+        assert result.error is not None
         assert "binary data" in result.error.lower()
         assert "unsupported content type" in result.error.lower()
 
@@ -187,6 +190,7 @@ The end.
 
         assert result.success is False
         assert result.chunks_created == 0
+        assert result.error is not None
         assert "binary data" in result.error.lower()
         assert "unsupported content type" in result.error.lower()
 
@@ -203,6 +207,7 @@ The end.
 
         assert result.success is False
         assert result.chunks_created == 0
+        assert result.error is not None
         assert "binary data" in result.error.lower()
 
     def test_process_binary_fails_graceful_mode(
@@ -219,6 +224,7 @@ The end.
         # Binary files should fail even in graceful mode
         assert result.success is False
         assert result.chunks_created == 0
+        assert result.error is not None
         assert "binary data" in result.error.lower()
 
     def test_binary_content_string_validation(
@@ -233,6 +239,7 @@ The end.
         result = validator.validate_content(binary_string_content, Path("test.md"))
 
         assert result.is_valid is False
+        assert result.error is not None
         assert "binary-like content" in result.error.lower()
 
     def test_high_control_char_ratio_detected(
@@ -247,6 +254,7 @@ The end.
         result = validator.validate_content(control_content, Path("test.md"))
 
         assert result.is_valid is False
+        assert result.error is not None
         assert "binary-like content" in result.error.lower()
         assert "control characters" in result.error.lower()
 
@@ -262,6 +270,7 @@ The end.
         result = validator.validate_content(non_printable_content, Path("test.md"))
 
         assert result.is_valid is False
+        assert result.error is not None
         assert "binary data" in result.error.lower()
         assert "printable characters" in result.error.lower()
 
@@ -273,6 +282,7 @@ The end.
         result = validator.validate_content(repeated_content, Path("test.md"))
 
         assert result.is_valid is False
+        assert result.error is not None
         assert "binary data" in result.error.lower()
         assert "repeated bytes" in result.error.lower()
 
@@ -293,6 +303,7 @@ The end.
         result = validator.validate_content(content, Path("test.md"))
 
         assert result.is_valid is False
+        assert result.error is not None
         assert "encoded binary data" in result.error.lower()
 
     def test_valid_markdown_not_detected_as_binary(

@@ -157,3 +157,4 @@ chroma_data/
 .claude/
 .plans/
 .data/
+mock_chromadb_storage.json

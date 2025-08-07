@@ -334,19 +334,135 @@ The project uses GitHub Actions for CI/CD:
 
 ## Agent Instructions
 
-**IMPORTANT**: After creating or modifying any Python file, agents MUST run the following linting check:
+### **CRITICAL: Type Safety and CI/CD Prevention Rules**
 
-```bash
-ruff check --fix src/ tests/
+**MANDATORY CHECKS**: After creating or modifying ANY Python file, agents MUST run ALL of the following checks in sequence:
+
+1. **Linting and Formatting** (REQUIRED):
+   ```bash
+   ruff format src/ tests/
+   ruff check --fix src/ tests/
+   ```
+
+2. **Type Checking** (CRITICAL - CI/CD BLOCKER):
+   ```bash
+   mypy src/ tests/
+   ```
+
+3. **Pre-commit Validation** (RECOMMENDED):
+   ```bash
+   pre-commit run --all-files
+   ```
+
+### **Type Safety Requirements**
+
+**NEVER commit code that fails MyPy type checking.** The following patterns MUST be avoided as they cause CI/CD failures:
+
+#### **1. Optional/Union Attribute Access**
+```python
+# ❌ WRONG - Will cause CI/CD failure
+assert "error" in result.error.lower()  # result.error could be None
+
+# ✅ CORRECT - Add None check first
+assert result.error is not None
+assert "error" in result.error.lower()
 ```
 
-**Example**: If you've just created or modified files in `src/shard_markdown/cli/`, run:
+#### **2. Missing Type Annotations on Fixtures**
+```python
+# ❌ WRONG - Will cause CI/CD failure
+@pytest.fixture
+def sample_data(request) -> Dict[str, Any]:  # 'request' missing type
+    return request.param
 
-```bash
-ruff check --fix src/ tests/
+# ✅ CORRECT - Always type fixture parameters
+@pytest.fixture
+def sample_data(request: pytest.FixtureRequest) -> Dict[str, Any]:
+    return request.param
 ```
 
-This will automatically fix any formatting issues and report any remaining lint errors that require manual attention.
+#### **3. Untyped Decorators**
+```python
+# ❌ WRONG - Will cause CI/CD failure
+@field_validator("field_name")
+@classmethod
+def validate_field(cls, v: str) -> str:  # Decorator typing issue
+
+# ✅ CORRECT - Add type ignore for Pydantic decorators
+@field_validator("field_name")  # type: ignore[misc]
+@classmethod
+def validate_field(cls, v: str) -> str:
+```
+
+#### **4. Generator Return Types**
+```python
+# ❌ WRONG - Will cause CI/CD failure
+def data_generator():
+    yield item
+
+# ✅ CORRECT - Specify Generator return type
+from typing import Generator
+
+def data_generator() -> Generator[ItemType, None, None]:
+    yield item
+```
+
+### **Development Workflow Enforcement**
+
+**BEFORE making ANY commit, agents MUST:**
+
+1. **Verify Local Type Checking**: `mypy src/ tests/` returns exit code 0
+2. **Verify All Linting**: `ruff check src/ tests/` returns exit code 0
+3. **Verify Pre-commit Hooks**: `pre-commit run --all-files` passes all checks
+4. **Run Affected Tests**: Ensure no regressions introduced
+
+### **CI/CD Failure Response Protocol**
+
+**If ANY CI/CD check fails after your changes:**
+
+1. **IMMEDIATELY investigate** using available tools (Bash, Grep, Read)
+2. **NEVER ignore type errors** - they indicate potential runtime bugs
+3. **FIX ALL MyPy errors** before proceeding with other tasks
+4. **VALIDATE fixes locally** before pushing additional commits
+5. **DOCUMENT lessons learned** for future prevention
+
+### **Preventive Measures**
+
+**To prevent CI/CD failures, agents should:**
+
+1. **Use strict typing practices** from the start of any code changes
+2. **Test edge cases** including None values and empty collections
+3. **Add type annotations proactively** rather than reactively
+4. **Validate type safety** as part of every development task
+5. **Monitor for new type checking rules** in MyPy configuration updates
+
+### **Legacy Code Handling**
+
+**When working with existing code that has type issues:**
+
+1. **Fix type errors** in files you modify (don't ignore them)
+2. **Add gradual typing** improvements where possible
+3. **Document type improvements** in commit messages
+4. **Consider broader type safety improvements** for the module
+
+**Example Workflow**: If you've modified files in `src/shard_markdown/core/`, run:
+
+```bash
+# 1. Format and lint
+ruff format src/ tests/
+ruff check --fix src/ tests/
+
+# 2. Type check (CRITICAL)
+mypy src/ tests/
+
+# 3. Validate with pre-commit
+pre-commit run --all-files
+
+# 4. Run affected tests
+pytest tests/unit/core/ -v
+```
+
+**FAILURE IS NOT AN OPTION**: Type checking failures block the entire CI/CD pipeline and prevent deployments. Always prioritize type safety compliance.
 
 This ensures code quality and adherence to project standards before proceeding with additional tasks.
 

@@ -3,13 +3,19 @@
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
+from typing import cast
 from unittest.mock import Mock
 
 import pytest
 from click.testing import CliRunner
 
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig, ProcessingConfig
+from shard_markdown.config.settings import (
+    AppConfig,
+    ChromaDBConfig,
+    ChunkingMethod,
+    ProcessingConfig,
+)
 from shard_markdown.config.settings import ChunkingConfig as SettingsChunkingConfig
 from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
 from shard_markdown.core.models import (
@@ -71,7 +77,7 @@ def app_config() -> AppConfig:
         chunking=SettingsChunkingConfig(
             default_size=300,
             default_overlap=50,
-            method="structure",
+            method=ChunkingMethod.STRUCTURE,
         ),
     )
 
@@ -401,24 +407,24 @@ def binary_file(temp_dir: Path) -> Path:
 
 
 @pytest.fixture(params=[50, 100, 500, 1000, 2000])
-def chunk_sizes(request) -> int:
+def chunk_sizes(request: pytest.FixtureRequest) -> int:
     """Parametrized fixture for different chunk sizes."""
-    return request.param
+    return cast(int, request.param)
 
 
 @pytest.fixture(params=["structure", "fixed", "semantic"])
-def chunking_methods(request) -> str:
+def chunking_methods(request: pytest.FixtureRequest) -> str:
     """Parametrized fixture for different chunking methods."""
-    return request.param
+    return cast(str, request.param)
 
 
 @pytest.fixture(params=[1, 2, 4, 8])
-def worker_counts(request) -> int:
+def worker_counts(request: pytest.FixtureRequest) -> int:
     """Parametrized fixture for different worker counts."""
-    return request.param
+    return cast(int, request.param)
 
 
 @pytest.fixture(params=["utf-8", "latin-1", "ascii"])
-def encodings(request) -> str:
+def encodings(request: pytest.FixtureRequest) -> str:
     """Parametrized fixture for different encodings."""
-    return request.param
+    return cast(str, request.param)

@@ -238,7 +238,7 @@ class MockHelper:
         host: str = "localhost",
         port: int = 8000,
         ssl: bool = False,
-        timeout: float = 5.0,
+        timeout: int = 5,
         auth_token: str | None = None,
     ) -> ChromaDBConfig:
         """Create a mock ChromaDB configuration.

@@ -5,7 +5,7 @@ import tempfile
 import time
 from collections.abc import Generator
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -27,57 +27,54 @@ class TestEncodingDetectorConfig:
         """Test default configuration values."""
         config = EncodingDetectorConfig()
 
-        assert config.confidence_threshold == 0.8
-        assert config.fallback_encoding == "utf-8"
-        assert config.sample_size == 50000
-        assert config.enable_advanced_detection is True
-        assert config.enable_binary_detection is True
-        assert config.max_binary_ratio == 0.3
-        assert config.binary_chunk_size == 8192
+        assert config.min_confidence == 0.8
+        assert config.fallback_encodings == ["utf-8", "iso-8859-1", "windows-1252"]
+        assert config.sample_size == 8192
+        assert config.block_suspicious is True
+        assert config.strict_fallback is False
+        assert config.cache_size == 1000
+        assert config.cache_ttl == 3600
 
     def test_custom_config(self) -> None:
         """Test custom configuration values."""
         config = EncodingDetectorConfig(
-            confidence_threshold=0.9,
-            fallback_encoding="latin-1",
+            min_confidence=0.9,
+            fallback_encodings=["latin-1", "utf-8"],
             sample_size=10000,
-            enable_advanced_detection=False,
-            enable_binary_detection=False,
-            max_binary_ratio=0.1,
-            binary_chunk_size=4096,
+            block_suspicious=False,
+            strict_fallback=True,
+            cache_size=500,
+            cache_ttl=1800,
         )
 
-        assert config.confidence_threshold == 0.9
-        assert config.fallback_encoding == "latin-1"
+        assert config.min_confidence == 0.9
+        assert config.fallback_encodings == ["latin-1", "utf-8"]
         assert config.sample_size == 10000
-        assert config.enable_advanced_detection is False
-        assert config.enable_binary_detection is False
-        assert config.max_binary_ratio == 0.1
-        assert config.binary_chunk_size == 4096
+        assert config.block_suspicious is False
+        assert config.strict_fallback is True
+        assert config.cache_size == 500
+        assert config.cache_ttl == 1800
 
     def test_config_validation(self) -> None:
         """Test configuration validation."""
         # Test invalid confidence threshold
         with pytest.raises(ValueError):
-            EncodingDetectorConfig(confidence_threshold=-0.1)
+            EncodingDetectorConfig(min_confidence=-0.1)
 
         with pytest.raises(ValueError):
-            EncodingDetectorConfig(confidence_threshold=1.1)
+            EncodingDetectorConfig(min_confidence=1.1)
 
         # Test invalid sample size
         with pytest.raises(ValueError):
             EncodingDetectorConfig(sample_size=0)
 
-        # Test invalid binary ratio
+        # Test invalid cache size
         with pytest.raises(ValueError):
-            EncodingDetectorConfig(max_binary_ratio=-0.1)
+            EncodingDetectorConfig(cache_size=-1)
 
+        # Test invalid cache ttl
         with pytest.raises(ValueError):
-            EncodingDetectorConfig(max_binary_ratio=1.1)
-
-        # Test invalid binary chunk size
-        with pytest.raises(ValueError):
-            EncodingDetectorConfig(binary_chunk_size=0)
+            EncodingDetectorConfig(cache_ttl=-1)
 
 
 class TestEncodingDetectionResult:
@@ -88,28 +85,36 @@ class TestEncodingDetectionResult:
         result = EncodingDetectionResult(
             encoding="utf-8",
             confidence=0.95,
-            is_binary=False,
-            errors=[],
+            method="chardet",
+            sample_size=8192,
+            language="en",
+            detection_time=0.01,
         )
 
         assert result.encoding == "utf-8"
         assert result.confidence == 0.95
-        assert result.is_binary is False
-        assert result.errors == []
+        assert result.method == "chardet"
+        assert result.sample_size == 8192
+        assert result.language == "en"
+        assert result.detection_time == 0.01
 
-    def test_result_with_errors(self) -> None:
-        """Test result with errors."""
+    def test_result_with_low_confidence(self) -> None:
+        """Test result with low confidence."""
         result = EncodingDetectionResult(
             encoding="utf-8",
             confidence=0.5,
-            is_binary=False,
-            errors=["Low confidence detection"],
+            method="chardet",
+            sample_size=4096,
+            language=None,
+            detection_time=0.005,
         )
 
         assert result.encoding == "utf-8"
         assert result.confidence == 0.5
-        assert result.is_binary is False
-        assert result.errors == ["Low confidence detection"]
+        assert result.method == "chardet"
+        assert result.sample_size == 4096
+        assert result.language is None
+        assert result.detection_time == 0.005
 
 
 class TestEncodingDetector:
@@ -119,8 +124,7 @@ class TestEncodingDetector:
     def detector(self) -> EncodingDetector:
         """Create a detector instance for testing."""
         config = EncodingDetectorConfig(
-            sample_size=1000,  # Smaller sample for testing
-            binary_chunk_size=512,
+            sample_size=1024,  # Smaller sample for testing (minimum is 1024)
         )
         return EncodingDetector(config)
 
@@ -147,8 +151,6 @@ class TestEncodingDetector:
 
         assert result.encoding.lower() == "utf-8"
         assert result.confidence > 0.8
-        assert result.is_binary is False
-        assert len(result.errors) == 0
 
     def test_latin1_detection(self, detector: EncodingDetector, temp_dir: Path) -> None:
         """Test Latin-1 encoding detection."""
@@ -161,7 +163,6 @@ class TestEncodingDetector:
         # Should detect latin-1 or similar
         assert result.encoding.lower() in ["latin-1", "iso-8859-1", "windows-1252"]
         assert result.confidence > 0.5
-        assert result.is_binary is False
 
     def test_binary_file_detection(
         self, detector: EncodingDetector, temp_dir: Path
@@ -186,7 +187,6 @@ class TestEncodingDetector:
 
         # Should default to UTF-8 for empty files
         assert result.encoding == "utf-8"
-        assert result.is_binary is False
 
     def test_large_file_sampling(
         self, detector: EncodingDetector, temp_dir: Path
@@ -201,7 +201,6 @@ class TestEncodingDetector:
 
         assert result.encoding.lower() == "utf-8"
         assert result.confidence > 0.8
-        assert result.is_binary is False
 
     def test_mixed_encoding_detection(
         self, detector: EncodingDetector, temp_dir: Path
@@ -216,7 +215,6 @@ class TestEncodingDetector:
 
         assert result.encoding.lower() in ["utf-8", "ascii"]
         assert result.confidence > 0.5
-        assert result.is_binary is False
 
     def test_nonexistent_file_handling(self, detector: EncodingDetector) -> None:
         """Test handling of non-existent files."""
@@ -255,8 +253,8 @@ class TestEncodingDetector:
             result = detector.detect_encoding(test_file)
             # If detection succeeds, check that it falls back appropriately
             assert result.encoding is not None
-            if result.confidence < detector.config.confidence_threshold:
-                assert result.encoding == detector.config.fallback_encoding
+            if result.confidence < detector.config.min_confidence:
+                assert result.encoding in detector.config.fallback_encodings
         except (ProcessingError, ShardMarkdownError):
             # These exceptions are acceptable for ambiguous content
             pass
@@ -273,7 +271,6 @@ class TestEncodingDetector:
 
         assert result.encoding.lower() in ["utf-8", "utf-8-sig"]
         assert result.confidence > 0.8
-        assert result.is_binary is False
 
     def test_corrupted_file_handling(
         self, detector: EncodingDetector, temp_dir: Path
@@ -313,7 +310,7 @@ class TestEncodingDetector:
 
     @patch("chardet.detect")
     def test_chardet_fallback(
-        self, mock_detect: pytest.Mock, detector: EncodingDetector, temp_dir: Path
+        self, mock_detect: Mock, detector: EncodingDetector, temp_dir: Path
     ) -> None:
         """Test fallback to chardet when built-in detection fails."""
         mock_detect.return_value = {"encoding": "utf-8", "confidence": 0.95}
@@ -331,12 +328,12 @@ class TestEncodingDetector:
     def test_config_override(self) -> None:
         """Test detector with custom configuration."""
         custom_config = EncodingDetectorConfig(
-            confidence_threshold=0.95,
-            fallback_encoding="latin-1",
+            min_confidence=0.95,
+            fallback_encodings=["latin-1"],
             sample_size=2000,
         )
         detector = EncodingDetector(custom_config)
 
-        assert detector.config.confidence_threshold == 0.95
-        assert detector.config.fallback_encoding == "latin-1"
+        assert detector.config.min_confidence == 0.95
+        assert detector.config.fallback_encodings == ["latin-1"]
         assert detector.config.sample_size == 2000

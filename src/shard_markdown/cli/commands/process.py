@@ -158,16 +158,16 @@ def process(  # noqa: C901
       shard-md process -c test-docs --use-mock *.md
     """
     # Handle context setup - this may be None during testing
-    if ctx.obj is None:
-        # Load default config for testing scenarios
-        config = load_config()
-        verbose = 0
-    else:
+    config = None
+    verbose = 0
+
+    if ctx.obj is not None:
         config = ctx.obj.get("config")
-        if config is None:
-            # Fallback to loading config if not found in context
-            config = load_config()
         verbose = ctx.obj.get("verbose", 0)
+
+    if config is None:
+        # Load default config for testing scenarios or when not in context
+        config = load_config()
 
     try:
         # Validate and prepare

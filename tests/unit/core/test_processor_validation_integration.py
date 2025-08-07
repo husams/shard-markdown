@@ -158,6 +158,7 @@ This is a large markdown document that exceeds the sample size.
         result = processor.process_document(binary_file, "test-collection")
         # Should fail due to binary pattern detection
         assert result.success is False
+        assert result.error is not None
         assert "repeated bytes" in result.error
 
     def test_encoding_fallback_with_validation(self, temp_dir: Path) -> None:

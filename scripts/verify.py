@@ -7,10 +7,12 @@ CI failures and ensure code quality.
 
 import argparse
 import json
+import os
 import shutil
 import subprocess  # noqa: S404
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -90,6 +92,9 @@ class VerificationRunner:
         coverage: bool = False,
         exit_early: bool = False,
         verbose: bool = False,
+        ci_mode: bool = False,
+        json_output: bool = False,
+        pre_push: bool = False,
     ):
         """Initialize verification runner.
 
@@ -99,12 +104,18 @@ class VerificationRunner:
             coverage: Whether to enforce coverage thresholds
             exit_early: Whether to exit on first failure
             verbose: Whether to show detailed output
+            ci_mode: Whether running in CI/CD environment
+            json_output: Whether to output results as JSON
+            pre_push: Whether running as pre-push hook
         """
         self.fix = fix
         self.fast = fast
         self.coverage = coverage
         self.exit_early = exit_early
         self.verbose = verbose
+        self.ci_mode = ci_mode or os.getenv("CI") == "true"
+        self.json_output = json_output
+        self.pre_push = pre_push
         self.project_root = Path(__file__).parent.parent
         self.results: list[CheckResult] = []
 
@@ -173,6 +184,10 @@ class VerificationRunner:
         Args:
             result: CheckResult to print
         """
+        if self.json_output:
+            # JSON output handled separately
+            return
+
         status_symbol = "✅" if result.success else "❌"
         status_color = Colors.OKGREEN if result.success else Colors.FAIL
 
@@ -197,7 +212,10 @@ class VerificationRunner:
             command.append("--check")
         command.extend(["src/", "tests/", "scripts/"])
 
-        with ProgressIndicator("Checking code formatting"):
+        if not self.ci_mode:
+            with ProgressIndicator("Checking code formatting"):
+                return self._run_command(command, "Code Formatting (ruff format)")
+        else:
             return self._run_command(command, "Code Formatting (ruff format)")
 
     def _check_ruff_lint(self) -> CheckResult:
@@ -207,14 +225,20 @@ class VerificationRunner:
             command.append("--fix")
         command.extend(["src/", "tests/", "scripts/"])
 
-        with ProgressIndicator("Running linter"):
+        if not self.ci_mode:
+            with ProgressIndicator("Running linter"):
+                return self._run_command(command, "Linting (ruff check)")
+        else:
             return self._run_command(command, "Linting (ruff check)")
 
     def _check_mypy(self) -> CheckResult:
         """Check type annotations with mypy."""
         command = ["mypy", "src/"]
 
-        with ProgressIndicator("Running type checking"):
+        if not self.ci_mode:
+            with ProgressIndicator("Running type checking"):
+                return self._run_command(command, "Type Checking (mypy)")
+        else:
             return self._run_command(command, "Type Checking (mypy)")
 
     def _check_bandit_security(self) -> CheckResult | None:
@@ -230,20 +254,23 @@ class VerificationRunner:
 
         command = ["bandit", "-r", "src/", "-f", "json"]
 
-        with ProgressIndicator("Running security checks"):
+        if not self.ci_mode:
+            with ProgressIndicator("Running security checks"):
+                result = self._run_command(command, "Security Scanning (bandit)")
+        else:
             result = self._run_command(command, "Security Scanning (bandit)")
 
-            # Bandit returns non-zero for security issues
-            if not result.success and result.output:
-                try:
-                    bandit_data = json.loads(result.output)
-                    if bandit_data.get("results"):
-                        num_issues = len(bandit_data["results"])
-                        result.error = f"Found {num_issues} security issues"
-                except json.JSONDecodeError:
-                    pass
+        # Bandit returns non-zero for security issues
+        if not result.success and result.output:
+            try:
+                bandit_data = json.loads(result.output)
+                if bandit_data.get("results"):
+                    num_issues = len(bandit_data["results"])
+                    result.error = f"Found {num_issues} security issues"
+            except json.JSONDecodeError:
+                pass
 
-            return result
+        return result
 
     def _run_tests(self) -> CheckResult:
         """Run the test suite."""
@@ -257,13 +284,22 @@ class VerificationRunner:
             if not self.verbose:
                 command.append("--cov-report=term:skip-covered")
 
-        command.extend(["-v", "--tb=short"])
+        # Adjust test output for different environments
+        if self.ci_mode:
+            command.extend(["-v", "--tb=short", "--no-header"])
+        else:
+            command.extend(["-v", "--tb=short"])
 
         test_name = "Tests" + (" (fast mode)" if self.fast else "")
         if self.coverage:
             test_name += " with Coverage"
 
-        with ProgressIndicator("Running test suite"):
+        if not self.ci_mode:
+            with ProgressIndicator("Running test suite"):
+                return self._run_command(
+                    command, test_name, capture_output=not self.verbose
+                )
+        else:
             return self._run_command(
                 command, test_name, capture_output=not self.verbose
             )
@@ -276,28 +312,63 @@ class VerificationRunner:
         # Run coverage report to get percentage
         command = ["python3", "-m", "coverage", "report", "--format=total"]
 
-        with ProgressIndicator("Checking coverage threshold"):
+        if not self.ci_mode:
+            with ProgressIndicator("Checking coverage threshold"):
+                result = self._run_command(command, "Coverage Threshold Check")
+        else:
             result = self._run_command(command, "Coverage Threshold Check")
 
-            if result.success and result.output.strip():
-                try:
-                    coverage_pct = float(result.output.strip())
-                    minimum_coverage = 85.0  # From CLAUDE.md requirements
+        if result.success and result.output.strip():
+            try:
+                coverage_pct = float(result.output.strip())
+                minimum_coverage = 85.0  # From CLAUDE.md requirements
 
-                    if coverage_pct < minimum_coverage:
-                        result.success = False
-                        result.error = (
-                            f"Coverage {coverage_pct:.1f}% is below minimum "
-                            f"threshold of {minimum_coverage}%"
-                        )
-                    else:
-                        result.error = f"Coverage: {coverage_pct:.1f}%"
-
-                except ValueError:
+                if coverage_pct < minimum_coverage:
                     result.success = False
-                    result.error = "Could not parse coverage percentage"
+                    result.error = (
+                        f"Coverage {coverage_pct:.1f}% is below minimum "
+                        f"threshold of {minimum_coverage}%"
+                    )
+                else:
+                    result.error = f"Coverage: {coverage_pct:.1f}%"
 
-            return result
+            except ValueError:
+                result.success = False
+                result.error = "Could not parse coverage percentage"
+
+        return result
+
+    def _output_json_results(self) -> None:
+        """Output results in JSON format for CI/CD integration."""
+        python_version = (
+            f"{sys.version_info.major}.{sys.version_info.minor}."
+            f"{sys.version_info.micro}"
+        )
+        json_results = {
+            "timestamp": time.time(),
+            "success": all(r.success for r in self.results),
+            "total_checks": len(self.results),
+            "passed_checks": sum(1 for r in self.results if r.success),
+            "failed_checks": sum(1 for r in self.results if not r.success),
+            "total_duration": sum(r.duration for r in self.results),
+            "checks": [
+                {
+                    "name": r.name,
+                    "success": r.success,
+                    "duration": r.duration,
+                    "output": r.output,
+                    "error": r.error,
+                }
+                for r in self.results
+            ],
+            "environment": {
+                "ci_mode": self.ci_mode,
+                "python_version": python_version,
+                "platform": sys.platform,
+            },
+        }
+
+        print(json.dumps(json_results, indent=2 if not self.ci_mode else None))
 
     def run_all_checks(self) -> bool:
         """Run all verification checks.
@@ -305,19 +376,27 @@ class VerificationRunner:
         Returns:
             True if all checks passed, False otherwise
         """
-        print(
-            f"{Colors.HEADER}{Colors.BOLD}"
-            "🚀 Running shard-markdown verification checks"
-            f"{Colors.ENDC}\n"
-        )
+        if not self.json_output and not self.pre_push:
+            print(
+                f"{Colors.HEADER}{Colors.BOLD}"
+                "🚀 Running shard-markdown verification checks"
+                f"{Colors.ENDC}\n"
+            )
 
-        checks = [
+        # Determine which checks to run
+        checks: list[tuple[str, Callable[[], CheckResult | None]]] = [
             ("format", self._check_ruff_format),
             ("lint", self._check_ruff_lint),
             ("typecheck", self._check_mypy),
-            ("security", self._check_bandit_security),
-            ("tests", self._run_tests),
         ]
+
+        # Add security check unless in pre-push mode (for speed)
+        if not self.pre_push:
+            checks.append(("security", self._check_bandit_security))
+
+        # Add tests unless in pre-push mode (for speed)
+        if not self.pre_push:
+            checks.append(("tests", self._run_tests))
 
         # Add coverage check if requested
         if self.coverage:
@@ -331,23 +410,47 @@ class VerificationRunner:
                 continue
 
             self.results.append(result)
-            self._print_result(result)
+
+            if not self.json_output:
+                self._print_result(result)
 
             if not result.success:
                 all_passed = False
                 if self.exit_early:
-                    print(
-                        f"\n{Colors.FAIL}Exiting early due to failure in "
-                        f"{result.name}{Colors.ENDC}"
-                    )
+                    if not self.json_output:
+                        print(
+                            f"\n{Colors.FAIL}Exiting early due to failure in "
+                            f"{result.name}{Colors.ENDC}"
+                        )
                     break
 
-        # Print summary
-        self._print_summary()
+        # Output results
+        if self.json_output:
+            self._output_json_results()
+        else:
+            self._print_summary()
+
         return all_passed
 
     def _print_summary(self) -> None:
         """Print a summary of all check results."""
+        if self.pre_push:
+            # Simplified output for pre-push hooks
+            passed = sum(1 for r in self.results if r.success)
+            total = len(self.results)
+            if passed == total:
+                print(
+                    f"{Colors.OKGREEN}✅ All {total} pre-push checks "
+                    f"passed{Colors.ENDC}"
+                )
+            else:
+                failed = total - passed
+                print(
+                    f"{Colors.FAIL}❌ {failed} out of {total} pre-push "
+                    f"checks failed{Colors.ENDC}"
+                )
+            return
+
         print(f"\n{Colors.HEADER}{Colors.BOLD}📊 Summary{Colors.ENDC}")
         print("=" * 50)
 
@@ -372,6 +475,14 @@ class VerificationRunner:
                 if result.error:
                     print(f"    {result.error}")
 
+        # Add CI/CD specific guidance
+        if self.ci_mode and failed_checks:
+            print(f"\n{Colors.WARNING}🔧 CI/CD Failure Guidance:{Colors.ENDC}")
+            print("1. Run locally: python scripts/verify.py --fix")
+            print("2. Check type safety: mypy src/")
+            print("3. Review pre-commit hooks are installed")
+            print("4. See CLAUDE.md for development guidelines")
+
 
 def main() -> int:
     """Main entry point for the verification script."""
@@ -386,6 +497,9 @@ Examples:
   python scripts/verify.py --coverage         # Include coverage validation
   python scripts/verify.py --exit-early       # Exit on first failure
   python scripts/verify.py --verbose          # Show detailed output
+  python scripts/verify.py --ci               # CI/CD mode
+  python scripts/verify.py --json             # JSON output for automation
+  python scripts/verify.py --pre-push         # Pre-push hook mode
         """,
     )
 
@@ -420,6 +534,24 @@ Examples:
         help="Show detailed output for all checks",
     )
 
+    parser.add_argument(
+        "--ci",
+        action="store_true",
+        help="Run in CI/CD mode with optimized output",
+    )
+
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output results in JSON format for automation",
+    )
+
+    parser.add_argument(
+        "--pre-push",
+        action="store_true",
+        help="Run critical checks only for pre-push hook (fast mode)",
+    )
+
     args = parser.parse_args()
 
     runner = VerificationRunner(
@@ -428,16 +560,23 @@ Examples:
         coverage=args.coverage,
         exit_early=args.exit_early,
         verbose=args.verbose,
+        ci_mode=args.ci,
+        json_output=args.json,
+        pre_push=args.pre_push,
     )
 
     try:
         success = runner.run_all_checks()
         return 0 if success else 1
     except KeyboardInterrupt:
-        print(f"\n{Colors.WARNING}❌ Verification interrupted by user{Colors.ENDC}")
+        if not args.json:
+            print(f"\n{Colors.WARNING}❌ Verification interrupted by user{Colors.ENDC}")
         return 1
     except Exception as e:
-        print(f"\n{Colors.FAIL}❌ Unexpected error: {e}{Colors.ENDC}")
+        if not args.json:
+            print(f"\n{Colors.FAIL}❌ Unexpected error: {e}{Colors.ENDC}")
+        else:
+            print(json.dumps({"error": str(e), "success": False}))
         return 1
 
 

@@ -1,6 +1,7 @@
 """Integration tests for advanced encoding detection with DocumentProcessor."""
 
 import tempfile
+from collections.abc import Generator
 from pathlib import Path
 from unittest.mock import patch
 
@@ -16,7 +17,7 @@ class TestEncodingDetectionIntegration:
     """Integration tests for encoding detection with document processing."""
 
     @pytest.fixture
-    def temp_dir(self) -> Path:
+    def temp_dir(self) -> Generator[Path, None, None]:
         """Create temporary directory for test files."""
         with tempfile.TemporaryDirectory() as temp_dir:
             yield Path(temp_dir)
@@ -168,6 +169,7 @@ The advanced system should handle this better than simple fallback.
 
         # Should fail gracefully
         assert result.success is False
+        assert result.error is not None
         assert "encoding" in result.error.lower()
 
     def test_empty_file_with_detection(
@@ -182,6 +184,7 @@ The advanced system should handle this better than simple fallback.
         # Should handle empty file gracefully
         assert result.success is False  # Empty files are considered failures
         assert result.chunks_created == 0
+        assert result.error is not None
         assert "empty" in result.error.lower()
 
     def test_large_file_sampling(
@@ -271,6 +274,7 @@ Content includes: café, naïve, résumé for encoding variety.
 
             # Should fail due to security restriction
             assert result.success is False
+            assert result.error is not None
             assert "whitelist" in result.error.lower()
 
     def test_confidence_threshold_handling(self, temp_dir: Path) -> None:

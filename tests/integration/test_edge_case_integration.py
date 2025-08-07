@@ -1,6 +1,7 @@
 """Integration tests for edge case handling across the entire processing pipeline."""
 
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -236,7 +237,7 @@ thousands_separator = "."
         test_files = []
 
         # Create files of different sizes
-        size_configs = [
+        size_configs: list[dict[str, Any]] = [
             {"name": "tiny", "sections": 1, "content_multiplier": 1},
             {"name": "small", "sections": 3, "content_multiplier": 5},
             {"name": "medium", "sections": 10, "content_multiplier": 10},

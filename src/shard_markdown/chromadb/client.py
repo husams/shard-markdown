@@ -2,7 +2,8 @@
 
 import socket
 import time
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, cast
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -250,7 +251,12 @@ class ChromaDBClient:
             self._validate_insertion_data(ids, documents, metadatas)
 
             # Insert into collection
-            collection.add(ids=ids, documents=documents, metadatas=metadatas)
+            # Cast metadatas to the expected type for ChromaDB
+            typed_metadatas: list[Mapping[str, str | int | float | bool | None]] = [
+                cast(Mapping[str, str | int | float | bool | None], m)
+                for m in metadatas
+            ]
+            collection.add(ids=ids, documents=documents, metadatas=typed_metadatas)
 
             processing_time = time.time() - start_time
 
