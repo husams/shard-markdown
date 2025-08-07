@@ -143,7 +143,7 @@ class VerificationRunner:
                 error = result.stderr
             else:
                 # For commands that need to show output in real-time
-                result = subprocess.run(command, cwd=cwd, check=False)  # noqa: S603
+                result = subprocess.run(command, cwd=cwd, check=False, text=True)  # noqa: S603
                 success = result.returncode == 0
                 output = ""
                 error = ""

@@ -162,11 +162,11 @@ The utilities work seamlessly with existing pytest fixtures defined in `conftest
 def test_with_utilities_and_fixtures(temp_dir, chunking_config, sample_chunks):
     # Use existing fixtures
     assert chunking_config.chunk_size == 300
-    
+
     # Enhance with utilities
     large_file = FileHelper.create_large_markdown_file(temp_dir, "large.md")
     AssertionHelper.assert_chunks_valid(sample_chunks)
-    
+
     # Mix and match as needed
     templates = DataGenerator.generate_markdown_content_templates()
     # ... test logic
@@ -216,7 +216,7 @@ def test_process_file_success(temp_dir):
     content = "# Test\n\nContent here."
     file_path = temp_dir / "test.md"
     file_path.write_text(content)
-    
+
     result = processor.process(file_path)
     assert result.success is True
     assert result.error is None

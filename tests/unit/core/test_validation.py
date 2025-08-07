@@ -141,7 +141,7 @@ def hello_world():
 
         result = validator.validate_content("", Path("test.md"))
         assert result.is_valid is False
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_whitespace_only_content(self) -> None:
         """Test validation of whitespace-only content."""
@@ -150,7 +150,7 @@ def hello_world():
         content = "   \n\n\t\t\n   \n"
         result = validator.validate_content(content, Path("test.md"))
         assert result.is_valid is False
-        assert "empty" in result.error.lower()
+        assert result.error is not None and "empty" in result.error.lower()
 
     def test_high_control_character_ratio(self) -> None:
         """Test content with high ratio of control characters."""
@@ -160,7 +160,7 @@ def hello_world():
         content = "# Test\n\n" + "\x00\x01\x02\x03" * 50 + "\n\nSome text"
         result = validator.validate_content(content, Path("test.md"))
         assert result.is_valid is False
-        assert "control characters" in result.error
+        assert result.error is not None and "control characters" in result.error
 
     def test_low_printable_character_ratio(self) -> None:
         """Test content with low ratio of printable characters."""
@@ -170,7 +170,7 @@ def hello_world():
         content = "# Test\n\n" + "".join(chr(i) for i in range(1, 20)) * 10
         result = validator.validate_content(content, Path("test.md"))
         assert result.is_valid is False
-        assert "binary" in result.error
+        assert result.error is not None and "binary" in result.error
 
     def test_encoding_artifacts_detection(self) -> None:
         """Test detection of encoding artifacts."""
@@ -191,7 +191,7 @@ def hello_world():
             if artifact in ["\ufffd"]:
                 # These should fail
                 assert result.is_valid is False
-                assert "encoding" in result.error.lower()
+                assert result.error is not None and "encoding" in result.error.lower()
             # Others might pass depending on implementation
 
     def test_null_byte_detection(self) -> None:
@@ -201,7 +201,7 @@ def hello_world():
         content = "# Test\n\nContent with\x00null bytes"
         result = validator.validate_content(content, Path("test.md"))
         assert result.is_valid is False
-        assert "null bytes" in result.error
+        assert result.error is not None and "null bytes" in result.error
 
     def test_repeated_byte_patterns(self) -> None:
         """Test detection of repeated byte patterns."""
@@ -212,7 +212,7 @@ def hello_world():
 
         result = validator.validate_content(content, Path("test.md"))
         assert result.is_valid is False
-        assert "repeated bytes" in result.error
+        assert result.error is not None and "repeated bytes" in result.error
 
     def test_base64_detection(self) -> None:
         """Test detection of base64-encoded content."""
@@ -238,7 +238,7 @@ def hello_world():
 
         result = validator.validate_content(content, Path("test.md"))
         assert result.is_valid is False
-        assert "encoded binary data" in result.error
+        assert result.error is not None and "encoded binary data" in result.error
 
     def test_markdown_structure_validation(self) -> None:
         """Test markdown structure validation."""
@@ -259,7 +259,7 @@ More content after unclosed block.
         # Structure validation behavior depends on implementation
         # Document the current behavior
         if not result.is_valid:
-            assert "structure" in result.error.lower()
+            assert result.error is not None and "structure" in result.error.lower()
 
     def test_large_content_sampling(self) -> None:
         """Test validation of large content with sampling."""
@@ -376,7 +376,7 @@ def process_data(data):
 
         result = validator.validate_content(binary_content, Path("binary.md"))
         assert result.is_valid is False
-        assert "binary" in result.error.lower()
+        assert result.error is not None and "binary" in result.error.lower()
 
     def test_validation_result_consistency(self) -> None:
         """Test that validation results are consistent across calls."""

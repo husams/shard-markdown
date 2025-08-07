@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 
 class MarkdownElement(BaseModel):
@@ -163,9 +163,9 @@ class ChunkingConfig(BaseModel):
 
     @field_validator("overlap")
     @classmethod
-    def validate_overlap(cls, v: int, info: Any) -> int:
+    def validate_overlap(cls, v: int, info: ValidationInfo) -> int:
         """Validate overlap is less than chunk size."""
-        if info.data and "chunk_size" in info.data:
+        if hasattr(info, "data") and info.data and "chunk_size" in info.data:
             chunk_size = info.data["chunk_size"]
             if v >= chunk_size:
                 raise ValueError(
