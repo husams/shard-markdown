@@ -90,13 +90,10 @@ class TestDocumentProcessor:
 
         result = processor.process_document(non_existent_file, "test-collection")
 
-        assert result.success is False
-        assert result.error is not None
-        assert (
-            "not found" in result.error.lower()
-            or "no such file" in result.error.lower()
-        )
+        # Non-existent files are now handled gracefully
+        assert result.success is True
         assert result.chunks_created == 0
+        assert result.error is None
 
     def test_process_document_empty_file(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -107,8 +104,47 @@ class TestDocumentProcessor:
 
         result = processor.process_document(empty_file, "test-collection")
 
-        assert result.success is False
-        assert result.error and "empty" in result.error.lower()
+        # Empty files are now handled gracefully
+        assert result.success is True
+        assert result.chunks_created == 0
+        assert result.error is None
+
+    def test_process_document_whitespace_only_file(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
+        """Test processing file with only whitespace."""
+        whitespace_file = temp_dir / "whitespace.md"
+        whitespace_file.write_text("   \n\t\n   ")
+
+        result = processor.process_document(whitespace_file, "test-collection")
+
+        # Files with only whitespace are handled gracefully
+        assert result.success is True
+        assert result.chunks_created == 0
+        assert result.error is None
+
+    def test_read_file_non_existent(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
+        """Test reading non-existent file returns empty string."""
+        non_existent = temp_dir / "does_not_exist.md"
+
+        result = processor._read_file(non_existent)
+
+        # Non-existent files return empty string
+        assert result == ""
+
+    def test_read_file_directory(
+        self, processor: DocumentProcessor, temp_dir: Path
+    ) -> None:
+        """Test reading a directory raises appropriate error."""
+        from shard_markdown.utils.errors import ProcessingError
+
+        # Try to read a directory
+        with pytest.raises(ProcessingError) as exc_info:
+            processor._read_file(temp_dir)
+
+        assert "directory" in str(exc_info.value).lower()
 
     def test_process_document_large_file(
         self, processor: DocumentProcessor, temp_dir: Path
