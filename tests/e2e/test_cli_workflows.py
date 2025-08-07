@@ -1,5 +1,6 @@
 """End-to-end tests for CLI workflows."""
 
+import os
 import time
 from typing import Any
 
@@ -7,6 +8,7 @@ import pytest
 from click.testing import CliRunner
 
 from shard_markdown.cli.main import cli
+from tests.fixtures.chromadb_fixtures import ChromaDBTestFixture
 
 
 @pytest.mark.e2e
@@ -18,23 +20,49 @@ class TestBasicCLIWorkflows:
         """CLI runner for e2e tests."""
         return CliRunner()
 
+    @pytest.fixture(autouse=True)
+    def setup_chromadb(self, chromadb_test_fixture: ChromaDBTestFixture) -> None:
+        """Ensure ChromaDB is properly initialized for e2e tests.
+
+        Args:
+            chromadb_test_fixture: ChromaDB test fixture
+        """
+        # The fixture handles setup automatically
+        pass
+
     def test_complete_document_processing_workflow(
-        self, cli_runner: CliRunner, sample_markdown_file: Any
+        self,
+        cli_runner: CliRunner,
+        sample_markdown_file: Any,
+        chromadb_test_fixture: ChromaDBTestFixture,
     ) -> None:
         """Test complete workflow from document to processed chunks."""
+        # Ensure collection is created first
+        collection_name = "e2e-test-collection"
+        try:
+            chromadb_test_fixture.create_test_collection(collection_name)
+        except Exception as e:
+            pytest.skip(f"ChromaDB not available: {e}")
+
+        # Set environment variables for CLI
+        env = os.environ.copy()
+        env["CHROMA_HOST"] = chromadb_test_fixture.host
+        env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+
         # Process a document
         result = cli_runner.invoke(
             cli,
             [
                 "process",
                 "--collection",
-                "e2e-test-collection",
+                collection_name,
                 "--chunk-size",
                 "500",
                 "--chunk-overlap",
                 "100",
                 str(sample_markdown_file),
             ],
+            env=env,
         )
 
         print(f"Process output: {result.output}")
@@ -67,23 +95,39 @@ class TestBasicCLIWorkflows:
             )
 
     def test_batch_processing_workflow(
-        self, cli_runner: CliRunner, test_documents: Any
+        self,
+        cli_runner: CliRunner,
+        test_documents: Any,
+        chromadb_test_fixture: ChromaDBTestFixture,
     ) -> None:
         """Test batch processing workflow."""
+        # Ensure collection is created first
+        collection_name = "batch-e2e-test"
+        try:
+            chromadb_test_fixture.create_test_collection(collection_name)
+        except Exception as e:
+            pytest.skip(f"ChromaDB not available: {e}")
+
         file_paths = [str(path) for path in test_documents.values()]
+
+        # Set environment variables for CLI
+        env = os.environ.copy()
+        env["CHROMA_HOST"] = chromadb_test_fixture.host
+        env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
 
         result = cli_runner.invoke(
             cli,
             [
                 "process",
                 "--collection",
-                "batch-e2e-test",
+                collection_name,
                 "--chunk-method",
                 "structure",
                 "--max-workers",
                 "2",
             ]
             + file_paths,
+            env=env,
         )
 
         print(f"Batch process output: {result.output}")
@@ -208,8 +252,21 @@ class TestAdvancedCLIWorkflows:
         """CLI runner for advanced tests."""
         return CliRunner()
 
+    @pytest.fixture(autouse=True)
+    def setup_chromadb(self, chromadb_test_fixture: ChromaDBTestFixture) -> None:
+        """Ensure ChromaDB is properly initialized for e2e tests.
+
+        Args:
+            chromadb_test_fixture: ChromaDB test fixture
+        """
+        # The fixture handles setup automatically
+        pass
+
     def test_custom_chunking_strategies(
-        self, cli_runner: CliRunner, sample_markdown_file: Any
+        self,
+        cli_runner: CliRunner,
+        sample_markdown_file: Any,
+        chromadb_test_fixture: ChromaDBTestFixture,
     ) -> None:
         """Test different chunking strategies."""
         strategies = [
@@ -218,8 +275,19 @@ class TestAdvancedCLIWorkflows:
             ("structure", "1500", "300"),
         ]
 
+        # Set environment variables for CLI
+        env = os.environ.copy()
+        env["CHROMA_HOST"] = chromadb_test_fixture.host
+        env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+
         for method, size, overlap in strategies:
             collection_name = f"chunking-{method}-{size}"
+
+            # Ensure collection is created first
+            try:
+                chromadb_test_fixture.create_test_collection(collection_name)
+            except Exception as e:
+                pytest.skip(f"ChromaDB not available: {e}")
 
             result = cli_runner.invoke(
                 cli,
@@ -235,6 +303,7 @@ class TestAdvancedCLIWorkflows:
                     overlap,
                     str(sample_markdown_file),
                 ],
+                env=env,
             )
 
             print(f"Chunking {method} output: {result.output}")
