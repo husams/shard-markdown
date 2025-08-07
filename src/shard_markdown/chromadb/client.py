@@ -2,7 +2,7 @@
 
 import socket
 import time
-from typing import Any
+from typing import Any, cast
 
 import chromadb
 from chromadb.api import ClientAPI
@@ -235,7 +235,11 @@ class ChromaDBClient:
             # Prepare data for insertion
             ids = [chunk.id or f"chunk_{i}" for i, chunk in enumerate(chunks)]
             documents = [chunk.content for chunk in chunks]
-            metadatas = [chunk.metadata for chunk in chunks]
+            # Cast metadata to the type expected by ChromaDB
+            metadatas = [
+                cast(dict[str, str | int | float | bool | None], chunk.metadata)
+                for chunk in chunks
+            ]
 
             # Add API version info to metadata
             if self._version_info:
