@@ -15,7 +15,15 @@ def test_setup_logging_console_only() -> None:
     """Test basic logging setup with console handler only."""
     with patch("shard_markdown.utils.logging.logging.getLogger") as mock_get_logger:
         mock_logger = MagicMock()
-        mock_get_logger.return_value = mock_logger
+        mock_third_party_logger = MagicMock()
+
+        def get_logger_side_effect(name):
+            if name == "shard_markdown":
+                return mock_logger
+            else:
+                return mock_third_party_logger
+
+        mock_get_logger.side_effect = get_logger_side_effect
 
         setup_logging(level=logging.DEBUG)
 
@@ -32,7 +40,15 @@ def test_setup_logging_with_file() -> None:
 
         with patch("shard_markdown.utils.logging.logging.getLogger") as mock_get_logger:
             mock_logger = MagicMock()
-            mock_get_logger.return_value = mock_logger
+            mock_third_party_logger = MagicMock()
+
+            def get_logger_side_effect(name):
+                if name == "shard_markdown":
+                    return mock_logger
+                else:
+                    return mock_third_party_logger
+
+            mock_get_logger.side_effect = get_logger_side_effect
 
             setup_logging(level=logging.INFO, file_path=log_file)
 
@@ -152,8 +168,9 @@ def test_log_context_record_factory() -> None:
     context = {"user_id": "123", "operation": "test_op"}
 
     with LogContext(logger, **context):
-        # Create a log record to test the factory
-        record = logging.LogRecord(
+        # Use the factory to create a log record
+        factory = logging.getLogRecordFactory()
+        record = factory(
             name="test",
             level=logging.INFO,
             pathname="test.py",
