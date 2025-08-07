@@ -1,8 +1,10 @@
 """Pytest configuration and fixtures."""
 
+import os
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -17,6 +19,14 @@ from shard_markdown.core.models import (
     MarkdownAST,
     MarkdownElement,
     ProcessingResult,
+)
+
+# Import ChromaDB test fixtures
+from tests.fixtures.chromadb_fixtures import (
+    chromadb_test_client,  # noqa: F401
+    chromadb_test_fixture,  # noqa: F401
+    test_collection,  # noqa: F401
+    wait_for_chromadb,
 )
 
 
@@ -504,3 +514,55 @@ def mock_processor() -> Mock:
         ),
     ]
     return processor
+
+
+# pytest hooks for test setup
+def pytest_configure(config: Any) -> None:
+    """Configure pytest with custom markers and settings.
+
+    Args:
+        config: pytest configuration object
+    """
+    # Register custom markers
+    config.addinivalue_line("markers", "chromadb: mark test as requiring ChromaDB")
+    config.addinivalue_line("markers", "e2e: mark test as end-to-end test")
+    config.addinivalue_line("markers", "integration: mark test as integration test")
+    config.addinivalue_line("markers", "unit: mark test as unit test")
+    config.addinivalue_line("markers", "slow: mark test as slow")
+
+    # In CI environment, wait for ChromaDB if tests need it
+    is_ci = os.environ.get("CI") == "true"
+    is_github_actions = os.environ.get("GITHUB_ACTIONS") == "true"
+
+    if is_ci or is_github_actions:
+        # Check if we're running tests that need ChromaDB
+        if any(
+            marker in config.option.markexpr
+            if hasattr(config.option, "markexpr")
+            else False
+            for marker in ["chromadb", "e2e", "integration"]
+        ):
+            host = os.environ.get("CHROMA_HOST", "localhost")
+            port = int(os.environ.get("CHROMA_PORT", "8000"))
+            print(f"CI Environment detected. Waiting for ChromaDB at {host}:{port}...")
+            if wait_for_chromadb(host, port, timeout=60):
+                print("ChromaDB is ready for testing")
+            else:
+                print("Warning: ChromaDB not available, some tests may fail")
+
+
+def pytest_collection_modifyitems(config: Any, items: list[Any]) -> None:
+    """Modify test collection to add markers and skip conditions.
+
+    Args:
+        config: pytest configuration object
+        items: List of test items
+    """
+    # Skip ChromaDB tests if ChromaDB is not available
+    skip_chromadb = os.environ.get("SKIP_CHROMADB_TESTS") == "true"
+
+    if skip_chromadb:
+        skip_marker = pytest.mark.skip(reason="SKIP_CHROMADB_TESTS is set")
+        for item in items:
+            if "chromadb" in item.keywords:
+                item.add_marker(skip_marker)
