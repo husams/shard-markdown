@@ -1,6 +1,6 @@
 """ChromaDB query and retrieval operations."""
 
-from typing import Any, Literal, cast
+from typing import Any, cast
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
@@ -54,8 +54,8 @@ class ChromaDBOperations:
         try:
             collection = self.client.client.get_collection(collection_name)
 
-            # Prepare include list
-            include: list[Literal["documents", "distances", "metadatas"]] = [
+            # Prepare include list - use Any for chromadb compatibility
+            include: Any = [
                 "documents",
                 "distances",
             ]
@@ -130,8 +130,8 @@ class ChromaDBOperations:
         try:
             collection = self.client.client.get_collection(collection_name)
 
-            # Prepare include list
-            include: list[Literal["documents", "metadatas"]] = ["documents"]
+            # Prepare include list - use Any for chromadb compatibility
+            include: Any = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -203,8 +203,8 @@ class ChromaDBOperations:
         try:
             collection = self.client.client.get_collection(collection_name)
 
-            # Prepare include list
-            include: list[Literal["documents", "metadatas"]] = ["documents"]
+            # Prepare include list - use Any for chromadb compatibility
+            include: Any = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
