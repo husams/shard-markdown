@@ -30,6 +30,7 @@ class TestBasicCLIWorkflows:
         # The fixture handles setup automatically
         pass
 
+    @pytest.mark.chromadb
     def test_complete_document_processing_workflow(
         self,
         cli_runner: CliRunner,
@@ -94,6 +95,7 @@ class TestBasicCLIWorkflows:
                 indicator in query_output_lower for indicator in success_indicators
             )
 
+    @pytest.mark.chromadb
     def test_batch_processing_workflow(
         self,
         cli_runner: CliRunner,
@@ -262,6 +264,7 @@ class TestAdvancedCLIWorkflows:
         # The fixture handles setup automatically
         pass
 
+    @pytest.mark.chromadb
     def test_custom_chunking_strategies(
         self,
         cli_runner: CliRunner,

@@ -321,7 +321,7 @@ jobs:
           echo "🧪 Running ChromaDB integration tests with version ${{ matrix.chromadb-version }}"
 
           # Run ChromaDB-specific tests
-          uv run pytest tests/integration/ -v --tb=short --strict-markers -m "chromadb"
+          uv run pytest tests/e2e/ -v --tb=short --strict-markers -m "chromadb"
 
           # Run basic CLI integration test
           uv run shard-md collections create ci-test-${{ matrix.chromadb-version }}

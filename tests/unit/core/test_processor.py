@@ -16,11 +16,6 @@ class TestDocumentProcessor:
     """Test suite for DocumentProcessor class."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
-        """Create DocumentProcessor instance for testing."""
-        return DocumentProcessor(chunking_config)
-
-    @pytest.fixture
     def mock_parser(self) -> Generator[Mock, None, None]:
         """Mock MarkdownParser."""
         with patch("shard_markdown.core.processor.MarkdownParser") as mock:
@@ -37,6 +32,21 @@ class TestDocumentProcessor:
         """Mock MetadataExtractor."""
         with patch("shard_markdown.core.processor.MetadataExtractor") as mock:
             yield mock.return_value
+
+    @pytest.fixture
+    def processor(
+        self,
+        chunking_config: ChunkingConfig,
+        mock_parser: Mock,
+        mock_chunker: Mock,
+        mock_metadata_extractor: Mock,
+    ) -> DocumentProcessor:
+        """Create DocumentProcessor instance for testing.
+
+        Note: This must be created AFTER the mocks are in place so that
+        the processor uses the mocked instances.
+        """
+        return DocumentProcessor(chunking_config)
 
     def test_processor_initialization(self, chunking_config: ChunkingConfig) -> None:
         """Test processor initializes correctly."""
@@ -66,9 +76,33 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+
+        # Mock enhance_chunk_metadata to return the input with additional fields
+        def enhance_mock(metadata, chunk_index, total_chunks, structural_context):
+            enhanced = metadata.copy()
+            enhanced.update(
+                {
+                    "chunk_index": chunk_index,
+                    "total_chunks": total_chunks,
+                    "enhanced": True,
+                    "is_first_chunk": chunk_index == 0,
+                    "is_last_chunk": chunk_index == total_chunks - 1,
+                    "chunk_position_percent": round(
+                        (chunk_index / max(total_chunks - 1, 1)) * 100, 2
+                    ),
+                }
+            )
+            return enhanced
+
+        mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
 
         result = processor.process_document(sample_markdown_file, "test-collection")
+
+        # Debug output
+        print(f"Mock chunker called: {mock_chunker.chunk_document.called}")
+        print(f"Mock chunker return value: {mock_chunker.chunk_document.return_value}")
+        print(f"Sample chunks length: {len(sample_chunks)}")
+        print(f"Result chunks created: {result.chunks_created}")
 
         assert result.success is True
         assert result.file_path == sample_markdown_file
@@ -151,11 +185,17 @@ class TestDocumentProcessor:
     ) -> None:
         """Test processing file that's too large."""
         large_file = temp_dir / "large.md"
+        # Create a dummy file first
+        large_file.write_text("# Test")
 
         # Create file larger than 100MB limit
-        with patch.object(Path, "stat") as mock_stat:
-            mock_stat.return_value.st_size = 150 * 1024 * 1024  # 150MB
+        import os
 
+        mock_stat_result = Mock()
+        mock_stat_result.st_size = 150 * 1024 * 1024  # 150MB
+        mock_stat_result.st_mode = os.stat(large_file).st_mode  # Get real mode
+
+        with patch.object(Path, "stat", return_value=mock_stat_result):
             result = processor.process_document(large_file, "test-collection")
 
             assert result.success is False
@@ -290,7 +330,25 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+
+        # Mock enhance_chunk_metadata to return the input with additional fields
+        def enhance_mock(metadata, chunk_index, total_chunks, structural_context):
+            enhanced = metadata.copy()
+            enhanced.update(
+                {
+                    "chunk_index": chunk_index,
+                    "total_chunks": total_chunks,
+                    "enhanced": True,
+                    "is_first_chunk": chunk_index == 0,
+                    "is_last_chunk": chunk_index == total_chunks - 1,
+                    "chunk_position_percent": round(
+                        (chunk_index / max(total_chunks - 1, 1)) * 100, 2
+                    ),
+                }
+            )
+            return enhanced
+
+        mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
 
         file_paths = list(test_documents.values())
         result = processor.process_batch(file_paths, "test-collection", max_workers=2)
@@ -365,7 +423,25 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+
+        # Mock enhance_chunk_metadata to return the input with additional fields
+        def enhance_mock(metadata, chunk_index, total_chunks, structural_context):
+            enhanced = metadata.copy()
+            enhanced.update(
+                {
+                    "chunk_index": chunk_index,
+                    "total_chunks": total_chunks,
+                    "enhanced": True,
+                    "is_first_chunk": chunk_index == 0,
+                    "is_last_chunk": chunk_index == total_chunks - 1,
+                    "chunk_position_percent": round(
+                        (chunk_index / max(total_chunks - 1, 1)) * 100, 2
+                    ),
+                }
+            )
+            return enhanced
+
+        mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
 
         file_paths = list(test_documents.values())
 
@@ -400,7 +476,25 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {
             "title": "Test"
         }
-        mock_metadata_extractor.enhance_chunk_metadata.return_value = {"enhanced": True}
+
+        # Mock enhance_chunk_metadata to return the input with additional fields
+        def enhance_mock(metadata, chunk_index, total_chunks, structural_context):
+            enhanced = metadata.copy()
+            enhanced.update(
+                {
+                    "chunk_index": chunk_index,
+                    "total_chunks": total_chunks,
+                    "enhanced": True,
+                    "is_first_chunk": chunk_index == 0,
+                    "is_last_chunk": chunk_index == total_chunks - 1,
+                    "chunk_position_percent": round(
+                        (chunk_index / max(total_chunks - 1, 1)) * 100, 2
+                    ),
+                }
+            )
+            return enhanced
+
+        mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
 
         file_paths = list(test_documents.values())
         result = processor.process_batch(

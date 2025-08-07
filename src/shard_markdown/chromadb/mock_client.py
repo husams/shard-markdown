@@ -5,8 +5,10 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ..config.settings import ChromaDBConfig
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.logging import get_logger
+from .client import ChromaDBClient
 
 
 logger = get_logger(__name__)
@@ -82,15 +84,23 @@ class MockCollection:
         }
 
 
-class MockChromaDBClient:
+class MockChromaDBClient(ChromaDBClient):
     """Mock ChromaDB client for testing and development."""
 
-    def __init__(self, config: Any = None) -> None:
+    def __init__(self, config: ChromaDBConfig | None = None) -> None:
         """Initialize mock client.
 
         Args:
             config: Configuration object (optional for mock)
         """
+        # Use default config if not provided
+        if config is None:
+            config = ChromaDBConfig(host="localhost", port=8000)
+
+        # Initialize parent class
+        super().__init__(config)
+
+        # Override client attributes for mock
         self.config = config
         self.collections: dict[str, MockCollection] = {}
         self._connection_validated = False
@@ -152,16 +162,16 @@ class MockChromaDBClient:
             collections_info.append(info)
         return collections_info
 
-    def delete_collection(self, name: str) -> None:
+    def delete_collection(self, name: str) -> bool:
         """Delete collection."""
         if name in self.collections:
             del self.collections[name]
             self._save_storage()
             logger.info(f"Deleted mock collection: {name}")
+            return True
+        return False
 
-    def bulk_insert(
-        self, collection: MockCollection, chunks: list[DocumentChunk]
-    ) -> InsertResult:
+    def bulk_insert(self, collection: Any, chunks: list[DocumentChunk]) -> InsertResult:
         """Bulk insert chunks into collection."""
         start_time = time.time()
 

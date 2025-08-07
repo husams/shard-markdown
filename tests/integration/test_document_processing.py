@@ -10,6 +10,7 @@ from shard_markdown.core.models import ChunkingConfig
 from shard_markdown.core.processor import DocumentProcessor
 
 
+@pytest.mark.integration
 class TestDocumentProcessingIntegration:
     """Integration tests for document processing workflows."""
 
