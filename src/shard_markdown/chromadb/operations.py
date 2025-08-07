@@ -1,6 +1,6 @@
 """ChromaDB query and retrieval operations."""
 
-from typing import Any
+from typing import Any, Literal, cast
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
@@ -55,18 +55,23 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include: list[str] = ["documents", "distances"]
+            include: list[Literal["documents", "distances", "metadatas"]] = [
+                "documents",
+                "distances",
+            ]
             if include_metadata:
                 include.append("metadatas")
 
             # Perform query
             results = collection.query(
-                query_texts=[query_text], n_results=limit, include=include
+                query_texts=[query_text],
+                n_results=limit,
+                include=include,
             )
 
             # Process results
             processed_results = self._process_query_results(
-                results, similarity_threshold, include_metadata
+                cast(dict[str, Any], results), similarity_threshold, include_metadata
             )
 
             logger.info(
@@ -126,7 +131,7 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include: list[str] = ["documents"]
+            include: list[Literal["documents", "metadatas"]] = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -137,13 +142,15 @@ class ChromaDBOperations:
                 return None
 
             # Format result
-            document_data = {
+            document_data: dict[str, Any] = {
                 "id": results["ids"][0],
                 "content": results["documents"][0] if results["documents"] else "",
             }
 
             if include_metadata and results.get("metadatas"):
-                document_data["metadata"] = results["metadatas"][0]
+                metadatas = results.get("metadatas")
+                if metadatas and isinstance(metadatas, list) and len(metadatas) > 0:
+                    document_data["metadata"] = metadatas[0]
 
             logger.info(
                 "Retrieved document '%s' from '%s'", document_id, collection_name
@@ -197,7 +204,7 @@ class ChromaDBOperations:
             collection = self.client.client.get_collection(collection_name)
 
             # Prepare include list
-            include: list[str] = ["documents"]
+            include: list[Literal["documents", "metadatas"]] = ["documents"]
             if include_metadata:
                 include.append("metadatas")
 
@@ -227,12 +234,10 @@ class ChromaDBOperations:
                     ),
                 }
 
-                if (
-                    include_metadata
-                    and results.get("metadatas")
-                    and i < len(results.get("metadatas", []))
-                ):
-                    doc_data["metadata"] = results["metadatas"][i]
+                if include_metadata:
+                    metadatas = results.get("metadatas")
+                    if metadatas and isinstance(metadatas, list) and i < len(metadatas):
+                        doc_data["metadata"] = metadatas[i]
 
                 documents.append(doc_data)
 
