@@ -72,7 +72,7 @@ class TestChromaDBClient:
         mock_socket.return_value = mock_sock_instance
         mock_sock_instance.connect_ex.return_value = 0
 
-        # Mock version detector
+        # Mock version detector instance and its detect_api_version method
         from shard_markdown.chromadb.version_detector import APIVersionInfo
 
         mock_version_info = APIVersionInfo(
@@ -81,7 +81,16 @@ class TestChromaDBClient:
             version_endpoint="http://localhost:8000/api/v2/version",
             detection_time=1234567890.0,
         )
-        client.version_detector.detect_api_version.return_value = mock_version_info  # type: ignore[attr-defined]
+
+        # Create a mock instance for the version detector
+        mock_version_detector_instance = Mock()
+        mock_version_detector_instance.detect_api_version.return_value = (
+            mock_version_info
+        )
+        mock_version_detector_class.return_value = mock_version_detector_instance
+
+        # Re-initialize the client's version_detector with our mock
+        client.version_detector = mock_version_detector_instance
 
         # Mock ChromaDB client
         mock_client_instance = Mock()

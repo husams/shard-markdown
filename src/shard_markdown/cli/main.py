@@ -83,6 +83,9 @@ def cli(
     except (OSError, ValueError) as e:
         console.print(f"[red]Error initializing shard-md:[/red] {str(e)}")
         sys.exit(1)
+    except Exception as e:
+        console.print(f"[red]Error initializing shard-md:[/red] {str(e)}")
+        sys.exit(1)
 
 
 @cli.command()

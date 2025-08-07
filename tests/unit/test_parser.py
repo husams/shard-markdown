@@ -103,8 +103,9 @@ function greet() {
         parser = MarkdownParser()
         ast = parser.parse(content)
 
-        lists = [e for e in ast.elements if e.type == "list"]
-        assert len(lists) >= 2
+        # Parser creates list_item elements, not list elements
+        list_items = [e for e in ast.elements if e.type == "list_item"]
+        assert len(list_items) >= 6  # 3 unordered + 3 ordered items
 
     def test_parse_empty_content(self):
         """Test parsing empty or whitespace-only content."""

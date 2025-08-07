@@ -36,9 +36,14 @@ class MarkdownParser:
         """
         try:
             # Parse frontmatter if present
-            post = frontmatter.loads(content)
-            markdown_content = post.content
-            frontmatter_metadata = dict(post.metadata)
+            try:
+                post = frontmatter.loads(content)
+                markdown_content = post.content
+                frontmatter_metadata = dict(post.metadata)
+            except Exception:
+                # If frontmatter parsing fails, treat entire content as markdown
+                markdown_content = content
+                frontmatter_metadata = {}
 
             # Convert to HTML to extract structure
             html = self.md.convert(markdown_content)

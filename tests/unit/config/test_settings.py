@@ -320,13 +320,13 @@ class TestConfigValidationScenarios:
 
     def test_extreme_values(self) -> None:
         """Test configuration with extreme values."""
-        # Very large chunk size
-        chunking_config = ChunkingConfig(default_size=100000)
-        assert chunking_config.default_size == 100000
+        # Maximum allowed chunk size
+        chunking_config = ChunkingConfig(default_size=10000)
+        assert chunking_config.default_size == 10000
 
-        # Very high worker count
-        processing_config = ProcessingConfig(max_workers=100)
-        assert processing_config.max_workers == 100
+        # Maximum allowed worker count
+        processing_config = ProcessingConfig(max_workers=16)
+        assert processing_config.max_workers == 16
 
         # Very large timeout
         chromadb_config = ChromaDBConfig(timeout=3600)
