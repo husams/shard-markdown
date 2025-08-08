@@ -221,7 +221,7 @@ jobs:
           uv run shard-md --help
 
           # Test source distribution
-          uv pip uninstall shard-markdown -y
+          uv pip uninstall shard-markdown
           uv pip install dist/*.tar.gz
           uv run shard-md --help
 
