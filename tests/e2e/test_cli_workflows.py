@@ -76,8 +76,7 @@ class TestBasicCLIWorkflows:
                 "search",
                 "--collection",
                 "e2e-test-collection",
-                "--query",
-                "test content",
+                "test content",  # Query text is a positional argument
                 "--limit",
                 "5",
             ],
@@ -457,8 +456,11 @@ Content here.
         if process_result.exit_code == 0:
             # Test different query types
             query_types = [
-                ("search", ["--query", "test", "--limit", "3"]),
-                ("similarity", ["--text", "sample content", "--limit", "5"]),
+                ("search", ["test", "--limit", "3"]),  # Query text is positional
+                (
+                    "similarity",
+                    ["sample content", "--limit", "5"],
+                ),  # Text is positional
                 ("list", ["--limit", "10"]),
             ]
 
