@@ -129,15 +129,31 @@ class ChromaDBClient:
             logger.info("Retrieved existing collection: %s", name)
             return collection
 
-        except (ValueError, KeyError, AttributeError, RuntimeError) as e:
+        except Exception as e:
+            # Check if it's a "collection doesn't exist" error from ChromaDB
+            error_msg = str(e).lower()
+            if "does not exist" in error_msg or "not found" in error_msg:
+                raise ChromaDBError(
+                    f"Collection '{name}' does not exist",
+                    error_code=1413,
+                    context={
+                        "collection_name": name,
+                        "api_version": self._version_info.version
+                        if self._version_info
+                        else None,
+                    },
+                    cause=e,
+                ) from e
+            # For other errors, re-raise with different error code
             raise ChromaDBError(
-                f"Collection '{name}' does not exist",
-                error_code=1413,
+                f"Failed to get collection '{name}': {str(e)}",
+                error_code=1499,
                 context={
                     "collection_name": name,
                     "api_version": self._version_info.version
                     if self._version_info
                     else None,
+                    "original_error": str(e),
                 },
                 cause=e,
             ) from e
