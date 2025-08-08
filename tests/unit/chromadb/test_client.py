@@ -56,7 +56,7 @@ class TestChromaDBClient:
         assert client.client is None
         assert client._connection_validated is False
 
-    @patch("shard_markdown.chromadb.client.chromadb.HttpClient")
+    @patch("chromadb.HttpClient")
     @patch("shard_markdown.chromadb.client.ChromaDBVersionDetector")
     @patch("shard_markdown.chromadb.client.socket.socket")
     def test_connect_success(
