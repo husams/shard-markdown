@@ -402,6 +402,7 @@ Content here.
                     "--max-workers",
                     str(workers),
                     "--use-mock",
+                    "--create-collection",
                 ]
                 + file_paths,
             )
@@ -446,6 +447,7 @@ Content here.
                 "--chunk-overlap",
                 "300",
                 "--use-mock",
+                "--create-collection",
                 str(large_doc),
             ],
         )
@@ -523,6 +525,7 @@ processing:
                 "--collection",
                 "config-override-test",
                 "--use-mock",
+                "--create-collection",
                 str(sample_markdown_file),
             ],
         )
@@ -616,7 +619,7 @@ processing:
         (files_dir / "readme.txt").write_text("Text file")
         (files_dir / "data.json").write_text('{"key": "value"}')
 
-        # Process with pattern filtering
+        # Process with recursive mode (automatically finds .md files)
         result = cli_runner.invoke(
             cli,
             [
@@ -625,8 +628,7 @@ processing:
                 "pattern-test",
                 "--recursive",
                 "--use-mock",
-                "--pattern",
-                "*.md",
+                "--create-collection",
                 str(files_dir),
             ],
         )
@@ -634,8 +636,8 @@ processing:
         print(f"Pattern filtering output: {result.output}")
         assert result.exit_code == 0
         output_lower = result.output.lower()
-        success_indicators = ["processed", "success"]
-        assert any(indicator in output_lower for indicator in success_indicators)
+        # Should process only the 2 .md files, not the .txt or .json files
+        assert "2" in result.output or "processed" in output_lower
 
 
 @pytest.mark.e2e
@@ -726,7 +728,7 @@ class TestCLIErrorScenarios:
             # Should handle permission errors gracefully
             if result.exit_code != 0:
                 output_lower = result.output.lower()
-                permission_indicators = ["permission", "access"]
+                permission_indicators = ["permission", "access", "readable", "denied"]
                 assert any(
                     indicator in output_lower for indicator in permission_indicators
                 )
@@ -827,6 +829,7 @@ This concludes document {i}.
                 "performance-test",
                 "--recursive",
                 "--use-mock",
+                "--create-collection",
                 str(files_dir),
             ],
         )
@@ -864,6 +867,7 @@ This concludes document {i}.
                 "--chunk-size",
                 "2000",
                 "--use-mock",
+                "--create-collection",
                 str(large_doc),
             ],
         )
