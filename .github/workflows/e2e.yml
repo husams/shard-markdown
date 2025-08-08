@@ -232,10 +232,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Test matrix with stable versions covering different API capabilities
+        # Use only the latest stable ChromaDB version
         chromadb-version:
           - "0.5.23" # Latest stable with full v1/v2 API support
-          - "0.5.16" # First version with v2 API support
 
     steps:
       - name: Checkout code
@@ -401,74 +400,5 @@ jobs:
         run: |
           uv run shard-md collections delete performance-test || true
 
-  # Test ChromaDB version compatibility matrix
-  e2e-version-compatibility:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        chromadb-version:
-          - "0.5.23" # Latest stable
-          - "0.5.20" # Mid-range stable
-          - "0.5.16" # First with v2 API
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Set up Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
-        run: uv sync --dev --extra chromadb
-
-      - name: Setup ChromaDB
-        uses: ./.github/actions/setup-chromadb
-        with:
-          chromadb-version: ${{ matrix.chromadb-version }}
-          port: 8000
-          timeout: 120
-
-      - name: Run comprehensive compatibility test
-        env:
-          CHROMA_HOST: localhost
-          CHROMA_PORT: 8000
-        run: |
-          echo "🧪 Running compatibility tests for ChromaDB ${{ matrix.chromadb-version }}"
-
-          # Test version detection
-          if [ -f "./scripts/detect-chromadb-version.sh" ]; then
-            ./scripts/detect-chromadb-version.sh --host localhost --port 8000
-          fi
-
-          # Test basic operations
-          collection_name="compat-test-$(echo ${{ matrix.chromadb-version }} | tr '.' '-')"
-
-          echo "Creating collection: $collection_name"
-          uv run shard-md collections create "$collection_name" --description "Compatibility test for version ${{ matrix.chromadb-version }}"
-
-          echo "# Compatibility Test" > compat-test.md
-          echo "Testing ChromaDB version ${{ matrix.chromadb-version }}" >> compat-test.md
-          echo "" >> compat-test.md
-          echo "## API Version Detection" >> compat-test.md
-          echo "This test validates that the API version detection works correctly." >> compat-test.md
-
-          echo "Processing document..."
-          uv run shard-md process --collection "$collection_name" compat-test.md
-
-          echo "Testing search..."
-          uv run shard-md query search "compatibility" --collection "$collection_name" --limit 3
-
-          echo "Testing collection operations..."
-          uv run shard-md collections info "$collection_name"
-          uv run shard-md collections list
-
-          echo "Cleaning up..."
-          uv run shard-md collections delete "$collection_name"
-
-          echo "✅ Compatibility test passed for ChromaDB ${{ matrix.chromadb-version }}"
+  # Note: e2e-version-compatibility job removed as it duplicates e2e-chromadb-configs
+  # All version testing is now consolidated in e2e-chromadb-configs with version 0.5.23 only
