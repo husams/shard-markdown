@@ -4,11 +4,24 @@ import os
 import time
 from collections.abc import Callable, Generator
 from functools import wraps
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-import chromadb
 import pytest
-from chromadb.api import ClientAPI
+
+
+# Handle optional ChromaDB import
+try:
+    import chromadb
+    from chromadb.api import ClientAPI
+
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    chromadb = None
+    ClientAPI = Any
+    CHROMADB_AVAILABLE = False
+
+if TYPE_CHECKING:
+    import chromadb
 
 from shard_markdown.chromadb.client import ChromaDBClient
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
@@ -44,12 +57,25 @@ def retry_on_collection_error(
             for attempt in range(max_retries + 1):
                 try:
                     return func(*args, **kwargs)
-                except (
-                    chromadb.errors.InvalidArgumentError,
-                    chromadb.errors.NotFoundError,
-                    ValueError,
-                    KeyError,
-                ) as e:
+                except (ValueError, KeyError, RuntimeError) as e:
+                    # Also catch chromadb errors if available
+                    if CHROMADB_AVAILABLE:
+                        try:
+                            import chromadb.errors
+
+                            if isinstance(
+                                e,
+                                chromadb.errors.InvalidArgumentError
+                                | chromadb.errors.NotFoundError,
+                            ):
+                                pass  # Will be handled below
+                            elif not isinstance(
+                                e, ValueError | KeyError | RuntimeError
+                            ):
+                                raise
+                        except (ImportError, AttributeError):
+                            # ChromaDB errors not available, continue
+                            pass
                     last_exception = e
                     if attempt < max_retries:
                         logger.warning(
@@ -85,11 +111,19 @@ class ChromaDBTestFixture:
         """
         self.host = host
         self.port = port
-        self.client: ClientAPI | None = None
+        self.client: Any = None  # ClientAPI or MockChromaDBClient
         self._test_collections: set[str] = set()
 
     def setup(self) -> None:
         """Set up ChromaDB connection with retry logic."""
+        # Check if ChromaDB is available
+        if not CHROMADB_AVAILABLE:
+            logger.warning("ChromaDB not installed, using mock client")
+            from shard_markdown.chromadb.mock_client import MockChromaDBClient
+
+            self.client = MockChromaDBClient()
+            return
+
         # Check if we're in CI environment
         is_ci = os.environ.get("CI") == "true"
         is_github_actions = os.environ.get("GITHUB_ACTIONS") == "true"
@@ -139,7 +173,7 @@ class ChromaDBTestFixture:
     @retry_on_collection_error(max_retries=3)
     def create_test_collection(
         self, name: str, metadata: dict[str, Any] | None = None
-    ) -> chromadb.Collection:
+    ) -> Any:
         """Create a test collection with proper initialization.
 
         Args:
@@ -180,7 +214,7 @@ class ChromaDBTestFixture:
     @retry_on_collection_error(max_retries=3)
     def get_or_create_test_collection(
         self, name: str, metadata: dict[str, Any] | None = None
-    ) -> chromadb.Collection:
+    ) -> Any:
         """Get existing or create new test collection.
 
         Args:
@@ -201,7 +235,7 @@ class ChromaDBTestFixture:
         except Exception:
             return self.create_test_collection(name, metadata)
 
-    def ensure_collection_ready(self, collection: chromadb.Collection) -> bool:
+    def ensure_collection_ready(self, collection: Any) -> bool:
         """Ensure a collection is ready for operations.
 
         Args:
@@ -265,7 +299,7 @@ def chromadb_test_client(
 @pytest.fixture
 def test_collection(
     chromadb_test_fixture: ChromaDBTestFixture,
-) -> chromadb.Collection:
+) -> Any:
     """Create a test collection for each test.
 
     Args:
@@ -274,6 +308,9 @@ def test_collection(
     Returns:
         Test collection
     """
+    if not CHROMADB_AVAILABLE:
+        pytest.skip("ChromaDB not available")
+
     import uuid
 
     collection_name = f"test-{uuid.uuid4().hex[:8]}"
@@ -307,15 +344,20 @@ def wait_for_chromadb(
             sock.close()
 
             if result == 0:
-                # Try to connect with client
-                try:
-                    client = chromadb.HttpClient(host=host, port=port)
-                    client.heartbeat()
-                    logger.info(f"ChromaDB is ready at {host}:{port}")
+                # Try to connect with client if ChromaDB is available
+                if CHROMADB_AVAILABLE and chromadb:
+                    try:
+                        client = chromadb.HttpClient(host=host, port=port)
+                        client.heartbeat()
+                        logger.info(f"ChromaDB is ready at {host}:{port}")
+                        return True
+                    except Exception:  # noqa: S110
+                        # Not ready yet, will retry
+                        pass
+                else:
+                    # If ChromaDB not available, just check socket
+                    logger.info(f"Socket connection successful to {host}:{port}")
                     return True
-                except Exception:  # noqa: S110
-                    # Not ready yet, will retry
-                    pass
 
         except Exception:  # noqa: S110
             # Connection failed, will retry
