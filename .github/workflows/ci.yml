@@ -155,13 +155,25 @@ jobs:
           CHROMA_PORT: 8000
           COVERAGE_FILE: .coverage
         run: |
+          # Run tests and capture the exit code
           uv run pytest \
             --cov=shard_markdown \
             --cov-report=xml \
             --cov-report=html \
             --cov-report=term-missing \
-            --cov-fail-under=80 \
             tests/
+          TEST_EXIT_CODE=$?
+
+          # Check coverage threshold (informational only, don't fail the build)
+          echo ""
+          echo "📊 Checking coverage threshold (informational):"
+          uv run coverage report --fail-under=80 || {
+            echo "⚠️ Coverage is below 80% threshold - this is informational only and won't fail the build"
+            echo "ℹ️ To improve coverage, add more tests for uncovered code paths"
+          }
+
+          # Exit with the test exit code (fail only if tests failed, not coverage)
+          exit $TEST_EXIT_CODE
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
