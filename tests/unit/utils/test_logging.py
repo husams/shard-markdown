@@ -241,6 +241,8 @@ def test_setup_logging_file_rotation_config() -> None:
         )
         with handler_patch as mock_handler_class:
             mock_handler = MagicMock()
+            # Ensure mock handler has proper level attribute
+            mock_handler.level = logging.INFO
             mock_handler_class.return_value = mock_handler
 
             setup_logging(

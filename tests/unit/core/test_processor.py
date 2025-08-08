@@ -124,10 +124,11 @@ class TestDocumentProcessor:
 
         result = processor.process_document(non_existent_file, "test-collection")
 
-        # Non-existent files are now handled gracefully
-        assert result.success is True
+        # Non-existent files now return an error
+        assert result.success is False
         assert result.chunks_created == 0
-        assert result.error is None
+        assert result.error is not None
+        assert "not found" in result.error.lower()
 
     def test_process_document_empty_file(
         self, processor: DocumentProcessor, temp_dir: Path
@@ -160,13 +161,16 @@ class TestDocumentProcessor:
     def test_read_file_non_existent(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
-        """Test reading non-existent file returns empty string."""
+        """Test reading non-existent file raises FileSystemError."""
+        from shard_markdown.utils.errors import FileSystemError
+
         non_existent = temp_dir / "does_not_exist.md"
 
-        result = processor._read_file(non_existent)
+        # Non-existent files now raise FileSystemError
+        with pytest.raises(FileSystemError) as exc_info:
+            processor._read_file(non_existent)
 
-        # Non-existent files return empty string
-        assert result == ""
+        assert "not found" in str(exc_info.value).lower()
 
     def test_read_file_directory(
         self, processor: DocumentProcessor, temp_dir: Path

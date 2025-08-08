@@ -232,9 +232,11 @@ class DocumentProcessor:
         # Check if path exists
         if not file_path.exists():
             logger.warning(f"File not found: {file_path}")
-            # Return empty string for non-existent files
-            # This provides graceful handling for missing files
-            return ""
+            raise FileSystemError(
+                f"File not found: {file_path}",
+                error_code=1201,
+                context={"file_path": str(file_path)},
+            )
 
         # Check if it's a directory
         if file_path.is_dir():
@@ -259,9 +261,14 @@ class DocumentProcessor:
                     error_code=1202,
                     context={"file_path": str(file_path), "file_size": file_size},
                 )
-        except PermissionError:
+        except PermissionError as e:
             logger.warning(f"Permission denied accessing file: {file_path}")
-            return ""  # Return empty string for permission errors
+            raise FileSystemError(
+                f"Permission denied accessing file: {file_path}",
+                error_code=1205,
+                context={"file_path": str(file_path)},
+                cause=e,
+            ) from e
         except OSError as e:
             raise FileSystemError(
                 f"Cannot access file: {file_path}",
@@ -296,9 +303,14 @@ class DocumentProcessor:
                         },
                     ) from None
                 continue
-            except PermissionError:
+            except PermissionError as e:
                 logger.warning(f"Permission denied reading file: {file_path}")
-                return ""  # Return empty string for permission errors
+                raise FileSystemError(
+                    f"Permission denied reading file: {file_path}",
+                    error_code=1204,
+                    context={"file_path": str(file_path)},
+                    cause=e,
+                ) from e
             except OSError as e:
                 raise FileSystemError(
                     f"Error reading file: {file_path}",
