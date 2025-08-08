@@ -15,6 +15,27 @@ from ..utils.logging import get_logger
 from .version_detector import APIVersionInfo, ChromaDBVersionDetector
 
 
+# Import ChromaDB exceptions for better error handling
+try:
+    from chromadb.errors import (
+        ChromaError,
+        InvalidArgumentError,
+        UniqueConstraintError,
+    )
+except ImportError:
+    # Fallback if chromadb is not installed or older version
+    ChromaError = Exception
+    InvalidArgumentError = ValueError
+    UniqueConstraintError = ValueError
+
+# Import httpx exceptions for HTTP error handling
+try:
+    from httpx import HTTPStatusError
+except ImportError:
+    # Fallback if httpx is not installed
+    HTTPStatusError = Exception
+
+
 logger = get_logger(__name__)
 
 
@@ -191,7 +212,7 @@ class ChromaDBClient:
             logger.info("Retrieved existing collection: %s", name)
             return collection
 
-        except Exception as get_error:
+        except (ChromaError, HTTPStatusError, Exception) as get_error:
             # Check if it's a "not found" error - handle both ChromaDB native errors
             # and our wrapped errors
             error_msg = str(get_error).lower()
@@ -209,7 +230,10 @@ class ChromaDBClient:
                 is_not_found = True
 
             # Check for HTTPStatusError with 400/404 status
-            if hasattr(get_error, "response"):
+            if isinstance(get_error, HTTPStatusError):
+                if get_error.response.status_code in (400, 404):
+                    is_not_found = True
+            elif hasattr(get_error, "response"):
                 status_code = getattr(get_error.response, "status_code", None)
                 if status_code in (400, 404):
                     is_not_found = True
@@ -218,37 +242,120 @@ class ChromaDBClient:
             if create_if_missing and is_not_found:
                 # Create new collection since it doesn't exist
                 try:
-                    collection_metadata = metadata or {}
+                    # Prepare metadata - ensure all values are strings for compatibility
+                    collection_metadata = {}
+                    if metadata:
+                        # Convert all metadata values to strings
+                        collection_metadata.update(
+                            {k: str(v) for k, v in metadata.items()}
+                        )
+
+                    # Add our standard metadata
                     collection_metadata.update(
                         {
                             "created_by": "shard-md-cli",
                             "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
                             "version": "1.0.0",
-                            "api_version": self._version_info.version
-                            if self._version_info
-                            else "unknown",
                         }
                     )
 
-                    collection = self.client.create_collection(
-                        name=name, metadata=collection_metadata
+                    # Only add api_version if we have it
+                    if self._version_info and self._version_info.version:
+                        collection_metadata["api_version"] = str(
+                            self._version_info.version
+                        )
+
+                    logger.debug(
+                        f"Attempting to create collection '{name}' with metadata: "
+                        f"{collection_metadata}"
                     )
 
-                    logger.info("Created new collection: %s", name)
+                    # Create the collection with retry logic for transient failures
+                    max_retries = 3
+                    retry_delay = 1.0
+
+                    for attempt in range(max_retries):
+                        try:
+                            collection = self.client.create_collection(
+                                name=name, metadata=collection_metadata
+                            )
+                            break  # Success, exit retry loop
+                        except Exception as retry_error:
+                            if attempt < max_retries - 1:
+                                logger.warning(
+                                    f"Collection creation attempt {attempt + 1} "
+                                    f"failed: {retry_error}. Retrying in "
+                                    f"{retry_delay}s..."
+                                )
+                                time.sleep(retry_delay)
+                                retry_delay *= 2  # Exponential backoff
+                            else:
+                                # Final attempt failed, raise the error
+                                raise retry_error
+
+                    logger.info(
+                        f"Successfully created new collection: {name} "
+                        f"(id: {getattr(collection, 'id', 'unknown')})"
+                    )
                     return collection
 
-                except Exception as create_error:
+                except (ChromaError, HTTPStatusError, Exception) as create_error:
+                    # Log detailed error information for debugging
+                    logger.error(
+                        f"Failed to create collection '{name}': "
+                        f"Type: {type(create_error).__name__}, "
+                        f"Message: {str(create_error)}"
+                    )
+
+                    # Check if it's a UniqueConstraintError (collection already exists)
+                    # This can happen in race conditions
+                    if isinstance(create_error, UniqueConstraintError) or (
+                        "already exists" in str(create_error).lower()
+                    ):
+                        # Try to get the collection again - it might have been created
+                        # by another process in a race condition
+                        try:
+                            collection = self.client.get_collection(name)
+                            logger.info(
+                                f"Collection '{name}' already exists (race condition), "
+                                "retrieved successfully"
+                            )
+                            return collection
+                        except Exception as retry_error:
+                            # If we still can't get it, raise the original error
+                            logger.debug(
+                                f"Failed to get collection after race condition: "
+                                f"{retry_error}"
+                            )
+
+                    # Extract more specific error details
+                    error_details = {
+                        "collection_name": name,
+                        "error_type": type(create_error).__name__,
+                        "get_error": str(get_error),
+                        "create_error": str(create_error),
+                        "api_version": self._version_info.version
+                        if self._version_info
+                        else None,
+                    }
+
+                    # Add HTTP status code if available
+                    if isinstance(create_error, HTTPStatusError):
+                        error_details["http_status"] = create_error.response.status_code
+                        error_details["http_response"] = str(
+                            create_error.response.text
+                        )[:500]
+                        error_details["request_url"] = str(create_error.request.url)
+
+                    # Add client state information for debugging
+                    error_details["client_connected"] = str(self._connection_validated)
+                    error_details["host"] = self.config.host
+                    error_details["port"] = str(self.config.port)
+
                     raise ChromaDBError(
-                        f"Failed to create collection: {name}",
+                        f"Failed to create collection '{name}': {str(create_error)}",
                         error_code=1414,
-                        context={
-                            "collection_name": name,
-                            "get_error": str(get_error),
-                            "create_error": str(create_error),
-                            "api_version": self._version_info.version
-                            if self._version_info
-                            else None,
-                        },
+                        context=error_details,
                         cause=create_error,
                     ) from create_error
 
