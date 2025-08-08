@@ -100,7 +100,13 @@ class MockChromaDBClient:
         self.config = config
         self.collections: dict[str, MockCollection] = {}
         self._connection_validated = False
-        self.storage_path = Path("./mock_chromadb_storage.json")
+
+        # Use temp directory for storage to avoid polluting project directory
+        import tempfile
+
+        temp_dir = Path(tempfile.gettempdir()) / "shard_markdown_mock"
+        temp_dir.mkdir(exist_ok=True)
+        self.storage_path = temp_dir / "mock_chromadb_storage.json"
         self._load_storage()
 
     def connect(self) -> bool:
