@@ -535,6 +535,412 @@
           "processor_version": "0.1.0"
         },
         "id": "e809e6b8f79c8578_0000"
+      },
+      "ef593084944a8018_0000": {
+        "document": "# Test Document\n\nThis document has frontmatter that should be preserved.\n\n## Section 1\n\nContent here.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpmkqmjzhb/frontmatter_doc.md",
+          "file_name": "frontmatter_doc.md",
+          "file_stem": "frontmatter_doc",
+          "file_suffix": ".md",
+          "file_size": 179,
+          "file_modified": "2025-08-07T23:39:37.282465",
+          "file_created": "2025-08-07T23:39:37.282465",
+          "file_hash": "73d9638354170cce59bb93938a45e67006a8e1c21b222c397a923e61178c864b",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpmkqmjzhb",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpmkqmjzhb/frontmatter_doc.md",
+          "title": "Test Document",
+          "author": "Test Author",
+          "tags": [
+            "test",
+            "e2e"
+          ],
+          "total_elements": 4,
+          "header_count": 2,
+          "paragraph_count": 2,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1,
+            2
+          ],
+          "max_header_level": 2,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Section 1"
+            }
+          ],
+          "word_count": 14,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Section 1",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 2,
+          "processed_at": "2025-08-07T22:39:37.284026",
+          "processor_version": "0.1.0"
+        },
+        "id": "ef593084944a8018_0000"
+      },
+      "1a04196f9931eb5f_0000": {
+        "document": "# Test Document\n\nThis document has frontmatter that should be preserved.\n\n## Section 1\n\nContent here.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp4j5a6j55/frontmatter_doc.md",
+          "file_name": "frontmatter_doc.md",
+          "file_stem": "frontmatter_doc",
+          "file_suffix": ".md",
+          "file_size": 179,
+          "file_modified": "2025-08-07T23:39:54.673421",
+          "file_created": "2025-08-07T23:39:54.673421",
+          "file_hash": "73d9638354170cce59bb93938a45e67006a8e1c21b222c397a923e61178c864b",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp4j5a6j55",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp4j5a6j55/frontmatter_doc.md",
+          "title": "Test Document",
+          "author": "Test Author",
+          "tags": [
+            "test",
+            "e2e"
+          ],
+          "total_elements": 4,
+          "header_count": 2,
+          "paragraph_count": 2,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1,
+            2
+          ],
+          "max_header_level": 2,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Section 1"
+            }
+          ],
+          "word_count": 14,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Section 1",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 2,
+          "processed_at": "2025-08-07T22:39:54.674779",
+          "processor_version": "0.1.0"
+        },
+        "id": "1a04196f9931eb5f_0000"
+      },
+      "3104549d90a01452_0000": {
+        "document": "# Test Document\n\nThis document has frontmatter that should be preserved.\n\n## Section 1\n\nContent here.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpcf8rt9_p/frontmatter_doc.md",
+          "file_name": "frontmatter_doc.md",
+          "file_stem": "frontmatter_doc",
+          "file_suffix": ".md",
+          "file_size": 179,
+          "file_modified": "2025-08-07T23:40:10.825150",
+          "file_created": "2025-08-07T23:40:10.825150",
+          "file_hash": "73d9638354170cce59bb93938a45e67006a8e1c21b222c397a923e61178c864b",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpcf8rt9_p",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpcf8rt9_p/frontmatter_doc.md",
+          "title": "Test Document",
+          "author": "Test Author",
+          "tags": [
+            "test",
+            "e2e"
+          ],
+          "total_elements": 4,
+          "header_count": 2,
+          "paragraph_count": 2,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1,
+            2
+          ],
+          "max_header_level": 2,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Section 1"
+            }
+          ],
+          "word_count": 14,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Section 1",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 2,
+          "processed_at": "2025-08-07T22:40:10.826575",
+          "processor_version": "0.1.0"
+        },
+        "id": "3104549d90a01452_0000"
+      },
+      "aa79a742a51114e2_0000": {
+        "document": "# Test Document\n\nThis document has frontmatter that should be preserved.\n\n## Section 1\n\nContent here.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpyszbt1ah/frontmatter_doc.md",
+          "file_name": "frontmatter_doc.md",
+          "file_stem": "frontmatter_doc",
+          "file_suffix": ".md",
+          "file_size": 179,
+          "file_modified": "2025-08-07T23:40:34.404611",
+          "file_created": "2025-08-07T23:40:34.404611",
+          "file_hash": "73d9638354170cce59bb93938a45e67006a8e1c21b222c397a923e61178c864b",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpyszbt1ah",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpyszbt1ah/frontmatter_doc.md",
+          "title": "Test Document",
+          "author": "Test Author",
+          "tags": [
+            "test",
+            "e2e"
+          ],
+          "total_elements": 4,
+          "header_count": 2,
+          "paragraph_count": 2,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1,
+            2
+          ],
+          "max_header_level": 2,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Section 1"
+            }
+          ],
+          "word_count": 14,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Section 1",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 2,
+          "processed_at": "2025-08-07T22:40:34.405947",
+          "processor_version": "0.1.0"
+        },
+        "id": "aa79a742a51114e2_0000"
+      },
+      "dc284b0ff433c836_0000": {
+        "document": "# Test Document\n\nThis document has frontmatter that should be preserved.\n\n## Section 1\n\nContent here.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpllmk1gr6/frontmatter_doc.md",
+          "file_name": "frontmatter_doc.md",
+          "file_stem": "frontmatter_doc",
+          "file_suffix": ".md",
+          "file_size": 179,
+          "file_modified": "2025-08-07T23:40:52.121188",
+          "file_created": "2025-08-07T23:40:52.121188",
+          "file_hash": "73d9638354170cce59bb93938a45e67006a8e1c21b222c397a923e61178c864b",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpllmk1gr6",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpllmk1gr6/frontmatter_doc.md",
+          "title": "Test Document",
+          "author": "Test Author",
+          "tags": [
+            "test",
+            "e2e"
+          ],
+          "total_elements": 4,
+          "header_count": 2,
+          "paragraph_count": 2,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1,
+            2
+          ],
+          "max_header_level": 2,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Section 1"
+            }
+          ],
+          "word_count": 14,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Section 1",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 2,
+          "processed_at": "2025-08-07T22:40:52.122567",
+          "processor_version": "0.1.0"
+        },
+        "id": "dc284b0ff433c836_0000"
+      },
+      "bc1acd4facac5596_0000": {
+        "document": "# Test Document\n\nThis document has frontmatter that should be preserved.\n\n## Section 1\n\nContent here.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp6f_7q5wi/frontmatter_doc.md",
+          "file_name": "frontmatter_doc.md",
+          "file_stem": "frontmatter_doc",
+          "file_suffix": ".md",
+          "file_size": 179,
+          "file_modified": "2025-08-07T23:41:25.668585",
+          "file_created": "2025-08-07T23:41:25.668585",
+          "file_hash": "73d9638354170cce59bb93938a45e67006a8e1c21b222c397a923e61178c864b",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp6f_7q5wi",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp6f_7q5wi/frontmatter_doc.md",
+          "title": "Test Document",
+          "author": "Test Author",
+          "tags": [
+            "test",
+            "e2e"
+          ],
+          "total_elements": 4,
+          "header_count": 2,
+          "paragraph_count": 2,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1,
+            2
+          ],
+          "max_header_level": 2,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Section 1"
+            }
+          ],
+          "word_count": 14,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Section 1",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 2,
+          "processed_at": "2025-08-07T22:41:25.669900",
+          "processor_version": "0.1.0"
+        },
+        "id": "bc1acd4facac5596_0000"
+      },
+      "da8c91f786643b0f_0000": {
+        "document": "# Test Document\n\nThis document has frontmatter that should be preserved.\n\n## Section 1\n\nContent here.",
+        "metadata": {
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpl6xi2_uk/frontmatter_doc.md",
+          "file_name": "frontmatter_doc.md",
+          "file_stem": "frontmatter_doc",
+          "file_suffix": ".md",
+          "file_size": 179,
+          "file_modified": "2025-08-07T23:41:41.963184",
+          "file_created": "2025-08-07T23:41:41.963184",
+          "file_hash": "73d9638354170cce59bb93938a45e67006a8e1c21b222c397a923e61178c864b",
+          "file_hash_algorithm": "sha256",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpl6xi2_uk",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpl6xi2_uk/frontmatter_doc.md",
+          "title": "Test Document",
+          "author": "Test Author",
+          "tags": [
+            "test",
+            "e2e"
+          ],
+          "total_elements": 4,
+          "header_count": 2,
+          "paragraph_count": 2,
+          "code_block_count": 0,
+          "list_count": 0,
+          "header_levels": [
+            1,
+            2
+          ],
+          "max_header_level": 2,
+          "min_header_level": 1,
+          "table_of_contents": [
+            {
+              "level": 1,
+              "text": "Test Document"
+            },
+            {
+              "level": 2,
+              "text": "Section 1"
+            }
+          ],
+          "word_count": 14,
+          "estimated_reading_time_minutes": 1,
+          "chunk_method": "structure",
+          "chunk_size_config": 1000,
+          "overlap_config": 200,
+          "structural_context": "Test Document > Section 1",
+          "chunk_index": 0,
+          "total_chunks": 1,
+          "is_first_chunk": true,
+          "is_last_chunk": true,
+          "chunk_position_percent": 0.0,
+          "context_depth": 2,
+          "processed_at": "2025-08-07T22:41:41.964530",
+          "processor_version": "0.1.0"
+        },
+        "id": "da8c91f786643b0f_0000"
       }
     }
   },
@@ -542,7 +948,7 @@
     "metadata": {
       "created_by": "test",
       "test": true,
-      "created_at": "2025-08-07T19:55:30Z"
+      "created_at": "2025-08-07T23:41:41Z"
     },
     "documents": {}
   },
@@ -550,7 +956,7 @@
     "metadata": {
       "created_by": "test",
       "test": true,
-      "created_at": "2025-08-07T19:55:30Z"
+      "created_at": "2025-08-07T23:41:41Z"
     },
     "documents": {}
   },
@@ -558,7 +964,7 @@
     "metadata": {
       "created_by": "test",
       "test": true,
-      "created_at": "2025-08-07T19:55:30Z"
+      "created_at": "2025-08-07T23:41:41Z"
     },
     "documents": {}
   },
@@ -566,7 +972,7 @@
     "metadata": {
       "created_by": "test",
       "test": true,
-      "created_at": "2025-08-07T19:55:30Z"
+      "created_at": "2025-08-07T23:41:41Z"
     },
     "documents": {}
   },
@@ -574,23 +980,23 @@
     "metadata": {
       "created_by": "test",
       "test": true,
-      "created_at": "2025-08-07T19:55:30Z"
+      "created_at": "2025-08-07T23:41:41Z"
     },
     "documents": {
-      "7a0d3ef671f0a17d_0000": {
+      "73b3e97e755f9649_0000": {
         "document": "# Sample Document\n\nThis is a sample markdown document for testing purposes.\n\n## Section 1\n\nHere's some content in section 1.\n\n### Subsection 1.1\n\nMore detailed content here.\n\n## Section 2\n\nDifferent content in section 2.\n\n```python\n```python\ndef example_function():\n    return \"Hello, World!\"\n```\n```\n\n## Conclusion\n\nThat's the end of our sample document.",
         "metadata": {
-          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp0a_x2ht_/sample.md",
+          "file_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpdfoi53r2/sample.md",
           "file_name": "sample.md",
           "file_stem": "sample",
           "file_suffix": ".md",
           "file_size": 341,
-          "file_modified": "2025-08-07T19:55:30.197479",
-          "file_created": "2025-08-07T19:55:30.197479",
+          "file_modified": "2025-08-07T23:41:41.948810",
+          "file_created": "2025-08-07T23:41:41.948810",
           "file_hash": "a26f891d4f5955c3f8c371b5ab01845f0620e4d174c8542507952b6190fb8143",
           "file_hash_algorithm": "sha256",
-          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp0a_x2ht_",
-          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmp0a_x2ht_/sample.md",
+          "parent_directory": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpdfoi53r2",
+          "relative_path": "/private/var/folders/07/p__xlp357ps_8_fb3yhffmrh0000gn/T/tmpdfoi53r2/sample.md",
           "title": "Sample Document",
           "total_elements": 11,
           "header_count": 5,
@@ -641,10 +1047,10 @@
           "is_last_chunk": true,
           "chunk_position_percent": 0.0,
           "context_depth": 2,
-          "processed_at": "2025-08-07T18:55:30.208534",
+          "processed_at": "2025-08-07T22:41:41.961064",
           "processor_version": "0.1.0"
         },
-        "id": "7a0d3ef671f0a17d_0000"
+        "id": "73b3e97e755f9649_0000"
       }
     }
   }
