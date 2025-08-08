@@ -394,7 +394,9 @@ features:
         # Basic performance checks
         assert result.success_rate > 0
         assert result.total_processing_time > 0
-        assert result.total_processing_time <= (end_time - start_time)
+        # Add small tolerance for timing precision issues on fast systems
+        elapsed_time = max(end_time - start_time, 0.001)
+        assert result.total_processing_time <= elapsed_time + 0.001
         assert result.processing_speed > 0  # chunks per second
 
     def test_concurrent_processing_safety(

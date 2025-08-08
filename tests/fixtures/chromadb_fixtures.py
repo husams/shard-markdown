@@ -15,9 +15,9 @@ try:
     from chromadb.api import ClientAPI
 
     CHROMADB_AVAILABLE = True
-except ImportError:
-    chromadb = None
-    ClientAPI = Any
+except ImportError:  # pragma: no cover
+    chromadb = None  # noqa: F841
+    ClientAPI = Any  # noqa: F841
     CHROMADB_AVAILABLE = False
 
 if TYPE_CHECKING:
@@ -224,9 +224,12 @@ class ChromaDBTestFixture:
             )
         else:
             # MockChromaDBClient uses create_collection
-            collection = self.client.create_collection(
-                name=name, metadata=collection_metadata
-            )
+            # Use getattr to avoid mypy union-attr error
+            create_fn = getattr(self.client, "create_collection", None)
+            if create_fn:
+                collection = create_fn(name=name, metadata=collection_metadata)
+            else:
+                raise RuntimeError("Client does not support create_collection")
 
         self._test_collections.add(name)
         logger.info(f"Created test collection: {name}")
