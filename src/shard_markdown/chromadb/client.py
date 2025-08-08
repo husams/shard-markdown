@@ -22,18 +22,41 @@ try:
         InvalidArgumentError,
         UniqueConstraintError,
     )
+
+    CHROMADB_AVAILABLE = True
 except ImportError:
     # Fallback if chromadb is not installed or older version
-    ChromaError = Exception
-    InvalidArgumentError = ValueError
-    UniqueConstraintError = ValueError
+    CHROMADB_AVAILABLE = False
+
+    class ChromaError(Exception):  # type: ignore[no-redef]
+        """Fallback ChromaError exception."""
+
+        pass
+
+    class InvalidArgumentError(ValueError):  # type: ignore[no-redef]
+        """Fallback InvalidArgumentError exception."""
+
+        pass
+
+    class UniqueConstraintError(ValueError):  # type: ignore[no-redef]
+        """Fallback UniqueConstraintError exception."""
+
+        pass
+
 
 # Import httpx exceptions for HTTP error handling
 try:
     from httpx import HTTPStatusError
+
+    HTTPX_AVAILABLE = True
 except ImportError:
     # Fallback if httpx is not installed
-    HTTPStatusError = Exception
+    HTTPX_AVAILABLE = False
+
+    class HTTPStatusError(Exception):  # type: ignore[no-redef]
+        """Fallback HTTPStatusError exception."""
+
+        pass
 
 
 logger = get_logger(__name__)
@@ -212,7 +235,7 @@ class ChromaDBClient:
             logger.info("Retrieved existing collection: %s", name)
             return collection
 
-        except (ChromaError, HTTPStatusError, Exception) as get_error:
+        except Exception as get_error:
             # Check if it's a "not found" error - handle both ChromaDB native errors
             # and our wrapped errors
             error_msg = str(get_error).lower()
@@ -230,7 +253,7 @@ class ChromaDBClient:
                 is_not_found = True
 
             # Check for HTTPStatusError with 400/404 status
-            if isinstance(get_error, HTTPStatusError):
+            if HTTPX_AVAILABLE and isinstance(get_error, HTTPStatusError):
                 if get_error.response.status_code in (400, 404):
                     is_not_found = True
             elif hasattr(get_error, "response"):
@@ -299,7 +322,7 @@ class ChromaDBClient:
                     )
                     return collection
 
-                except (ChromaError, HTTPStatusError, Exception) as create_error:
+                except Exception as create_error:
                     # Log detailed error information for debugging
                     logger.error(
                         f"Failed to create collection '{name}': "
@@ -309,9 +332,13 @@ class ChromaDBClient:
 
                     # Check if it's a UniqueConstraintError (collection already exists)
                     # This can happen in race conditions
-                    if isinstance(create_error, UniqueConstraintError) or (
-                        "already exists" in str(create_error).lower()
-                    ):
+                    is_already_exists = "already exists" in str(create_error).lower()
+                    if CHROMADB_AVAILABLE:
+                        is_already_exists = is_already_exists or isinstance(
+                            create_error, UniqueConstraintError
+                        )
+
+                    if is_already_exists:
                         # Try to get the collection again - it might have been created
                         # by another process in a race condition
                         try:
@@ -340,8 +367,10 @@ class ChromaDBClient:
                     }
 
                     # Add HTTP status code if available
-                    if isinstance(create_error, HTTPStatusError):
-                        error_details["http_status"] = create_error.response.status_code
+                    if HTTPX_AVAILABLE and isinstance(create_error, HTTPStatusError):
+                        error_details["http_status"] = str(
+                            create_error.response.status_code
+                        )
                         error_details["http_response"] = str(
                             create_error.response.text
                         )[:500]
