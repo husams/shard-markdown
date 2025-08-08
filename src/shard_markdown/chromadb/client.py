@@ -2,10 +2,11 @@
 
 import socket
 import time
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-import chromadb
-from chromadb.api import ClientAPI
+
+if TYPE_CHECKING:
+    pass
 
 from ..config.settings import ChromaDBConfig
 from ..core.models import DocumentChunk, InsertResult
@@ -27,7 +28,7 @@ class ChromaDBClient:
             config: ChromaDB configuration
         """
         self.config = config
-        self.client: ClientAPI | None = None
+        self.client: Any | None = None  # ClientAPI when connected
         self._connection_validated = False
         self._version_info: APIVersionInfo | None = None
 
@@ -63,6 +64,8 @@ class ChromaDBClient:
             )
 
             # Create ChromaDB client with version-specific settings
+            import chromadb
+
             client_settings = self._get_client_settings()
             self.client = chromadb.HttpClient(**client_settings)
 
@@ -102,7 +105,7 @@ class ChromaDBClient:
         """
         return self._version_info
 
-    def get_collection(self, name: str) -> chromadb.Collection | Any:
+    def get_collection(self, name: str) -> Any:  # chromadb.Collection
         """Get existing collection.
 
         Args:
@@ -144,7 +147,7 @@ class ChromaDBClient:
         name: str,
         create_if_missing: bool = False,
         metadata: dict[str, Any] | None = None,
-    ) -> chromadb.Collection | Any:
+    ) -> Any:  # Returns chromadb.Collection when connected
         """Get existing or create new collection.
 
         Args:
@@ -210,7 +213,9 @@ class ChromaDBClient:
                 ) from create_error
 
     def bulk_insert(
-        self, collection: chromadb.Collection | Any, chunks: list[DocumentChunk]
+        self,
+        collection: Any,
+        chunks: list[DocumentChunk],  # chromadb.Collection
     ) -> InsertResult:
         """Bulk insert chunks into collection.
 

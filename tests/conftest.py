@@ -409,8 +409,8 @@ def performance_documents(temp_dir: Path, large_document_content: str) -> list[P
 
 
 @pytest.fixture
-def benchmark_config() -> dict:
-    """Create benchmark configuration for performance tests."""
+def benchmark_settings() -> dict:
+    """Create pytest-benchmark configuration settings for performance tests."""
     return {
         "min_rounds": 5,
         "max_time": 1.0,

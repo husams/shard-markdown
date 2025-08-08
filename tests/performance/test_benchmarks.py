@@ -182,7 +182,9 @@ class TestProcessingBenchmarks:
             "overlap": overlap,
             "processing_time": processing_time,
             "chunks_created": result.chunks_created,
-            "chunks_per_second": result.chunks_created / processing_time,
+            "chunks_per_second": result.chunks_created / processing_time
+            if result.chunks_created > 0
+            else 0,
         }
 
     def test_memory_usage_benchmark(

@@ -64,9 +64,11 @@ def setup_logging(
         logger.addHandler(file_handler)
 
     # Set third-party loggers to WARNING to reduce noise
-    logging.getLogger("chromadb").setLevel(logging.WARNING)
-    logging.getLogger("httpx").setLevel(logging.WARNING)
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    # Only set if not the main shard_markdown logger
+    for logger_name in ["chromadb", "httpx", "urllib3"]:
+        third_party_logger = logging.getLogger(logger_name)
+        if third_party_logger != logger:
+            third_party_logger.setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:
