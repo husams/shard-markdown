@@ -117,7 +117,18 @@ Final thoughts and summary.
         complex_file = temp_dir / "complex.md"
         complex_file.write_text(complex_content)
 
-        result = processor.process_document(complex_file, "complex-test")
+        # Create a custom processor with smaller chunk size for testing
+        from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
+
+        small_config = ModelsChunkingConfig(
+            chunk_size=300,  # Smaller chunk size to ensure multiple chunks
+            overlap=50,
+            method="structure",
+            respect_boundaries=True,
+        )
+        test_processor = DocumentProcessor(small_config)
+
+        result = test_processor.process_document(complex_file, "complex-test")
 
         assert result.success is True
         assert result.chunks_created >= 3  # Should create multiple chunks

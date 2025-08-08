@@ -374,6 +374,7 @@ Content here.
                 "--collection",
                 "error-recovery-test",
                 "--continue-on-error",
+                "--use-mock",
                 str(valid_file),
                 str(invalid_file),
             ],
@@ -400,6 +401,7 @@ Content here.
                     collection_name,
                     "--max-workers",
                     str(workers),
+                    "--use-mock",
                 ]
                 + file_paths,
             )
@@ -443,6 +445,7 @@ Content here.
                 "1500",
                 "--chunk-overlap",
                 "300",
+                "--use-mock",
                 str(large_doc),
             ],
         )
@@ -461,6 +464,7 @@ Content here.
                 "process",
                 "--collection",
                 "query-test-collection",
+                "--use-mock",
                 str(sample_markdown_file),
             ],
         )
@@ -518,6 +522,7 @@ processing:
                 "process",
                 "--collection",
                 "config-override-test",
+                "--use-mock",
                 str(sample_markdown_file),
             ],
         )
@@ -537,6 +542,7 @@ processing:
                 "process",
                 "--collection",
                 "quiet-test",
+                "--use-mock",
                 str(sample_markdown_file),
             ],
         )
@@ -551,6 +557,7 @@ processing:
                 "process",
                 "--collection",
                 "verbose-test",
+                "--use-mock",
                 str(sample_markdown_file),
             ],
         )
@@ -565,6 +572,7 @@ processing:
                 "process",
                 "--collection",
                 "very-verbose-test",
+                "--use-mock",
                 str(sample_markdown_file),
             ],
         )
@@ -583,6 +591,7 @@ processing:
                 "dry-run-test",
                 "--dry-run",
                 "--recursive",
+                "--use-mock",
             ]
             + file_paths,
         )
@@ -615,6 +624,7 @@ processing:
                 "--collection",
                 "pattern-test",
                 "--recursive",
+                "--use-mock",
                 "--pattern",
                 "*.md",
                 str(files_dir),
@@ -655,6 +665,7 @@ class TestCLIErrorScenarios:
                     "process",
                     "--collection",
                     invalid_name,
+                    "--use-mock",
                     str(sample_markdown_file),
                 ],
             )
@@ -671,6 +682,7 @@ class TestCLIErrorScenarios:
                 "process",
                 "--collection",
                 "missing-file-test",
+                "--use-mock",
                 "nonexistent1.md",
                 "nonexistent2.md",
             ],
@@ -704,6 +716,7 @@ class TestCLIErrorScenarios:
                     "--collection",
                     "permission-test",
                     "--recursive",
+                    "--use-mock",
                     str(restricted_dir),
                 ],
             )
@@ -752,6 +765,7 @@ invalid: yaml: content: here
                 "process",
                 "--collection",
                 "bad-config-test",
+                "--use-mock",
                 str(sample_markdown_file),
             ],
         )
@@ -812,6 +826,7 @@ This concludes document {i}.
                 "--collection",
                 "performance-test",
                 "--recursive",
+                "--use-mock",
                 str(files_dir),
             ],
         )
@@ -848,6 +863,7 @@ This concludes document {i}.
                 "large-doc-test",
                 "--chunk-size",
                 "2000",
+                "--use-mock",
                 str(large_doc),
             ],
         )
