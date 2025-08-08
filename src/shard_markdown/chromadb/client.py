@@ -268,9 +268,9 @@ class ChromaDBClient:
                     # Prepare metadata - ensure all values are strings for compatibility
                     collection_metadata = {}
                     if metadata:
-                        # Convert all metadata values to strings
+                        # Convert all metadata values to strings, excluding None values
                         collection_metadata.update(
-                            {k: str(v) for k, v in metadata.items()}
+                            {k: str(v) for k, v in metadata.items() if v is not None}
                         )
 
                     # Add our standard metadata
@@ -282,11 +282,8 @@ class ChromaDBClient:
                         }
                     )
 
-                    # Only add api_version if we have it
-                    if self._version_info and self._version_info.version:
-                        collection_metadata["api_version"] = str(
-                            self._version_info.version
-                        )
+                    # Skip api_version in metadata for ChromaDB 0.5.x compatibility
+                    # ChromaDB 0.5.x has issues with certain metadata fields
 
                     logger.debug(
                         f"Attempting to create collection '{name}' with metadata: "
