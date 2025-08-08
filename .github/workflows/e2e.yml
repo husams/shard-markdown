@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  PYTHON_VERSION: "3.11"
+  PYTHON_VERSION: "3.12"
 
 jobs:
   # Test CLI workflows with real ChromaDB
@@ -80,30 +80,85 @@ jobs:
           uv run shard-md query --help
           uv run shard-md config --help
 
+      - name: Verify ChromaDB connectivity
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          echo "Testing ChromaDB connectivity..."
+          curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || {
+            echo "ChromaDB not responding on port 8000"
+            exit 1
+          }
+          echo "ChromaDB is accessible"
+
+          # Test with Python to ensure client can connect
+          uv run python -c "import os; os.environ['CHROMA_HOST'] = 'localhost'; os.environ['CHROMA_PORT'] = '8000'; from shard_markdown.chromadb.client import ChromaDBClient; from shard_markdown.config.settings import ChromaDBConfig; config = ChromaDBConfig(host='localhost', port=8000); client = ChromaDBClient(config); print('✅ Python client can connect to ChromaDB') if client.connect() else (print('❌ Python client cannot connect to ChromaDB'), exit(1))"
+
       - name: Test configuration commands
         env:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
         run: |
-          # Initialize configuration
-          uv run shard-md config init --force
+          # Initialize configuration with explicit ChromaDB settings
+          echo "Creating config with ChromaDB connection settings..."
+          cat > shard-md-config.yaml << EOF
+          chromadb:
+            host: localhost
+            port: 8000
+            timeout: 30
+
+          chunking:
+            default_size: 1000
+            default_overlap: 200
+            method: structure
+
+          processing:
+            batch_size: 10
+            max_workers: 4
+          EOF
+
+          echo "Config file created:"
+          cat shard-md-config.yaml
 
           # Show configuration
-          uv run shard-md config show
+          uv run shard-md --config shard-md-config.yaml config show
 
       - name: Test collection management
         env:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
+          SHARD_MD_USE_MOCK_CHROMADB: "false" # Ensure we're not using mock
         run: |
-          # Create collection
-          uv run shard-md collections create test-collection --description "Test collection for E2E"
+          # Debug: Show environment and check Python imports
+          echo "Environment variables:"
+          echo "CHROMA_HOST=$CHROMA_HOST"
+          echo "CHROMA_PORT=$CHROMA_PORT"
+
+          # Test if chromadb is importable
+          uv run python -c "import chromadb; print(f'ChromaDB version: {chromadb.__version__}')" || echo "ChromaDB import failed"
+
+          # Test direct connection with Python
+          uv run python -c "import chromadb; client = chromadb.HttpClient(host='localhost', port=8000); print(f'Direct ChromaDB connection: {client.heartbeat()}')" || echo "Direct connection failed"
+
+          # Create collection with verbose output and explicit config
+          uv run shard-md --config shard-md-config.yaml -vvv collections create test-collection --description "Test collection for E2E" || {
+            echo "Collection create failed. Showing debug info..."
+            echo "Current directory: $(pwd)"
+            echo "Config file exists: $(ls -la shard-md-config.yaml 2>/dev/null || echo 'NO')"
+            echo "Environment: CHROMA_HOST=$CHROMA_HOST CHROMA_PORT=$CHROMA_PORT"
+            
+            # Try with mock as fallback to ensure CLI works
+            echo "Trying with mock client..."
+            SHARD_MD_USE_MOCK_CHROMADB=true uv run shard-md collections create test-collection-mock --description "Mock test" || echo "Mock also failed"
+            exit 1
+          }
 
           # List collections
-          uv run shard-md collections list
+          uv run shard-md --config shard-md-config.yaml collections list
 
           # Get collection info
-          uv run shard-md collections info test-collection
+          uv run shard-md --config shard-md-config.yaml collections info test-collection
 
       - name: Test document processing
         env:
@@ -111,13 +166,13 @@ jobs:
           CHROMA_PORT: 8000
         run: |
           # Process single document
-          uv run shard-md process --collection test-collection test-docs/doc1.md
+          uv run shard-md --config shard-md-config.yaml process --collection test-collection test-docs/doc1.md
 
           # Process multiple documents
-          uv run shard-md process --collection test-collection --recursive test-docs/
+          uv run shard-md --config shard-md-config.yaml process --collection test-collection --recursive test-docs/
 
           # Dry run
-          uv run shard-md process --collection test-collection --dry-run test-docs/doc2.md
+          uv run shard-md --config shard-md-config.yaml process --collection test-collection --dry-run test-docs/doc2.md
 
       - name: Test document querying
         env:
@@ -125,10 +180,10 @@ jobs:
           CHROMA_PORT: 8000
         run: |
           # Search documents
-          uv run shard-md query search "test document" --collection test-collection --limit 5
+          uv run shard-md --config shard-md-config.yaml query search "test document" --collection test-collection --limit 5
 
           # List documents
-          uv run shard-md query list-docs --collection test-collection
+          uv run shard-md --config shard-md-config.yaml query list-docs --collection test-collection
 
       - name: Test error handling
         env:
@@ -136,7 +191,7 @@ jobs:
           CHROMA_PORT: 8000
         run: |
           # Test with non-existent collection
-          if uv run shard-md query search "test" --collection non-existent 2>&1 | grep -q "error\|Error"; then
+          if uv run shard-md --config shard-md-config.yaml query search "test" --collection non-existent 2>&1 | grep -q "error\|Error"; then
             echo "✅ Error handling works for non-existent collection"
           else
             echo "❌ Error handling failed for non-existent collection"
@@ -144,7 +199,7 @@ jobs:
           fi
 
           # Test with non-existent file
-          if uv run shard-md process --collection test-collection non-existent.md 2>&1 | grep -q "error\|Error"; then
+          if uv run shard-md --config shard-md-config.yaml process --collection test-collection non-existent.md 2>&1 | grep -q "error\|Error"; then
             echo "✅ Error handling works for non-existent file"
           else
             echo "❌ Error handling failed for non-existent file"
@@ -156,7 +211,7 @@ jobs:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
         run: |
-          uv run shard-md collections delete test-collection || true
+          uv run shard-md --config shard-md-config.yaml collections delete test-collection || true
 
   # Test package installation from different sources
   e2e-installation:
@@ -259,6 +314,18 @@ jobs:
           port: 8000
           timeout: 120
 
+      - name: Verify ChromaDB connectivity for configs test
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          echo "Testing ChromaDB connectivity for configs test..."
+          curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || {
+            echo "ChromaDB not responding on port 8000"
+            exit 1
+          }
+          echo "ChromaDB is accessible"
+
       - name: Test ChromaDB API version detection
         env:
           CHROMA_HOST: localhost
@@ -303,17 +370,29 @@ jobs:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
         run: |
+          # Create config file for this test
+          cat > chromadb-test-config.yaml << EOF
+          chromadb:
+            host: localhost
+            port: 8000
+            timeout: 30
+
+          chunking:
+            default_size: 1000
+            default_overlap: 200
+          EOF
+
           # Test connection and basic operations
-          uv run shard-md collections create e2e-config-test-${{ matrix.chromadb-version }}
+          uv run shard-md --config chromadb-test-config.yaml collections create e2e-config-test-${{ matrix.chromadb-version }}
 
           echo "# Config Test for ChromaDB ${{ matrix.chromadb-version }}" > config-test.md
           echo "Testing ChromaDB configuration with version ${{ matrix.chromadb-version }}" >> config-test.md
           echo "" >> config-test.md
           echo "This test validates API compatibility across different ChromaDB versions." >> config-test.md
 
-          uv run shard-md process --collection e2e-config-test-${{ matrix.chromadb-version }} config-test.md
-          uv run shard-md query search "ChromaDB" --collection e2e-config-test-${{ matrix.chromadb-version }}
-          uv run shard-md collections delete e2e-config-test-${{ matrix.chromadb-version }}
+          uv run shard-md --config chromadb-test-config.yaml process --collection e2e-config-test-${{ matrix.chromadb-version }} config-test.md
+          uv run shard-md --config chromadb-test-config.yaml query search "ChromaDB" --collection e2e-config-test-${{ matrix.chromadb-version }}
+          uv run shard-md --config chromadb-test-config.yaml collections delete e2e-config-test-${{ matrix.chromadb-version }}
 
   # Performance and load testing with stable versions
   e2e-performance:
@@ -370,12 +449,19 @@ jobs:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
         run: |
-          uv run shard-md collections create performance-test
+          # Create config for performance test
+          cat > perf-test-config.yaml << EOF
+          chromadb:
+            host: localhost
+            port: 8000
+          EOF
 
-          time uv run shard-md process --collection performance-test --recursive large-test-docs/
+          uv run shard-md --config perf-test-config.yaml collections create performance-test
+
+          time uv run shard-md --config perf-test-config.yaml process --collection performance-test --recursive large-test-docs/
 
           # Verify all documents were processed
-          DOC_COUNT=$(uv run shard-md query list-docs --collection performance-test | wc -l)
+          DOC_COUNT=$(uv run shard-md --config perf-test-config.yaml query list-docs --collection performance-test | wc -l)
           echo "Processed $DOC_COUNT document chunks"
 
           if [ "$DOC_COUNT" -lt 100 ]; then
@@ -389,16 +475,16 @@ jobs:
           CHROMA_PORT: 8000
         run: |
           # Test search performance
-          time uv run shard-md query search "Lorem ipsum" --collection performance-test --limit 10
-          time uv run shard-md query search "Section" --collection performance-test --limit 20
-          time uv run shard-md query search "Document" --collection performance-test --limit 5
+          time uv run shard-md --config perf-test-config.yaml query search "Lorem ipsum" --collection performance-test --limit 10
+          time uv run shard-md --config perf-test-config.yaml query search "Section" --collection performance-test --limit 20
+          time uv run shard-md --config perf-test-config.yaml query search "Document" --collection performance-test --limit 5
 
       - name: Cleanup performance test
         env:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
         run: |
-          uv run shard-md collections delete performance-test || true
+          uv run shard-md --config perf-test-config.yaml collections delete performance-test || true
 
   # Note: e2e-version-compatibility job removed as it duplicates e2e-chromadb-configs
   # All version testing is now consolidated in e2e-chromadb-configs with version 0.5.23 only
