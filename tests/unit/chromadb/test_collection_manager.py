@@ -226,22 +226,58 @@ class TestCollectionManager:
         mock_collection: Mock,
     ) -> None:
         """Test collection_exists returns True when collection exists."""
-        mock_client.get_collection.return_value = mock_collection
+        # Mock list_collections to return a list with the collection
+        mock_client.list_collections.return_value = [
+            {"name": "test_collection", "count": 0, "metadata": {}}
+        ]
 
         result = collection_manager.collection_exists("test_collection")
 
         assert result is True
-        mock_client.get_collection.assert_called_once_with("test_collection")
+        mock_client.list_collections.assert_called_once()
 
     def test_collection_exists_false(
         self, collection_manager: CollectionManager, mock_client: Mock
     ) -> None:
         """Test collection_exists returns False when collection doesn't exist."""
+        # Mock list_collections to return an empty list
+        mock_client.list_collections.return_value = []
+
+        result = collection_manager.collection_exists("test_collection")
+
+        assert result is False
+        mock_client.list_collections.assert_called_once()
+
+    def test_collection_exists_fallback_to_get(
+        self,
+        collection_manager: CollectionManager,
+        mock_client: Mock,
+        mock_collection: Mock,
+    ) -> None:
+        """Test collection_exists falls back to get_collection when list fails."""
+        # Mock list_collections to raise an error
+        mock_client.list_collections.side_effect = ChromaDBError("List failed")
+        # Mock get_collection to succeed
+        mock_client.get_collection.return_value = mock_collection
+
+        result = collection_manager.collection_exists("test_collection")
+
+        assert result is True
+        mock_client.list_collections.assert_called_once()
+        mock_client.get_collection.assert_called_once_with("test_collection")
+
+    def test_collection_exists_fallback_false(
+        self, collection_manager: CollectionManager, mock_client: Mock
+    ) -> None:
+        """Test collection_exists returns False when both list and get fail."""
+        # Mock both methods to fail
+        mock_client.list_collections.side_effect = ChromaDBError("List failed")
         mock_client.get_collection.side_effect = ChromaDBError("Collection not found")
 
         result = collection_manager.collection_exists("test_collection")
 
         assert result is False
+        mock_client.list_collections.assert_called_once()
         mock_client.get_collection.assert_called_once_with("test_collection")
 
     def test_clear_collection_with_clear_method(

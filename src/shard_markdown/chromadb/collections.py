@@ -145,10 +145,17 @@ class CollectionManager:
             True if collection exists, False otherwise
         """
         try:
-            self.get_collection(name)
-            return True
+            # Try to list collections and check if name is in the list
+            # This is more reliable than trying to get a collection that might not exist
+            collections = self.list_collections()
+            return any(col["name"] == name for col in collections)
         except ChromaDBError:
-            return False
+            # If we can't list collections, fall back to trying to get the collection
+            try:
+                self.get_collection(name)
+                return True
+            except ChromaDBError:
+                return False
 
     def clear_collection(self, name: str) -> bool:
         """Clear all documents from a collection.
