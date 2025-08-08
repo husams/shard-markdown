@@ -169,14 +169,39 @@ class ChromaDBClient:
             )
 
         try:
-            # Try to get existing collection
-            return self.get_collection(name)
+            # Try to get existing collection using the raw client
+            # to avoid double-wrapping errors
+            collection = self.client.get_collection(name)
+            logger.info("Retrieved existing collection: %s", name)
+            return collection
 
-        except ChromaDBError as get_error:
-            if not create_if_missing:
+        except Exception as get_error:
+            # Check if it's a "not found" error - handle both ChromaDB native errors
+            # and our wrapped errors
+            error_msg = str(get_error).lower()
+            is_not_found = (
+                "does not exist" in error_msg
+                or "not found" in error_msg
+                or "404" in error_msg
+            )
+
+            if not create_if_missing or not is_not_found:
+                # Re-raise as ChromaDBError if not creating or if it's a different error
+                if not isinstance(get_error, ChromaDBError):
+                    raise ChromaDBError(
+                        f"Failed to get collection: {name}",
+                        error_code=1413,
+                        context={
+                            "collection_name": name,
+                            "api_version": self._version_info.version
+                            if self._version_info
+                            else None,
+                        },
+                        cause=get_error,
+                    ) from get_error
                 raise get_error
 
-            # Create new collection
+            # Create new collection since it doesn't exist
             try:
                 collection_metadata = metadata or {}
                 collection_metadata.update(
