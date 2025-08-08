@@ -8,7 +8,6 @@ from typing import Any
 from ..config.settings import ChromaDBConfig
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.logging import get_logger
-from .client import ChromaDBClient
 
 
 logger = get_logger(__name__)
@@ -84,7 +83,7 @@ class MockCollection:
         }
 
 
-class MockChromaDBClient(ChromaDBClient):
+class MockChromaDBClient:
     """Mock ChromaDB client for testing and development."""
 
     def __init__(self, config: ChromaDBConfig | None = None) -> None:
@@ -96,9 +95,6 @@ class MockChromaDBClient(ChromaDBClient):
         # Use default config if not provided
         if config is None:
             config = ChromaDBConfig(host="localhost", port=8000)
-
-        # Initialize parent class
-        super().__init__(config)
 
         # Override client attributes for mock
         self.config = config

@@ -2,10 +2,11 @@
 
 import socket
 import time
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
-import chromadb
-from chromadb.api import ClientAPI
+
+if TYPE_CHECKING:
+    import chromadb
 
 from ..config.settings import ChromaDBConfig
 from ..core.models import DocumentChunk, InsertResult
@@ -27,7 +28,7 @@ class ChromaDBClient:
             config: ChromaDB configuration
         """
         self.config = config
-        self.client: ClientAPI | None = None
+        self.client: Any | None = None  # ClientAPI when connected
         self._connection_validated = False
         self._version_info: APIVersionInfo | None = None
 
@@ -63,6 +64,8 @@ class ChromaDBClient:
             )
 
             # Create ChromaDB client with version-specific settings
+            import chromadb
+
             client_settings = self._get_client_settings()
             self.client = chromadb.HttpClient(**client_settings)
 
