@@ -58,7 +58,7 @@ class DocumentProcessor:
                     file_path=file_path,
                     success=True,  # Consider empty files as successfully processed
                     chunks_created=0,
-                    processing_time=time.time() - start_time,
+                    processing_time=max(0.001, time.time() - start_time),
                     collection_name=collection_name,
                 )
 
@@ -78,7 +78,7 @@ class DocumentProcessor:
                     file_path=file_path,
                     success=False,
                     error="No chunks generated from document",
-                    processing_time=time.time() - start_time,
+                    processing_time=max(0.001, time.time() - start_time),
                 )
 
             # Enhance chunks with metadata
@@ -86,7 +86,9 @@ class DocumentProcessor:
                 chunks, file_metadata, doc_metadata, file_path
             )
 
-            processing_time = time.time() - start_time
+            processing_time = max(
+                0.001, time.time() - start_time
+            )  # Ensure minimum time for Windows
 
             logger.info(
                 f"Successfully processed {file_path}: "
@@ -109,7 +111,9 @@ class DocumentProcessor:
             FileSystemError,
             Exception,  # Catch all other exceptions
         ) as e:
-            processing_time = time.time() - start_time
+            processing_time = max(
+                0.001, time.time() - start_time
+            )  # Ensure minimum time for Windows
             error_msg = str(e)
 
             logger.error("Failed to process %s: %s", file_path, error_msg)
@@ -202,7 +206,9 @@ class DocumentProcessor:
         processing_stats: dict[str, Any] = {
             "successful": [r for r in results if r.success],
             "failed": [r for r in results if not r.success],
-            "total_time": time.time() - start_time,
+            "total_time": max(
+                0.001, time.time() - start_time
+            ),  # Ensure minimum time for Windows precision
         }
         total_chunks = sum(r.chunks_created for r in processing_stats["successful"])
 

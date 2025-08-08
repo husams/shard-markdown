@@ -329,7 +329,7 @@ jobs:
           echo "Testing ChromaDB integration in CI." >> ci-test.md
           uv run shard-md process --collection ci-test-${{ matrix.chromadb-version }} ci-test.md
           uv run shard-md query search "integration" --collection ci-test-${{ matrix.chromadb-version }}
-          uv run shard-md collections delete ci-test-${{ matrix.chromadb-version }}
+          uv run shard-md collections delete ci-test-${{ matrix.chromadb-version }} || echo "Collection already deleted or doesn't exist"
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4

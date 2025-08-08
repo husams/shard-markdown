@@ -432,6 +432,12 @@ class TestDocumentProcessingErrors:
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
         """Test handling of file permission errors."""
+        import platform
+
+        # Skip test on Windows as permission handling is different
+        if platform.system() == "Windows":
+            pytest.skip("File permission test not applicable on Windows")
+
         # This test is platform-dependent and might not work in all environments
         try:
             # Create a file and remove read permissions
