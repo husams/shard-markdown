@@ -144,17 +144,23 @@ class CollectionManager:
         Returns:
             True if collection exists, False otherwise
         """
+        # Try to get the collection directly
+        # This approach avoids issues with list_collections that might fail
+        # due to metadata format issues or server errors
         try:
-            # Try to list collections and check if name is in the list
-            # This is more reliable than trying to get a collection that might not exist
-            collections = self.list_collections()
-            return any(col["name"] == name for col in collections)
-        except ChromaDBError:
-            # If we can't list collections, fall back to trying to get the collection
+            self.get_collection(name)
+            return True
+        except ChromaDBError as e:
+            # Check if it's a "not found" error
+            error_msg = str(e).lower()
+            if "not found" in error_msg or "does not exist" in error_msg:
+                return False
+            # For other errors, try listing collections as a fallback
             try:
-                self.get_collection(name)
-                return True
+                collections = self.list_collections()
+                return any(col["name"] == name for col in collections)
             except ChromaDBError:
+                # If both methods fail, assume collection doesn't exist
                 return False
 
     def clear_collection(self, name: str) -> bool:
