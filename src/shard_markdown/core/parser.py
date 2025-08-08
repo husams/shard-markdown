@@ -5,8 +5,13 @@ from typing import Any
 
 import frontmatter
 import markdown
+import yaml
 
+from ..utils.logging import get_logger
 from .models import MarkdownAST, MarkdownElement
+
+
+logger = get_logger(__name__)
 
 
 class MarkdownParser:
@@ -40,8 +45,11 @@ class MarkdownParser:
                 post = frontmatter.loads(content)
                 markdown_content = post.content
                 frontmatter_metadata = dict(post.metadata)
-            except Exception:
+            except (yaml.scanner.ScannerError, yaml.parser.ParserError, Exception):
                 # If frontmatter parsing fails, treat entire content as markdown
+                logger.debug(
+                    "Failed to parse frontmatter, treating entire content as markdown"
+                )
                 markdown_content = content
                 frontmatter_metadata = {}
 

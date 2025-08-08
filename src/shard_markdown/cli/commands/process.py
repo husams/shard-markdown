@@ -125,7 +125,17 @@ def process(  # noqa: C901
       # Use mock ChromaDB for testing
       shard-md process -c test-docs --use-mock *.md
     """
-    config = ctx.obj["config"]
+    # Handle cases where ctx.obj might be None (e.g., in tests)
+    if ctx.obj is None:
+        ctx.obj = {}
+
+    config = ctx.obj.get("config")
+    if config is None:
+        # Create a default config for testing
+        from ...config.settings import AppConfig
+
+        config = AppConfig()
+
     verbose = ctx.obj.get("verbose", 0)
 
     try:
@@ -193,9 +203,15 @@ def _setup_chromadb_and_collection(
     create_collection: bool,
 ) -> tuple:
     """Set up ChromaDB client and collection."""
+    from ...utils.errors import ChromaDBError, NetworkError
+
     chroma_client = create_chromadb_client(config.chromadb, use_mock=use_mock)
-    if not chroma_client.connect():
-        raise click.ClickException("Failed to connect to ChromaDB")
+    try:
+        if not chroma_client.connect():
+            raise click.ClickException("Failed to connect to ChromaDB")
+    except (NetworkError, ChromaDBError) as e:
+        # Re-raise with the specific error message from the exception
+        raise click.ClickException(str(e)) from e
 
     collection_manager = CollectionManager(chroma_client)
 
