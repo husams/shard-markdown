@@ -100,7 +100,14 @@ class MockChromaDBClient:
         self.config = config
         self.collections: dict[str, MockCollection] = {}
         self._connection_validated = False
-        self.storage_path = Path("./mock_chromadb_storage.json")
+
+        # Use temp directory for storage to avoid polluting project directory
+        import tempfile
+
+        temp_dir = Path(tempfile.gettempdir()) / "shard_markdown_mock"
+        # Ensure parent directories exist with parents=True
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        self.storage_path = temp_dir / "mock_chromadb_storage.json"
         self._load_storage()
 
     def connect(self) -> bool:
@@ -206,7 +213,7 @@ class MockChromaDBClient:
         """Load collections from storage file."""
         if self.storage_path.exists():
             try:
-                with open(self.storage_path) as f:
+                with open(self.storage_path, encoding="utf-8") as f:
                     data = json.load(f)
 
                 for name, collection_data in data.items():
@@ -221,8 +228,10 @@ class MockChromaDBClient:
                     f"Loaded {len(self.collections)} mock collections from storage"
                 )
 
-            except (OSError, json.JSONDecodeError, ValueError) as e:
+            except (OSError, json.JSONDecodeError, ValueError, PermissionError) as e:
                 logger.warning("Failed to load mock storage: %s", e)
+                # Initialize empty collections on error
+                self.collections = {}
 
     def _save_storage(self) -> None:
         """Save collections to storage file."""
@@ -234,12 +243,15 @@ class MockChromaDBClient:
                     "documents": collection.documents,
                 }
 
-            with open(self.storage_path, "w") as f:
+            # Ensure directory exists before saving
+            self.storage_path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(self.storage_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
             logger.debug("Saved mock collections to storage")
 
-        except (OSError, ValueError) as e:
+        except (OSError, ValueError, PermissionError) as e:
             logger.warning("Failed to save mock storage: %s", e)
 
 

@@ -152,6 +152,8 @@ sample_*.md
 # ChromaDB data
 chroma_data/
 .chroma/
+.data/
+mock_chromadb_storage.json
 
 # Claude files
 .claude/

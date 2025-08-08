@@ -15,14 +15,13 @@ try:
     from chromadb.api import ClientAPI
 
     CHROMADB_AVAILABLE = True
-except ImportError:
-    chromadb = None
-    ClientAPI = Any
+except ImportError:  # pragma: no cover
+    chromadb = None  # noqa: F841
+    ClientAPI = Any  # noqa: F841
     CHROMADB_AVAILABLE = False
 
 if TYPE_CHECKING:
     import chromadb
-    from chromadb.api import ClientAPI
 
 from shard_markdown.chromadb.client import ChromaDBClient
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
@@ -112,17 +111,17 @@ class ChromaDBTestFixture:
         """
         self.host = host
         self.port = port
-        self.client: ClientAPI | MockChromaDBClient | None = None
+        self.client: ChromaDBClient | MockChromaDBClient | None = None
         self._test_collections: set[str] = set()
+        self._is_mock = False  # Track if using mock client
 
     def setup(self) -> None:
         """Set up ChromaDB connection with retry logic."""
         # Check if ChromaDB is available
         if not CHROMADB_AVAILABLE:
             logger.warning("ChromaDB not installed, using mock client")
-            from shard_markdown.chromadb.mock_client import MockChromaDBClient
-
             self.client = MockChromaDBClient()
+            self._is_mock = True
             return
 
         # Check if we're in CI environment
@@ -136,17 +135,27 @@ class ChromaDBTestFixture:
 
         logger.info(f"Setting up ChromaDB test fixture at {self.host}:{self.port}")
 
-        # Try to connect with retries
+        # Try to connect with retries using our wrapper
         max_attempts = 10 if (is_ci or is_github_actions) else 3
         for attempt in range(max_attempts):
             try:
-                if chromadb is None:
-                    raise ImportError("chromadb not available")
-                self.client = chromadb.HttpClient(host=self.host, port=self.port)
-                # Test connection
-                self.client.heartbeat()
-                logger.info("ChromaDB connection established")
-                return
+                # Always use our ChromaDBClient wrapper for real connections
+                config = ChromaDBConfig(
+                    host=self.host,
+                    port=self.port,
+                    timeout=10,
+                )
+                client = ChromaDBClient(config)
+
+                # Try to connect
+                if client.connect():
+                    self.client = client
+                    self._is_mock = False
+                    logger.info("ChromaDB connection established using wrapper")
+                    return
+                else:
+                    raise ConnectionError("Failed to connect")
+
             except Exception as e:
                 logger.warning(f"ChromaDB connection attempt {attempt + 1} failed: {e}")
                 if attempt < max_attempts - 1:
@@ -154,17 +163,17 @@ class ChromaDBTestFixture:
                 else:
                     # If we can't connect, use mock client for tests
                     logger.warning("Using mock ChromaDB client for tests")
-                    from shard_markdown.chromadb.mock_client import MockChromaDBClient
-
                     self.client = MockChromaDBClient()
+                    self._is_mock = True
                     return
 
     def teardown(self) -> None:
         """Clean up test collections."""
-        if self.client and self._test_collections:
+        if self._test_collections and self.client:
             logger.info(f"Cleaning up {len(self._test_collections)} test collections")
             for collection_name in self._test_collections:
                 try:
+                    # Both ChromaDBClient and MockChromaDBClient have delete_collection
                     self.client.delete_collection(collection_name)
                     logger.debug(f"Deleted test collection: {collection_name}")
                 except Exception as e:
@@ -207,9 +216,21 @@ class ChromaDBTestFixture:
             }
         )
 
-        collection = self.client.create_collection(
-            name=name, metadata=collection_metadata
-        )
+        # Both ChromaDBClient and MockChromaDBClient support these methods
+        if hasattr(self.client, "get_or_create_collection"):
+            # ChromaDBClient has get_or_create_collection
+            collection = self.client.get_or_create_collection(
+                name=name, create_if_missing=True, metadata=collection_metadata
+            )
+        else:
+            # MockChromaDBClient uses create_collection
+            # Use getattr to avoid mypy union-attr error
+            create_fn = getattr(self.client, "create_collection", None)
+            if create_fn:
+                collection = create_fn(name=name, metadata=collection_metadata)
+            else:
+                raise RuntimeError("Client does not support create_collection")
+
         self._test_collections.add(name)
         logger.info(f"Created test collection: {name}")
         return collection
@@ -231,6 +252,7 @@ class ChromaDBTestFixture:
             raise RuntimeError("ChromaDB client not initialized")
 
         try:
+            # Both ChromaDBClient and MockChromaDBClient have get_collection
             collection = self.client.get_collection(name)
             logger.debug(f"Retrieved existing test collection: {name}")
             self._test_collections.add(name)
@@ -281,21 +303,12 @@ def chromadb_test_client(
     Returns:
         ChromaDB client instance
     """
-    config = ChromaDBConfig(
-        host=chromadb_test_fixture.host,
-        port=chromadb_test_fixture.port,
-        timeout=10,
-    )
-    client = ChromaDBClient(config)
+    # Return the client from the fixture - it's already properly set up
+    if chromadb_test_fixture.client:
+        return chromadb_test_fixture.client
 
-    # Try to connect, fall back to mock if unavailable
-    try:
-        if client.connect():
-            return client
-    except Exception as e:
-        logger.warning(f"Failed to connect to ChromaDB, using mock: {e}")
-
-    # Return mock client if real connection fails
+    # Fallback to mock if fixture setup failed
+    logger.warning("No client in fixture, returning mock client")
     return MockChromaDBClient()
 
 
