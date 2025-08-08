@@ -112,7 +112,8 @@ class ChromaDBTestFixture:
         """
         self.host = host
         self.port = port
-        self.client: ClientAPI | MockChromaDBClient | None = None
+        self.client: ChromaDBClient | MockChromaDBClient | None = None
+        self._raw_client: ClientAPI | None = None  # Keep raw client for compatibility
         self._test_collections: set[str] = set()
 
     def setup(self) -> None:
@@ -136,17 +137,28 @@ class ChromaDBTestFixture:
 
         logger.info(f"Setting up ChromaDB test fixture at {self.host}:{self.port}")
 
-        # Try to connect with retries
+        # Try to connect with retries using our wrapper
         max_attempts = 10 if (is_ci or is_github_actions) else 3
         for attempt in range(max_attempts):
             try:
-                if chromadb is None:
-                    raise ImportError("chromadb not available")
-                self.client = chromadb.HttpClient(host=self.host, port=self.port)
-                # Test connection
-                self.client.heartbeat()
-                logger.info("ChromaDB connection established")
-                return
+                # Use our ChromaDBClient wrapper instead of raw client
+                config = ChromaDBConfig(
+                    host=self.host,
+                    port=self.port,
+                    timeout=10,
+                )
+                wrapper_client = ChromaDBClient(config)
+
+                # Try to connect
+                if wrapper_client.connect():
+                    self.client = wrapper_client
+                    # Store the underlying raw client for compatibility
+                    self._raw_client = wrapper_client.client
+                    logger.info("ChromaDB connection established using wrapper")
+                    return
+                else:
+                    raise ConnectionError("Failed to connect")
+
             except Exception as e:
                 logger.warning(f"ChromaDB connection attempt {attempt + 1} failed: {e}")
                 if attempt < max_attempts - 1:
@@ -161,11 +173,16 @@ class ChromaDBTestFixture:
 
     def teardown(self) -> None:
         """Clean up test collections."""
-        if self.client and self._test_collections:
+        if self._test_collections:
             logger.info(f"Cleaning up {len(self._test_collections)} test collections")
             for collection_name in self._test_collections:
                 try:
-                    self.client.delete_collection(collection_name)
+                    if isinstance(self.client, ChromaDBClient):
+                        self.client.delete_collection(collection_name)
+                    elif isinstance(self.client, MockChromaDBClient):
+                        self.client.delete_collection(collection_name)
+                    elif self._raw_client:
+                        self._raw_client.delete_collection(collection_name)
                     logger.debug(f"Deleted test collection: {collection_name}")
                 except Exception as e:
                     logger.warning(
@@ -191,7 +208,12 @@ class ChromaDBTestFixture:
 
         # Delete if exists
         try:
-            self.client.delete_collection(name)
+            if isinstance(self.client, ChromaDBClient):
+                self.client.delete_collection(name)
+            elif isinstance(self.client, MockChromaDBClient):
+                self.client.delete_collection(name)
+            elif self._raw_client:
+                self._raw_client.delete_collection(name)
             logger.debug(f"Deleted existing collection: {name}")
         except Exception:
             # Collection doesn't exist, which is fine
@@ -207,9 +229,22 @@ class ChromaDBTestFixture:
             }
         )
 
-        collection = self.client.create_collection(
-            name=name, metadata=collection_metadata
-        )
+        # Use wrapper client if available
+        if isinstance(self.client, ChromaDBClient):
+            collection = self.client.get_or_create_collection(
+                name=name, create_if_missing=True, metadata=collection_metadata
+            )
+        elif isinstance(self.client, MockChromaDBClient):
+            collection = self.client.create_collection(
+                name=name, metadata=collection_metadata
+            )
+        elif self._raw_client:
+            collection = self._raw_client.create_collection(
+                name=name, metadata=collection_metadata
+            )
+        else:
+            raise RuntimeError("No client available")
+
         self._test_collections.add(name)
         logger.info(f"Created test collection: {name}")
         return collection
@@ -231,7 +266,15 @@ class ChromaDBTestFixture:
             raise RuntimeError("ChromaDB client not initialized")
 
         try:
-            collection = self.client.get_collection(name)
+            if isinstance(self.client, ChromaDBClient):
+                collection = self.client.get_collection(name)
+            elif isinstance(self.client, MockChromaDBClient):
+                collection = self.client.get_collection(name)
+            elif self._raw_client:
+                collection = self._raw_client.get_collection(name)
+            else:
+                raise RuntimeError("No client available")
+
             logger.debug(f"Retrieved existing test collection: {name}")
             self._test_collections.add(name)
             return collection
@@ -281,6 +324,11 @@ def chromadb_test_client(
     Returns:
         ChromaDB client instance
     """
+    # Return the client from the fixture if it's already set up
+    if chromadb_test_fixture.client:
+        return chromadb_test_fixture.client
+
+    # Otherwise create a new one
     config = ChromaDBConfig(
         host=chromadb_test_fixture.host,
         port=chromadb_test_fixture.port,
