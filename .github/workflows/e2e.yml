@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest] # Removed macos-latest as not needed
         # Use stable ChromaDB version for reliable testing
         # 0.5.23: Latest stable version with v1/v2 API support
         chromadb-version: ["0.5.23"]
