@@ -195,63 +195,77 @@ class ChromaDBClient:
             # Check if it's a "not found" error - handle both ChromaDB native errors
             # and our wrapped errors
             error_msg = str(get_error).lower()
-            is_not_found = (
+
+            # Also check the actual error type and its attributes
+            is_not_found = False
+
+            # Check error message patterns
+            if (
                 "does not exist" in error_msg
                 or "not found" in error_msg
                 or "404" in error_msg
-            )
+                or "invalidcollection" in error_msg  # ChromaDB specific error
+            ):
+                is_not_found = True
 
-            if not create_if_missing or not is_not_found:
-                # Re-raise as ChromaDBError if not creating or if it's a different error
-                if not isinstance(get_error, ChromaDBError):
+            # Check for HTTPStatusError with 400/404 status
+            if hasattr(get_error, "response"):
+                status_code = getattr(get_error.response, "status_code", None)
+                if status_code in (400, 404):
+                    is_not_found = True
+
+            # If we should create the collection and it doesn't exist
+            if create_if_missing and is_not_found:
+                # Create new collection since it doesn't exist
+                try:
+                    collection_metadata = metadata or {}
+                    collection_metadata.update(
+                        {
+                            "created_by": "shard-md-cli",
+                            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "version": "1.0.0",
+                            "api_version": self._version_info.version
+                            if self._version_info
+                            else "unknown",
+                        }
+                    )
+
+                    collection = self.client.create_collection(
+                        name=name, metadata=collection_metadata
+                    )
+
+                    logger.info("Created new collection: %s", name)
+                    return collection
+
+                except Exception as create_error:
                     raise ChromaDBError(
-                        f"Failed to get collection: {name}",
-                        error_code=1413,
+                        f"Failed to create collection: {name}",
+                        error_code=1414,
                         context={
                             "collection_name": name,
+                            "get_error": str(get_error),
+                            "create_error": str(create_error),
                             "api_version": self._version_info.version
                             if self._version_info
                             else None,
                         },
-                        cause=get_error,
-                    ) from get_error
-                raise get_error
+                        cause=create_error,
+                    ) from create_error
 
-            # Create new collection since it doesn't exist
-            try:
-                collection_metadata = metadata or {}
-                collection_metadata.update(
-                    {
-                        "created_by": "shard-md-cli",
-                        "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                        "version": "1.0.0",
-                        "api_version": self._version_info.version
-                        if self._version_info
-                        else "unknown",
-                    }
-                )
-
-                collection = self.client.create_collection(
-                    name=name, metadata=collection_metadata
-                )
-
-                logger.info("Created new collection: %s", name)
-                return collection
-
-            except (ValueError, RuntimeError, OSError) as create_error:
+            # Not creating or different error - re-raise
+            if not isinstance(get_error, ChromaDBError):
                 raise ChromaDBError(
-                    f"Failed to create collection: {name}",
-                    error_code=1414,
+                    f"Failed to get collection: {name}",
+                    error_code=1413,
                     context={
                         "collection_name": name,
-                        "get_error": str(get_error),
-                        "create_error": str(create_error),
                         "api_version": self._version_info.version
                         if self._version_info
                         else None,
                     },
-                    cause=create_error,
-                ) from create_error
+                    cause=get_error,
+                ) from get_error
+            raise get_error
 
     def bulk_insert(
         self,
