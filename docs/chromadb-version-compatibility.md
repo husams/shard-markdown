@@ -119,13 +119,12 @@ chromadb-version: ["latest", "0.4.15"]  # Unstable versions
 
 **After**:
 ```yaml
-chromadb-version: ["0.5.23", "0.5.18"]  # Stable versions
+chromadb-version: ["0.5.23"]  # Stable version
 ```
 
 **New comprehensive matrix**:
 - **0.5.23**: Latest stable with full v1/v2 API support
 - **0.5.20**: Mid-range stable version
-- **0.5.18**: Earlier stable version for compatibility
 - **0.5.16**: First version with v2 API support
 
 ### CI Workflow Updates

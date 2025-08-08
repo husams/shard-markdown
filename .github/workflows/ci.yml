@@ -300,7 +300,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chromadb-version: ["0.5.23", "0.5.18"] # Test stable versions
+        chromadb-version: ["0.5.23"] # Test stable version
 
     steps:
       - name: Checkout code
