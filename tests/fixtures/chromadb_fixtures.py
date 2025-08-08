@@ -4,11 +4,21 @@ import os
 import time
 from collections.abc import Callable, Generator
 from functools import wraps
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-import chromadb
 import pytest
-from chromadb.api import ClientAPI
+
+
+if TYPE_CHECKING:
+    import chromadb
+    from chromadb.api import ClientAPI
+else:
+    try:
+        import chromadb
+        from chromadb.api import ClientAPI
+    except ImportError:
+        chromadb = None
+        ClientAPI = Any
 
 from shard_markdown.chromadb.client import ChromaDBClient
 from shard_markdown.chromadb.mock_client import MockChromaDBClient
@@ -85,7 +95,7 @@ class ChromaDBTestFixture:
         """
         self.host = host
         self.port = port
-        self.client: ClientAPI | None = None
+        self.client: ClientAPI | MockChromaDBClient | None = None
         self._test_collections: set[str] = set()
 
     def setup(self) -> None:
@@ -105,6 +115,8 @@ class ChromaDBTestFixture:
         max_attempts = 10 if (is_ci or is_github_actions) else 3
         for attempt in range(max_attempts):
             try:
+                if chromadb is None:
+                    raise ImportError("chromadb not available")
                 self.client = chromadb.HttpClient(host=self.host, port=self.port)
                 # Test connection
                 self.client.heartbeat()
@@ -139,7 +151,7 @@ class ChromaDBTestFixture:
     @retry_on_collection_error(max_retries=3)
     def create_test_collection(
         self, name: str, metadata: dict[str, Any] | None = None
-    ) -> chromadb.Collection:
+    ) -> Any:  # chromadb.Collection
         """Create a test collection with proper initialization.
 
         Args:
@@ -180,7 +192,7 @@ class ChromaDBTestFixture:
     @retry_on_collection_error(max_retries=3)
     def get_or_create_test_collection(
         self, name: str, metadata: dict[str, Any] | None = None
-    ) -> chromadb.Collection:
+    ) -> Any:  # chromadb.Collection
         """Get existing or create new test collection.
 
         Args:
@@ -235,7 +247,7 @@ def chromadb_test_fixture() -> Generator[ChromaDBTestFixture, None, None]:
 @pytest.fixture
 def chromadb_test_client(
     chromadb_test_fixture: ChromaDBTestFixture,
-) -> ChromaDBClient:
+) -> ChromaDBClient | MockChromaDBClient:
     """Create a ChromaDB client for testing.
 
     Args:
@@ -265,7 +277,7 @@ def chromadb_test_client(
 @pytest.fixture
 def test_collection(
     chromadb_test_fixture: ChromaDBTestFixture,
-) -> chromadb.Collection:
+) -> Any:  # chromadb.Collection
     """Create a test collection for each test.
 
     Args:
@@ -309,6 +321,8 @@ def wait_for_chromadb(
             if result == 0:
                 # Try to connect with client
                 try:
+                    if chromadb is None:
+                        raise ImportError("chromadb not available")
                     client = chromadb.HttpClient(host=host, port=port)
                     client.heartbeat()
                     logger.info(f"ChromaDB is ready at {host}:{port}")
