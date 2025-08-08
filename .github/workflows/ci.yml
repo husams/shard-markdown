@@ -218,12 +218,12 @@ jobs:
         run: |
           # Test wheel installation
           uv pip install dist/*.whl
-          shard-md --help
+          uv run shard-md --help
 
           # Test source distribution
-          uv pip uninstall shard-markdown -y
+          uv pip uninstall shard-markdown
           uv pip install dist/*.tar.gz
-          shard-md --help
+          uv run shard-md --help
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
