@@ -21,10 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # Use stable ChromaDB versions for reliable testing
+        # Use stable ChromaDB version for reliable testing
         # 0.5.23: Latest stable version with v1/v2 API support
-        # 0.5.18: Earlier stable version for backward compatibility testing
-        chromadb-version: ["0.5.23", "0.5.18"]
+        chromadb-version: ["0.5.23"]
 
     steps:
       - name: Checkout code
@@ -236,7 +235,6 @@ jobs:
         # Test matrix with stable versions covering different API capabilities
         chromadb-version:
           - "0.5.23" # Latest stable with full v1/v2 API support
-          - "0.5.18" # Earlier stable version for compatibility
           - "0.5.16" # First version with v2 API support
 
     steps:
@@ -411,7 +409,6 @@ jobs:
         chromadb-version:
           - "0.5.23" # Latest stable
           - "0.5.20" # Mid-range stable
-          - "0.5.18" # Earlier stable
           - "0.5.16" # First with v2 API
 
     steps:

@@ -535,13 +535,26 @@ def pytest_configure(config: Any) -> None:
     is_github_actions = os.environ.get("GITHUB_ACTIONS") == "true"
 
     if is_ci or is_github_actions:
-        # Check if we're running tests that need ChromaDB
-        if any(
-            marker in config.option.markexpr
-            if hasattr(config.option, "markexpr")
-            else False
-            for marker in ["chromadb", "e2e", "integration"]
-        ):
+        # Check if we're actually running tests that need ChromaDB (not excluding them)
+        markexpr = getattr(config.option, "markexpr", "") or ""
+
+        # Check if ChromaDB tests are being run (not excluded)
+        needs_chromadb = False
+        if markexpr:
+            # Check if we're NOT excluding ChromaDB tests
+            # We need ChromaDB if:
+            # 1. Running chromadb/e2e/integration tests (positive selection)
+            # 2. NOT explicitly excluding them with "not chromadb", etc.
+            for marker in ["chromadb", "e2e", "integration"]:
+                # Check if marker is positively selected or not negated
+                if f"not {marker}" not in markexpr and marker in markexpr:
+                    needs_chromadb = True
+                    break
+        else:
+            # No mark expression means all tests are being run, including ChromaDB tests
+            needs_chromadb = True
+
+        if needs_chromadb:
             host = os.environ.get("CHROMA_HOST", "localhost")
             port = int(os.environ.get("CHROMA_PORT", "8000"))
             print(f"CI Environment detected. Waiting for ChromaDB at {host}:{port}...")

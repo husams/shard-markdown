@@ -108,7 +108,8 @@ class TestDocumentProcessor:
         assert result.file_path == sample_markdown_file
         assert result.chunks_created == len(sample_chunks)
         assert result.collection_name == "test-collection"
-        assert result.processing_time > 0
+        # On Windows, very fast operations might have processing_time of 0
+        assert result.processing_time >= 0
 
         # Verify method calls
         mock_parser.parse.assert_called_once()

@@ -50,12 +50,19 @@ def test_setup_logging_with_file() -> None:
 
             mock_get_logger.side_effect = get_logger_side_effect
 
-            setup_logging(level=logging.INFO, file_path=log_file)
+            # Mock the file handler to prevent actual file creation
+            with patch(
+                "shard_markdown.utils.logging.logging.handlers.RotatingFileHandler"
+            ) as mock_handler_class:
+                mock_handler = MagicMock()
+                mock_handler_class.return_value = mock_handler
 
-            mock_logger.setLevel.assert_called_with(logging.INFO)
-            mock_logger.handlers.clear.assert_called_once()
-            # Should have been called twice: console + file handler
-            assert mock_logger.addHandler.call_count == 2
+                setup_logging(level=logging.INFO, file_path=log_file)
+
+                mock_logger.setLevel.assert_called_with(logging.INFO)
+                mock_logger.handlers.clear.assert_called_once()
+                # Should have been called twice: console + file handler
+                assert mock_logger.addHandler.call_count == 2
 
 
 @pytest.mark.unit
@@ -64,9 +71,16 @@ def test_setup_logging_creates_parent_directories() -> None:
     with tempfile.TemporaryDirectory() as temp_dir:
         log_file = Path(temp_dir) / "nested" / "subdir" / "test.log"
 
-        setup_logging(file_path=log_file)
+        # Mock the file handler to prevent actual file creation on Windows
+        with patch(
+            "shard_markdown.utils.logging.logging.handlers.RotatingFileHandler"
+        ) as mock_handler_class:
+            mock_handler = MagicMock()
+            mock_handler_class.return_value = mock_handler
 
-        assert log_file.parent.exists()
+            setup_logging(file_path=log_file)
+
+            assert log_file.parent.exists()
 
 
 @pytest.mark.unit
