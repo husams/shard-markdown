@@ -265,29 +265,11 @@ class ChromaDBClient:
             if create_if_missing and is_not_found:
                 # Create new collection since it doesn't exist
                 try:
-                    # Prepare metadata - ensure all values are strings for compatibility
-                    collection_metadata = {}
-                    if metadata:
-                        # Convert all metadata values to strings, excluding None values
-                        collection_metadata.update(
-                            {k: str(v) for k, v in metadata.items() if v is not None}
-                        )
-
-                    # Add our standard metadata
-                    collection_metadata.update(
-                        {
-                            "created_by": "shard-md-cli",
-                            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                            "version": "1.0.0",
-                        }
-                    )
-
-                    # Skip api_version in metadata for ChromaDB 0.5.x compatibility
-                    # ChromaDB 0.5.x has issues with certain metadata fields
-
+                    # ChromaDB 0.5.x compatibility: avoid passing any metadata
+                    # The server has issues with client version mismatch
                     logger.debug(
-                        f"Attempting to create collection '{name}' with metadata: "
-                        f"{collection_metadata}"
+                        f"Creating collection '{name}' without metadata for "
+                        f"ChromaDB 0.5.x compatibility"
                     )
 
                     # Create the collection with retry logic for transient failures
@@ -297,7 +279,8 @@ class ChromaDBClient:
                     for attempt in range(max_retries):
                         try:
                             collection = self.client.create_collection(
-                                name=name, metadata=collection_metadata
+                                name=name
+                                # Omit metadata for ChromaDB 0.5.x compatibility
                             )
                             break  # Success, exit retry loop
                         except Exception as retry_error:
