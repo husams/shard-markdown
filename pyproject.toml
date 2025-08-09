@@ -103,6 +103,7 @@ ignore = [
 "__init__.py" = ["F401"]  # Allow unused imports in __init__.py
 "test_*.py" = ["D100", "D101", "D102", "D103", "S101"]  # Relax requirements for tests
 "tests/**/*.py" = ["D100", "D101", "D102", "D103", "S101"]
+"tests/fixtures/chromadb_fixtures.py" = ["S607"]  # Allow subprocess with partial path for docker commands
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -195,4 +196,5 @@ dev = [
     "safety>=2.3.0",
     "bandit[toml]>=1.7.0",
     "psutil>=5.9.0",
+    "docker>=6.1.0",
 ]

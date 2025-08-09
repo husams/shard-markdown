@@ -1,4 +1,4 @@
-"""End-to-end tests for CLI workflows."""
+"""End-to-end tests for CLI workflows with real ChromaDB instances only."""
 
 import os
 import time
@@ -9,6 +9,27 @@ from click.testing import CliRunner
 
 from shard_markdown.cli.main import cli
 from tests.fixtures.chromadb_fixtures import ChromaDBTestFixture
+
+
+@pytest.fixture(scope="session")
+def ensure_chromadb_running(
+    chromadb_test_fixture: ChromaDBTestFixture,
+) -> ChromaDBTestFixture:
+    """Session-scoped fixture to verify ChromaDB is accessible.
+
+    Args:
+        chromadb_test_fixture: ChromaDB test fixture
+
+    Returns:
+        The ChromaDB test fixture
+
+    Raises:
+        RuntimeError: If ChromaDB is not accessible
+    """
+    if not chromadb_test_fixture.client:
+        raise RuntimeError("ChromaDB is not accessible for E2E tests")
+
+    return chromadb_test_fixture
 
 
 @pytest.fixture
@@ -30,7 +51,7 @@ def chromadb_env(chromadb_test_fixture: ChromaDBTestFixture) -> dict[str, str]:
 
 @pytest.mark.e2e
 class TestBasicCLIWorkflows:
-    """Test basic end-to-end CLI workflows."""
+    """Test basic end-to-end CLI workflows with real ChromaDB."""
 
     @pytest.fixture
     def cli_runner(self) -> CliRunner:
@@ -38,14 +59,14 @@ class TestBasicCLIWorkflows:
         return CliRunner()
 
     @pytest.fixture(autouse=True)
-    def setup_chromadb(self, chromadb_test_fixture: ChromaDBTestFixture) -> None:
+    def setup_chromadb(self, ensure_chromadb_running: ChromaDBTestFixture) -> None:
         """Ensure ChromaDB is properly initialized for e2e tests.
 
         Args:
-            chromadb_test_fixture: ChromaDB test fixture
+            ensure_chromadb_running: ChromaDB test fixture that ensures real connection
         """
-        # The fixture handles setup automatically
-        pass
+        # Verify we have a real ChromaDB client
+        assert ensure_chromadb_running.client is not None
 
     @pytest.mark.chromadb
     def test_complete_document_processing_workflow(
@@ -265,14 +286,14 @@ class TestAdvancedCLIWorkflows:
         return CliRunner()
 
     @pytest.fixture(autouse=True)
-    def setup_chromadb(self, chromadb_test_fixture: ChromaDBTestFixture) -> None:
+    def setup_chromadb(self, ensure_chromadb_running: ChromaDBTestFixture) -> None:
         """Ensure ChromaDB is properly initialized for e2e tests.
 
         Args:
-            chromadb_test_fixture: ChromaDB test fixture
+            ensure_chromadb_running: ChromaDB test fixture that ensures real connection
         """
-        # The fixture handles setup automatically
-        pass
+        # Verify we have a real ChromaDB client
+        assert ensure_chromadb_running.client is not None
 
     @pytest.mark.chromadb
     def test_custom_chunking_strategies(

@@ -1,6 +1,7 @@
-"""ChromaDB test fixtures with proper initialization and cleanup."""
+"""ChromaDB test fixtures with real instances only (no Mock fallbacks)."""
 
 import os
+import subprocess
 import time
 from collections.abc import Callable, Generator
 from functools import wraps
@@ -12,19 +13,16 @@ import pytest
 # Handle optional ChromaDB import
 try:
     import chromadb
-    from chromadb.api import ClientAPI
 
     CHROMADB_AVAILABLE = True
 except ImportError:  # pragma: no cover
     chromadb = None  # noqa: F841
-    ClientAPI = Any  # noqa: F841
     CHROMADB_AVAILABLE = False
 
 if TYPE_CHECKING:
     import chromadb
 
 from shard_markdown.chromadb.client import ChromaDBClient
-from shard_markdown.chromadb.mock_client import MockChromaDBClient
 from shard_markdown.config.settings import ChromaDBConfig
 from shard_markdown.utils.logging import get_logger
 
@@ -99,30 +97,183 @@ def retry_on_collection_error(
     return decorator
 
 
-class ChromaDBTestFixture:
-    """ChromaDB test fixture with proper initialization and cleanup."""
+class ChromaDBContainerManager:
+    """Manage ChromaDB Docker container for testing."""
 
-    def __init__(self, host: str = "localhost", port: int = 8000) -> None:
+    def __init__(
+        self,
+        image: str = "chromadb/chroma:1.0.16",
+        port: int = 8000,
+        container_name: str = "shard-md-test-chromadb",
+    ) -> None:
+        """Initialize ChromaDB container manager.
+
+        Args:
+            image: Docker image to use
+            port: Port to expose ChromaDB on
+            container_name: Name of the container
+        """
+        self.image = image
+        self.port = port
+        self.container_name = container_name
+
+    def is_running(self) -> bool:
+        """Check if the ChromaDB container is running.
+
+        Returns:
+            True if container is running
+        """
+        try:
+            result = subprocess.run(  # noqa: S603, S607
+                [
+                    "docker",
+                    "ps",
+                    "--filter",
+                    f"name={self.container_name}",
+                    "--format",
+                    "{{.Names}}",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            return self.container_name in result.stdout
+        except (subprocess.SubprocessError, FileNotFoundError):
+            return False
+
+    def start_container(self) -> bool:
+        """Start the ChromaDB container if not running.
+
+        Returns:
+            True if started successfully or already running
+        """
+        if self.is_running():
+            logger.info(f"ChromaDB container {self.container_name} already running")
+            return True
+
+        try:
+            # Stop any existing container with the same name
+            subprocess.run(  # noqa: S603, S607
+                ["docker", "stop", self.container_name],
+                capture_output=True,
+                check=False,
+            )
+            subprocess.run(  # noqa: S603, S607
+                ["docker", "rm", self.container_name],
+                capture_output=True,
+                check=False,
+            )
+
+            # Start new container
+            cmd = [
+                "docker",
+                "run",
+                "-d",
+                "--name",
+                self.container_name,
+                "-p",
+                f"{self.port}:8000",
+                "-e",
+                "ANONYMIZED_TELEMETRY=false",
+                "-e",
+                "ALLOW_RESET=true",
+                self.image,
+            ]
+
+            result = subprocess.run(  # noqa: S603
+                cmd,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            container_id = result.stdout.strip()
+            logger.info(
+                f"Started ChromaDB container {self.container_name}: {container_id}"
+            )
+            return True
+
+        except subprocess.SubprocessError as e:
+            if "docker" in str(e).lower() and "not found" in str(e).lower():
+                logger.error(
+                    "Docker is not installed or not in PATH. Please install Docker to "
+                    "run ChromaDB tests."
+                )
+            else:
+                logger.error(f"Docker command failed: {e}")
+            return False
+        except FileNotFoundError:
+            logger.error(
+                "Docker executable not found. Please install Docker to run "
+                "ChromaDB tests."
+            )
+            return False
+
+    def stop_container(self) -> bool:
+        """Stop the ChromaDB container.
+
+        Returns:
+            True if stopped successfully
+        """
+        try:
+            subprocess.run(  # noqa: S603, S607
+                ["docker", "stop", self.container_name],
+                capture_output=True,
+                check=True,
+            )
+            subprocess.run(  # noqa: S603, S607
+                ["docker", "rm", self.container_name],
+                capture_output=True,
+                check=True,
+            )
+            logger.info(f"Stopped ChromaDB container {self.container_name}")
+            return True
+        except subprocess.SubprocessError as e:
+            logger.error(f"Failed to stop ChromaDB container: {e}")
+            return False
+        except FileNotFoundError:
+            logger.error("Docker executable not found.")
+            return False
+
+    def wait_for_ready(self, timeout: int = 30) -> bool:
+        """Wait for ChromaDB to be ready.
+
+        Args:
+            timeout: Maximum wait time in seconds
+
+        Returns:
+            True if ChromaDB is ready
+        """
+        return wait_for_chromadb("localhost", self.port, timeout)
+
+
+class ChromaDBTestFixture:
+    """ChromaDB test fixture with real instances only (no Mock fallback)."""
+
+    def __init__(
+        self, host: str = "localhost", port: int = 8000, require_real: bool = True
+    ) -> None:
         """Initialize ChromaDB test fixture.
 
         Args:
             host: ChromaDB host
             port: ChromaDB port
+            require_real: If True, requires real ChromaDB instance (no mock fallback)
         """
         self.host = host
         self.port = port
-        self.client: ChromaDBClient | MockChromaDBClient | None = None
+        self.require_real = require_real
+        self.client: ChromaDBClient | None = None
         self._test_collections: set[str] = set()
-        self._is_mock = False  # Track if using mock client
+        self.container_manager = ChromaDBContainerManager(port=port)
 
     def setup(self) -> None:
-        """Set up ChromaDB connection with retry logic."""
+        """Set up ChromaDB connection with retry logic - NO MOCK FALLBACK."""
         # Check if ChromaDB is available
         if not CHROMADB_AVAILABLE:
-            logger.warning("ChromaDB not installed, using mock client")
-            self.client = MockChromaDBClient()
-            self._is_mock = True
-            return
+            raise RuntimeError(
+                "ChromaDB not installed. Install with: pip install 'chromadb>=1.0.16'"
+            )
 
         # Check if we're in CI environment
         is_ci = os.environ.get("CI") == "true"
@@ -135,11 +286,26 @@ class ChromaDBTestFixture:
 
         logger.info(f"Setting up ChromaDB test fixture at {self.host}:{self.port}")
 
-        # Try to connect with retries using our wrapper
-        max_attempts = 10 if (is_ci or is_github_actions) else 3
+        # For local development (not CI), try to start container if needed
+        if not (is_ci or is_github_actions):
+            if not wait_for_chromadb(self.host, self.port, timeout=5):
+                logger.info("ChromaDB not accessible, attempting to start container")
+                if self.container_manager.start_container():
+                    if not self.container_manager.wait_for_ready(timeout=30):
+                        raise RuntimeError(
+                            f"ChromaDB container started but not ready at "
+                            f"{self.host}:{self.port}"
+                        )
+                else:
+                    raise RuntimeError(
+                        "Failed to start ChromaDB container. "
+                        "Please ensure Docker is running."
+                    )
+
+        # Try to connect with exponential backoff
+        max_attempts = 10 if (is_ci or is_github_actions) else 5
         for attempt in range(max_attempts):
             try:
-                # Always use our ChromaDBClient wrapper for real connections
                 # Get auth token from environment if available
                 auth_token = os.environ.get("CHROMA_AUTH_TOKEN")
                 config = ChromaDBConfig(
@@ -153,22 +319,22 @@ class ChromaDBTestFixture:
                 # Try to connect
                 if client.connect():
                     self.client = client
-                    self._is_mock = False
-                    logger.info("ChromaDB connection established using wrapper")
+                    logger.info("ChromaDB connection established")
                     return
                 else:
-                    raise ConnectionError("Failed to connect")
+                    raise ConnectionError("Failed to connect to ChromaDB")
 
             except Exception as e:
                 logger.warning(f"ChromaDB connection attempt {attempt + 1} failed: {e}")
                 if attempt < max_attempts - 1:
-                    time.sleep(2**attempt)  # Exponential backoff
+                    time.sleep(min(2**attempt, 30))  # Exponential backoff
                 else:
-                    # If we can't connect, use mock client for tests
-                    logger.warning("Using mock ChromaDB client for tests")
-                    self.client = MockChromaDBClient()
-                    self._is_mock = True
-                    return
+                    # Final attempt failed - raise error
+                    raise RuntimeError(
+                        f"Failed to connect to ChromaDB at {self.host}:{self.port} "
+                        f"after {max_attempts} attempts. Please ensure ChromaDB is "
+                        f"running or available in CI environment."
+                    ) from e
 
     def teardown(self) -> None:
         """Clean up test collections."""
@@ -176,7 +342,6 @@ class ChromaDBTestFixture:
             logger.info(f"Cleaning up {len(self._test_collections)} test collections")
             for collection_name in self._test_collections:
                 try:
-                    # Both ChromaDBClient and MockChromaDBClient have delete_collection
                     self.client.delete_collection(collection_name)
                     logger.debug(f"Deleted test collection: {collection_name}")
                 except Exception as e:
@@ -193,7 +358,7 @@ class ChromaDBTestFixture:
 
         Args:
             name: Collection name
-            metadata: Optional metadata
+            metadata: Optional metadata (currently unused but kept for API consistency)
 
         Returns:
             Created collection
@@ -209,33 +374,10 @@ class ChromaDBTestFixture:
             # Collection doesn't exist, which is fine
             logger.debug(f"Collection {name} doesn't exist, will create new")
 
-        # Create new collection
-        # Note: For ChromaDB 0.5.x compatibility, we don't pass metadata to real
-        # ChromaDB but MockChromaDBClient still accepts it for testing purposes
-
-        # Both ChromaDBClient and MockChromaDBClient support these methods
-        if hasattr(self.client, "get_or_create_collection"):
-            # ChromaDBClient has get_or_create_collection
-            # ChromaDBClient ignores metadata for ChromaDB 0.5.x compatibility
-            collection = self.client.get_or_create_collection(
-                name=name, create_if_missing=True, metadata=None
-            )
-        else:
-            # MockChromaDBClient uses create_collection and can accept metadata
-            collection_metadata = metadata or {}
-            collection_metadata.update(
-                {
-                    "created_by": "test",
-                    "test": True,
-                    "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                }
-            )
-            # Use getattr to avoid mypy union-attr error
-            create_fn = getattr(self.client, "create_collection", None)
-            if create_fn:
-                collection = create_fn(name=name, metadata=collection_metadata)
-            else:
-                raise RuntimeError("Client does not support create_collection")
+        # Create new collection using ChromaDBClient
+        collection = self.client.get_or_create_collection(
+            name=name, create_if_missing=True, metadata=None
+        )
 
         self._test_collections.add(name)
         logger.info(f"Created test collection: {name}")
@@ -258,7 +400,6 @@ class ChromaDBTestFixture:
             raise RuntimeError("ChromaDB client not initialized")
 
         try:
-            # Both ChromaDBClient and MockChromaDBClient have get_collection
             collection = self.client.get_collection(name)
             logger.debug(f"Retrieved existing test collection: {name}")
             self._test_collections.add(name)
@@ -291,7 +432,7 @@ def chromadb_test_fixture() -> Generator[ChromaDBTestFixture, None, None]:
     Returns:
         Initialized ChromaDB test fixture
     """
-    fixture = ChromaDBTestFixture()
+    fixture = ChromaDBTestFixture(require_real=True)
     fixture.setup()
     yield fixture
     fixture.teardown()
@@ -300,7 +441,7 @@ def chromadb_test_fixture() -> Generator[ChromaDBTestFixture, None, None]:
 @pytest.fixture
 def chromadb_test_client(
     chromadb_test_fixture: ChromaDBTestFixture,
-) -> ChromaDBClient | MockChromaDBClient:
+) -> ChromaDBClient:
     """Create a ChromaDB client for testing.
 
     Args:
@@ -309,13 +450,10 @@ def chromadb_test_client(
     Returns:
         ChromaDB client instance
     """
-    # Return the client from the fixture - it's already properly set up
     if chromadb_test_fixture.client:
         return chromadb_test_fixture.client
 
-    # Fallback to mock if fixture setup failed
-    logger.warning("No client in fixture, returning mock client")
-    return MockChromaDBClient()
+    raise RuntimeError("ChromaDB client not available in fixture")
 
 
 @pytest.fixture
@@ -375,7 +513,7 @@ def wait_for_chromadb(
                     settings = None
                     if auth_token:
                         # Create settings with authentication
-                        settings = chromadb.config.Settings(
+                        settings = chromadb.Settings(
                             chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
                             chroma_client_auth_credentials=auth_token,
                         )
