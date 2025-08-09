@@ -1,3 +1,7 @@
+## Tools
+- **IMPOTENT** ALOWYS use Serena tools.
+- **IMPOTENT** ALLOWS prioritise the use of MCP tools over Bash commands.
+
 # Python Development Best Practices & Guidelines
 
 This document outlines the Python coding standards, development guidelines, and testing practices for the shard-markdown repository.
@@ -238,18 +242,18 @@ def test_large_document_processing():
 
 ```bash
 # Run all tests
-pytest
+uv .pytest
 
 # Run with coverage
-pytest --cov=shard_markdown
+uv pytest --cov=shard_markdown
 
 # Run specific categories
-pytest -m unit                    # Unit tests only
+uv pytest -m unit                    # Unit tests only
 pytest -m integration            # Integration tests only
-pytest -m "not slow"             # Exclude slow tests
+uv pytest -m "not slow"             # Exclude slow tests
 
 # Run with output
-pytest -v -s
+uv pytest -v -s
 ```
 
 ### Test Coverage Requirements

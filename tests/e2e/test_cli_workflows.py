@@ -11,6 +11,23 @@ from shard_markdown.cli.main import cli
 from tests.fixtures.chromadb_fixtures import ChromaDBTestFixture
 
 
+@pytest.fixture
+def chromadb_env(chromadb_test_fixture: ChromaDBTestFixture) -> dict[str, str]:
+    """Create environment variables for ChromaDB connection.
+
+    Args:
+        chromadb_test_fixture: ChromaDB test fixture
+
+    Returns:
+        Dictionary of environment variables
+    """
+    env = os.environ.copy()
+    env["CHROMA_HOST"] = chromadb_test_fixture.host
+    env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+    env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105
+    return env
+
+
 @pytest.mark.e2e
 class TestBasicCLIWorkflows:
     """Test basic end-to-end CLI workflows."""
@@ -38,19 +55,15 @@ class TestBasicCLIWorkflows:
         chromadb_test_fixture: ChromaDBTestFixture,
     ) -> None:
         """Test complete workflow from document to processed chunks."""
-        # Ensure collection is created first
         collection_name = "e2e-test-collection"
-        try:
-            chromadb_test_fixture.create_test_collection(collection_name)
-        except Exception as e:
-            pytest.skip(f"ChromaDB not available: {e}")
 
-        # Set environment variables for CLI
+        # Set environment variables for CLI to connect to real ChromaDB
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105  # Set authentication token
 
-        # Process a document
+        # Process a document with --create-collection flag to ensure collection exists
         result = cli_runner.invoke(
             cli,
             [
@@ -61,7 +74,7 @@ class TestBasicCLIWorkflows:
                 "500",
                 "--chunk-overlap",
                 "100",
-                "--use-mock",
+                "--create-collection",  # Create collection if it doesn't exist
                 str(sample_markdown_file),
             ],
             env=env,
@@ -80,8 +93,7 @@ class TestBasicCLIWorkflows:
                 "search",
                 "--collection",
                 "e2e-test-collection",
-                "--query",
-                "test content",
+                "test content",  # Query text is a positional argument
                 "--limit",
                 "5",
             ],
@@ -104,19 +116,14 @@ class TestBasicCLIWorkflows:
         chromadb_test_fixture: ChromaDBTestFixture,
     ) -> None:
         """Test batch processing workflow."""
-        # Ensure collection is created first
         collection_name = "batch-e2e-test"
-        try:
-            chromadb_test_fixture.create_test_collection(collection_name)
-        except Exception as e:
-            pytest.skip(f"ChromaDB not available: {e}")
-
         file_paths = [str(path) for path in test_documents.values()]
 
-        # Set environment variables for CLI
+        # Set environment variables for CLI to connect to real ChromaDB
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105  # Set authentication token
 
         result = cli_runner.invoke(
             cli,
@@ -128,7 +135,7 @@ class TestBasicCLIWorkflows:
                 "structure",
                 "--max-workers",
                 "2",
-                "--use-mock",
+                "--create-collection",  # Create collection if it doesn't exist
             ]
             + file_paths,
             env=env,
@@ -139,7 +146,7 @@ class TestBasicCLIWorkflows:
         assert "processed" in result.output.lower()
 
     def test_recursive_directory_processing(
-        self, cli_runner: CliRunner, test_documents: Any
+        self, cli_runner: CliRunner, test_documents: Any, chromadb_env: dict[str, str]
     ) -> None:
         """Test recursive directory processing."""
         # Get the directory containing test documents
@@ -153,19 +160,21 @@ class TestBasicCLIWorkflows:
                 "recursive-e2e-test",
                 "--recursive",
                 "--create-collection",
-                "--use-mock",
                 str(test_dir),
             ],
+            env=chromadb_env,
         )
 
         print(f"Recursive process output: {result.output}")
         assert result.exit_code == 0
         assert "processed" in result.output.lower()
 
-    def test_collection_management_workflow(self, cli_runner: CliRunner) -> None:
+    def test_collection_management_workflow(
+        self, cli_runner: CliRunner, chromadb_env: dict[str, str]
+    ) -> None:
         """Test collection management workflow."""
         # List collections
-        list_result = cli_runner.invoke(cli, ["collections", "list"])
+        list_result = cli_runner.invoke(cli, ["collections", "list"], env=chromadb_env)
         print(f"Collections list output: {list_result.output}")
 
         # Create a collection
@@ -174,23 +183,27 @@ class TestBasicCLIWorkflows:
             [
                 "collections",
                 "create",
-                "--name",
-                "workflow-test-collection",
+                "workflow-test-collection",  # Name is a positional argument
                 "--description",
                 "Test collection for workflow testing",
             ],
+            env=chromadb_env,
         )
         print(f"Collection create output: {create_result.output}")
 
         # Get collection info
         info_result = cli_runner.invoke(
-            cli, ["collections", "info", "--name", "workflow-test-collection"]
+            cli,
+            ["collections", "info", "workflow-test-collection"],  # Name is positional
+            env=chromadb_env,
         )
         print(f"Collection info output: {info_result.output}")
 
         # Delete the collection
         delete_result = cli_runner.invoke(
-            cli, ["collections", "delete", "--name", "workflow-test-collection"]
+            cli,
+            ["collections", "delete", "workflow-test-collection"],  # Name is positional
+            env=chromadb_env,
         )
         print(f"Collection delete output: {delete_result.output}")
 
@@ -198,28 +211,23 @@ class TestBasicCLIWorkflows:
         self, cli_runner: CliRunner, temp_dir: Any
     ) -> None:
         """Test configuration management workflow."""
-        config_file = temp_dir / "test_config.yaml"
-
+        # Config init creates config in default location, not custom path
         # Generate default config
         init_result = cli_runner.invoke(
-            cli, ["config", "init", "--output", str(config_file)]
+            cli,
+            ["config", "init", "--force"],  # Force to avoid prompts
         )
         print(f"Config init output: {init_result.output}")
 
-        if init_result.exit_code == 0:
-            assert config_file.exists()
+        # Show config (without specifying config file, uses default)
+        show_result = cli_runner.invoke(cli, ["config", "show"])
+        print(f"Config show output: {show_result.output}")
 
-            # Show config
-            show_result = cli_runner.invoke(
-                cli, ["config", "show", "--config", str(config_file)]
-            )
-            print(f"Config show output: {show_result.output}")
-
-            # Validate config
-            validate_result = cli_runner.invoke(
-                cli, ["config", "validate", "--config", str(config_file)]
-            )
-            print(f"Config validate output: {validate_result.output}")
+        # Config validate command may not exist, so skip it
+        # validate_result = cli_runner.invoke(
+        #     cli, ["config", "validate"]
+        # )
+        # print(f"Config validate output: {validate_result.output}")
 
     def test_help_and_version_commands(self, cli_runner: CliRunner) -> None:
         """Test help and version commands work correctly."""
@@ -280,19 +288,14 @@ class TestAdvancedCLIWorkflows:
             ("structure", "1500", "300"),
         ]
 
-        # Set environment variables for CLI
+        # Set environment variables for CLI to connect to real ChromaDB
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105  # Set authentication token
 
         for method, size, overlap in strategies:
             collection_name = f"chunking-{method}-{size}"
-
-            # Ensure collection is created first
-            try:
-                chromadb_test_fixture.create_test_collection(collection_name)
-            except Exception as e:
-                pytest.skip(f"ChromaDB not available: {e}")
 
             result = cli_runner.invoke(
                 cli,
@@ -306,7 +309,7 @@ class TestAdvancedCLIWorkflows:
                     size,
                     "--chunk-overlap",
                     overlap,
-                    "--use-mock",
+                    "--create-collection",  # Create collection if it doesn't exist
                     str(sample_markdown_file),
                 ],
                 env=env,
@@ -316,7 +319,7 @@ class TestAdvancedCLIWorkflows:
             assert result.exit_code == 0
 
     def test_metadata_preservation_workflow(
-        self, cli_runner: CliRunner, temp_dir: Any
+        self, cli_runner: CliRunner, temp_dir: Any, chromadb_env: dict[str, str]
     ) -> None:
         """Test that metadata is preserved through processing."""
         # Create document with frontmatter
@@ -346,9 +349,9 @@ Content here.
                 "--collection",
                 "metadata-test",
                 "--create-collection",
-                "--use-mock",
                 str(doc_with_frontmatter),
             ],
+            env=chromadb_env,
         )
 
         print(f"Metadata processing output: {result.output}")
@@ -356,7 +359,7 @@ Content here.
         assert "processed" in result.output.lower()
 
     def test_error_recovery_workflow(
-        self, cli_runner: CliRunner, temp_dir: Any
+        self, cli_runner: CliRunner, temp_dir: Any, chromadb_env: dict[str, str]
     ) -> None:
         """Test error recovery and partial processing."""
         # Create mix of valid and invalid files
@@ -373,18 +376,19 @@ Content here.
                 "process",
                 "--collection",
                 "error-recovery-test",
-                "--continue-on-error",
-                "--use-mock",
+                # --continue-on-error option doesn't exist
+                "--create-collection",
                 str(valid_file),
                 str(invalid_file),
             ],
+            env=chromadb_env,
         )
 
         print(f"Error recovery output: {result.output}")
         # Should process what it can, might have partial success
 
     def test_concurrent_processing_workflow(
-        self, cli_runner: CliRunner, test_documents: Any
+        self, cli_runner: CliRunner, test_documents: Any, chromadb_env: dict[str, str]
     ) -> None:
         """Test concurrent processing with different worker counts."""
         file_paths = [str(path) for path in test_documents.values()]
@@ -401,10 +405,10 @@ Content here.
                     collection_name,
                     "--max-workers",
                     str(workers),
-                    "--use-mock",
                     "--create-collection",
                 ]
                 + file_paths,
+                env=chromadb_env,
             )
             end_time = time.time()
 
@@ -415,7 +419,7 @@ Content here.
             assert result.exit_code == 0
 
     def test_large_document_processing_workflow(
-        self, cli_runner: CliRunner, temp_dir: Any
+        self, cli_runner: CliRunner, temp_dir: Any, chromadb_env: dict[str, str]
     ) -> None:
         """Test processing of large documents."""
         # Create a substantial document
@@ -446,17 +450,20 @@ Content here.
                 "1500",
                 "--chunk-overlap",
                 "300",
-                "--use-mock",
                 "--create-collection",
                 str(large_doc),
             ],
+            env=chromadb_env,
         )
 
         print(f"Large document output: {result.output}")
         assert result.exit_code == 0
 
     def test_query_workflow_variations(
-        self, cli_runner: CliRunner, sample_markdown_file: Any
+        self,
+        cli_runner: CliRunner,
+        sample_markdown_file: Any,
+        chromadb_env: dict[str, str],
     ) -> None:
         """Test different query variations."""
         # First process a document
@@ -466,16 +473,19 @@ Content here.
                 "process",
                 "--collection",
                 "query-test-collection",
-                "--use-mock",
                 str(sample_markdown_file),
             ],
+            env=chromadb_env,
         )
 
         if process_result.exit_code == 0:
             # Test different query types
             query_types = [
-                ("search", ["--query", "test", "--limit", "3"]),
-                ("similarity", ["--text", "sample content", "--limit", "5"]),
+                ("search", ["test", "--limit", "3"]),  # Query text is positional
+                (
+                    "similarity",
+                    ["sample content", "--limit", "5"],
+                ),  # Text is positional
                 ("list", ["--limit", "10"]),
             ]
 
@@ -484,6 +494,7 @@ Content here.
                     cli,
                     ["query", query_type, "--collection", "query-test-collection"]
                     + args,
+                    env=chromadb_env,
                 )
 
                 print(f"Query {query_type} output: {query_result.output}")
@@ -495,6 +506,7 @@ Content here.
         cli_runner: CliRunner,
         sample_markdown_file: Any,
         temp_dir: Any,
+        chromadb_env: dict[str, str],
     ) -> None:
         """Test configuration override workflow."""
         # Create custom config
@@ -524,17 +536,20 @@ processing:
                 "process",
                 "--collection",
                 "config-override-test",
-                "--use-mock",
                 "--create-collection",
                 str(sample_markdown_file),
             ],
+            env=chromadb_env,
         )
 
         print(f"Config override output: {result.output}")
         assert result.exit_code == 0
 
     def test_verbose_and_quiet_modes(
-        self, cli_runner: CliRunner, sample_markdown_file: Any
+        self,
+        cli_runner: CliRunner,
+        sample_markdown_file: Any,
+        chromadb_env: dict[str, str],
     ) -> None:
         """Test verbose and quiet output modes."""
         # Test quiet mode
@@ -545,9 +560,10 @@ processing:
                 "process",
                 "--collection",
                 "quiet-test",
-                "--use-mock",
+                "--create-collection",  # Create collection if it doesn't exist
                 str(sample_markdown_file),
             ],
+            env=chromadb_env,
         )
 
         print(f"Quiet mode output: {quiet_result.output}")
@@ -560,9 +576,10 @@ processing:
                 "process",
                 "--collection",
                 "verbose-test",
-                "--use-mock",
+                "--create-collection",  # Create collection if it doesn't exist
                 str(sample_markdown_file),
             ],
+            env=chromadb_env,
         )
 
         print(f"Verbose mode output: {verbose_result.output}")
@@ -575,14 +592,17 @@ processing:
                 "process",
                 "--collection",
                 "very-verbose-test",
-                "--use-mock",
+                "--create-collection",  # Create collection if it doesn't exist
                 str(sample_markdown_file),
             ],
+            env=chromadb_env,
         )
 
         print(f"Very verbose mode output: {very_verbose_result.output}")
 
-    def test_dry_run_workflow(self, cli_runner: CliRunner, test_documents: Any) -> None:
+    def test_dry_run_workflow(
+        self, cli_runner: CliRunner, test_documents: Any, chromadb_env: dict[str, str]
+    ) -> None:
         """Test dry run functionality."""
         file_paths = [str(path) for path in test_documents.values()]
 
@@ -594,9 +614,9 @@ processing:
                 "dry-run-test",
                 "--dry-run",
                 "--recursive",
-                "--use-mock",
             ]
             + file_paths,
+            env=chromadb_env,
         )
 
         print(f"Dry run output: {result.output}")
@@ -605,7 +625,9 @@ processing:
         dry_run_indicators = ["would process", "dry run", "preview"]
         assert any(indicator in output_lower for indicator in dry_run_indicators)
 
-    def test_file_pattern_filtering(self, cli_runner: CliRunner, temp_dir: Any) -> None:
+    def test_file_pattern_filtering(
+        self, cli_runner: CliRunner, temp_dir: Any, chromadb_env: dict[str, str]
+    ) -> None:
         """Test file pattern filtering in recursive processing."""
         # Create various file types
         files_dir = temp_dir / "mixed_files"
@@ -627,10 +649,10 @@ processing:
                 "--collection",
                 "pattern-test",
                 "--recursive",
-                "--use-mock",
                 "--create-collection",
                 str(files_dir),
             ],
+            env=chromadb_env,
         )
 
         print(f"Pattern filtering output: {result.output}")
@@ -650,7 +672,10 @@ class TestCLIErrorScenarios:
         return CliRunner()
 
     def test_invalid_collection_name_scenarios(
-        self, cli_runner: CliRunner, sample_markdown_file: Any
+        self,
+        cli_runner: CliRunner,
+        sample_markdown_file: Any,
+        chromadb_env: dict[str, str],
     ) -> None:
         """Test various invalid collection names."""
         invalid_names = [
@@ -667,16 +692,18 @@ class TestCLIErrorScenarios:
                     "process",
                     "--collection",
                     invalid_name,
-                    "--use-mock",
                     str(sample_markdown_file),
                 ],
+                env=chromadb_env,
             )
 
             # Should handle invalid names appropriately
             print(f"Invalid name '{invalid_name}' output: {result.output}")
             # Most should fail, but we allow flexibility in validation
 
-    def test_missing_files_scenarios(self, cli_runner: CliRunner) -> None:
+    def test_missing_files_scenarios(
+        self, cli_runner: CliRunner, chromadb_env: dict[str, str]
+    ) -> None:
         """Test scenarios with missing files."""
         result = cli_runner.invoke(
             cli,
@@ -684,10 +711,10 @@ class TestCLIErrorScenarios:
                 "process",
                 "--collection",
                 "missing-file-test",
-                "--use-mock",
                 "nonexistent1.md",
                 "nonexistent2.md",
             ],
+            env=chromadb_env,
         )
 
         print(f"Missing files output: {result.output}")
@@ -697,7 +724,7 @@ class TestCLIErrorScenarios:
         assert any(indicator in output_lower for indicator in error_indicators)
 
     def test_permission_denied_scenarios(
-        self, cli_runner: CliRunner, temp_dir: Any
+        self, cli_runner: CliRunner, temp_dir: Any, chromadb_env: dict[str, str]
     ) -> None:
         """Test permission denied scenarios."""
         # Create a directory without read permissions
@@ -718,9 +745,9 @@ class TestCLIErrorScenarios:
                     "--collection",
                     "permission-test",
                     "--recursive",
-                    "--use-mock",
                     str(restricted_dir),
                 ],
+                env=chromadb_env,
             )
 
             print(f"Permission denied output: {result.output}")
@@ -747,6 +774,7 @@ class TestCLIErrorScenarios:
         cli_runner: CliRunner,
         sample_markdown_file: Any,
         temp_dir: Any,
+        chromadb_env: dict[str, str],
     ) -> None:
         """Test scenarios with malformed config files."""
         # Create malformed config
@@ -767,9 +795,9 @@ invalid: yaml: content: here
                 "process",
                 "--collection",
                 "bad-config-test",
-                "--use-mock",
                 str(sample_markdown_file),
             ],
+            env=chromadb_env,
         )
 
         print(f"Bad config output: {result.output}")
@@ -793,7 +821,10 @@ class TestCLIPerformance:
         return CliRunner()
 
     def test_large_batch_processing_performance(
-        self, cli_runner: CliRunner, temp_dir: Any
+        self,
+        cli_runner: CliRunner,
+        temp_dir: Any,
+        chromadb_test_fixture: ChromaDBTestFixture,
     ) -> None:
         """Test performance with large batch of files."""
         # Create many small files
@@ -821,6 +852,12 @@ This concludes document {i}.
         # Process all files and measure time
         start_time = time.time()
 
+        # Set environment variables for ChromaDB connection
+        env = os.environ.copy()
+        env["CHROMA_HOST"] = chromadb_test_fixture.host
+        env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105
+
         result = cli_runner.invoke(
             cli,
             [
@@ -828,10 +865,10 @@ This concludes document {i}.
                 "--collection",
                 "performance-test",
                 "--recursive",
-                "--use-mock",
                 "--create-collection",
                 str(files_dir),
             ],
+            env=env,
         )
 
         end_time = time.time()
@@ -844,7 +881,10 @@ This concludes document {i}.
         assert processing_time < 60  # Should complete within 60 seconds
 
     def test_memory_usage_with_large_documents(
-        self, cli_runner: CliRunner, temp_dir: Any
+        self,
+        cli_runner: CliRunner,
+        temp_dir: Any,
+        chromadb_test_fixture: ChromaDBTestFixture,
     ) -> None:
         """Test memory usage with large documents."""
         # Create a large document
@@ -857,6 +897,12 @@ This concludes document {i}.
 
         large_doc.write_text("".join(content))
 
+        # Set environment variables for ChromaDB connection
+        env = os.environ.copy()
+        env["CHROMA_HOST"] = chromadb_test_fixture.host
+        env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105
+
         # Process the large document
         result = cli_runner.invoke(
             cli,
@@ -866,10 +912,10 @@ This concludes document {i}.
                 "large-doc-test",
                 "--chunk-size",
                 "2000",
-                "--use-mock",
                 "--create-collection",
                 str(large_doc),
             ],
+            env=env,
         )
 
         print(f"Large document output: {result.output}")

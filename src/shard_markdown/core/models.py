@@ -1,6 +1,6 @@
 """Data models for document processing."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -83,7 +83,7 @@ class ProcessingResult(BaseModel):
     )
     error: str | None = Field(default=None, description="Error message if failed")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Processing timestamp"
+        default_factory=lambda: datetime.now(UTC), description="Processing timestamp"
     )
 
     @property

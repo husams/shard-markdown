@@ -56,14 +56,14 @@ class TestChromaDBClient:
         assert client.client is None
         assert client._connection_validated is False
 
-    @patch("chromadb.HttpClient")
+    @patch("builtins.__import__")
     @patch("shard_markdown.chromadb.client.ChromaDBVersionDetector")
     @patch("shard_markdown.chromadb.client.socket.socket")
     def test_connect_success(
         self,
         mock_socket: Mock,
         mock_version_detector_class: Mock,
-        mock_http_client: Mock,
+        mock_import: Mock,
         client: ChromaDBClient,
     ) -> None:
         """Test successful connection."""
@@ -93,8 +93,10 @@ class TestChromaDBClient:
         client.version_detector = mock_version_detector_instance
 
         # Mock ChromaDB client
+        mock_chromadb = Mock()
         mock_client_instance = Mock()
-        mock_http_client.return_value = mock_client_instance
+        mock_chromadb.HttpClient.return_value = mock_client_instance
+        mock_import.return_value = mock_chromadb
 
         result = client.connect()
 

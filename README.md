@@ -286,10 +286,10 @@ shard-markdown/
 pytest
 
 # Run with coverage
-pytest --cov=shard_markdown
+uv run pytest --cov=shard_markdown
 
 # Run specific test categories
-pytest -m unit
+uv run pytest -m unit
 pytest -m integration
 ```
 

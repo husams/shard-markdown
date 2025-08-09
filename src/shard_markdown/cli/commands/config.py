@@ -55,7 +55,7 @@ def show(ctx: click.Context, format: str, section: str) -> None:
 
     try:
         # Get configuration as dictionary
-        config_dict = config_obj.dict()
+        config_dict = config_obj.model_dump()
 
         # Filter to specific section if requested
         if section:
@@ -134,7 +134,7 @@ def set(
 
         # Load current configuration
         current_config = ctx.obj["config"]
-        config_dict = current_config.dict()
+        config_dict = current_config.model_dump()
 
         # Parse and set the value
         set_nested_value(config_dict, key, parse_config_value(value))

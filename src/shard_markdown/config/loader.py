@@ -65,7 +65,7 @@ def save_config(config: AppConfig, config_path: Path) -> None:
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Convert to dictionary
-    config_dict = config.dict()
+    config_dict = config.model_dump()
 
     # Write to YAML file
     with open(config_path, "w") as f:

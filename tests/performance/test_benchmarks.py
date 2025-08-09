@@ -137,7 +137,7 @@ class TestProcessingBenchmarks:
     )
     def test_chunking_performance_by_size(
         self, temp_dir: Any, chunk_size: int, overlap: int
-    ) -> dict[str, Any]:
+    ) -> None:
         """Benchmark performance with different chunk sizes."""
         config = ChunkingConfig(
             chunk_size=chunk_size, overlap=overlap, method="structure"
@@ -179,7 +179,8 @@ class TestProcessingBenchmarks:
 
         assert processing_time < 10.0, f"Processing too slow: {processing_time:.3f}s"
 
-        return {
+        # Performance metrics (for information only, not returned)
+        metrics = {
             "chunk_size": chunk_size,
             "overlap": overlap,
             "processing_time": processing_time,
@@ -188,6 +189,7 @@ class TestProcessingBenchmarks:
             if result.chunks_created > 0
             else 0,
         }
+        print(f"Performance metrics: {metrics}")
 
     def test_memory_usage_benchmark(
         self, temp_dir: Any, benchmark_config: ChunkingConfig

@@ -140,10 +140,13 @@ class ChromaDBTestFixture:
         for attempt in range(max_attempts):
             try:
                 # Always use our ChromaDBClient wrapper for real connections
+                # Get auth token from environment if available
+                auth_token = os.environ.get("CHROMA_AUTH_TOKEN")
                 config = ChromaDBConfig(
                     host=self.host,
                     port=self.port,
                     timeout=10,
+                    auth_token=auth_token,
                 )
                 client = ChromaDBClient(config)
 
@@ -207,23 +210,26 @@ class ChromaDBTestFixture:
             logger.debug(f"Collection {name} doesn't exist, will create new")
 
         # Create new collection
-        collection_metadata = metadata or {}
-        collection_metadata.update(
-            {
-                "created_by": "test",
-                "test": True,
-                "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            }
-        )
+        # Note: For ChromaDB 0.5.x compatibility, we don't pass metadata to real
+        # ChromaDB but MockChromaDBClient still accepts it for testing purposes
 
         # Both ChromaDBClient and MockChromaDBClient support these methods
         if hasattr(self.client, "get_or_create_collection"):
             # ChromaDBClient has get_or_create_collection
+            # ChromaDBClient ignores metadata for ChromaDB 0.5.x compatibility
             collection = self.client.get_or_create_collection(
-                name=name, create_if_missing=True, metadata=collection_metadata
+                name=name, create_if_missing=True, metadata=None
             )
         else:
-            # MockChromaDBClient uses create_collection
+            # MockChromaDBClient uses create_collection and can accept metadata
+            collection_metadata = metadata or {}
+            collection_metadata.update(
+                {
+                    "created_by": "test",
+                    "test": True,
+                    "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+            )
             # Use getattr to avoid mypy union-attr error
             create_fn = getattr(self.client, "create_collection", None)
             if create_fn:
@@ -364,7 +370,20 @@ def wait_for_chromadb(
                 try:
                     if chromadb is None:
                         raise ImportError("chromadb not available")
-                    client = chromadb.HttpClient(host=host, port=port)
+                    # Get auth token from environment if available
+                    auth_token = os.environ.get("CHROMA_AUTH_TOKEN")
+                    settings = None
+                    if auth_token:
+                        # Create settings with authentication
+                        settings = chromadb.config.Settings(
+                            chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+                            chroma_client_auth_credentials=auth_token,
+                        )
+                    client = (
+                        chromadb.HttpClient(host=host, port=port, settings=settings)
+                        if settings
+                        else chromadb.HttpClient(host=host, port=port)
+                    )
                     client.heartbeat()
                     logger.info(f"ChromaDB is ready at {host}:{port}")
                     return True

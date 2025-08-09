@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ChunkingMethod(str, Enum):
@@ -128,8 +128,4 @@ class AppConfig(BaseModel):
         default_factory=list, description="List of plugin modules to load"
     )
 
-    class Config:
-        """Pydantic configuration."""
-
-        _env_prefix = "SHARD_MD_"
-        _case_sensitive = False
+    model_config = ConfigDict()
