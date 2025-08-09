@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     pass
 
 from ..config.settings import ChromaDBConfig
+from ..core.metadata import MetadataExtractor
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.errors import ChromaDBError, NetworkError
 from ..utils.logging import get_logger
@@ -75,6 +76,9 @@ class ChromaDBClient:
         self.client: Any | None = None  # ClientAPI when connected
         self._connection_validated = False
         self._version_info: APIVersionInfo | None = None
+
+        # Initialize metadata extractor for sanitization
+        self._metadata_extractor = MetadataExtractor()
 
         # Initialize version detector
         self.version_detector = ChromaDBVersionDetector(
@@ -411,11 +415,16 @@ class ChromaDBClient:
             # Prepare data for insertion
             ids = [chunk.id or f"chunk_{i}" for i, chunk in enumerate(chunks)]
             documents = [chunk.content for chunk in chunks]
-            # Cast metadata to the type expected by ChromaDB
-            metadatas = [
-                cast(dict[str, str | int | float | bool | None], chunk.metadata)
-                for chunk in chunks
-            ]
+
+            # Sanitize metadata for ChromaDB compatibility
+            metadatas = []
+            for chunk in chunks:
+                sanitized_metadata = (
+                    self._metadata_extractor.sanitize_metadata_for_chromadb(
+                        chunk.metadata
+                    )
+                )
+                metadatas.append(sanitized_metadata)
 
             # Add API version info to metadata
             if self._version_info:

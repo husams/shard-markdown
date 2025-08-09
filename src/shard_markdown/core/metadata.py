@@ -1,6 +1,7 @@
 """Metadata extraction and enhancement for documents and chunks."""
 
 import hashlib
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -167,6 +168,89 @@ class MetadataExtractor:
         enhanced["processor_version"] = "0.1.0"
 
         return enhanced
+
+    def sanitize_metadata_for_chromadb(
+        self, metadata: dict[str, Any] | Any
+    ) -> dict[str, Any] | Any:
+        """Sanitize metadata for ChromaDB compatibility.
+
+        ChromaDB only accepts primitive types (str, int, float, bool, None) for
+        metadata. This method converts complex types to compatible formats:
+        - Lists are converted to comma-separated strings
+        - Dictionaries are converted to JSON strings
+        - Nested structures are handled recursively
+        - Primitive types are left unchanged
+
+        Args:
+            metadata: Raw metadata dictionary or other value
+
+        Returns:
+            Sanitized metadata dictionary compatible with ChromaDB
+        """
+        if not isinstance(metadata, dict):
+            return metadata
+
+        sanitized = {}
+
+        for key, value in metadata.items():
+            sanitized_value = self._sanitize_metadata_value(value)
+            sanitized[key] = sanitized_value
+
+        return sanitized
+
+    def _sanitize_metadata_value(self, value: Any) -> str | int | float | bool | None:
+        """Sanitize a single metadata value for ChromaDB compatibility.
+
+        Args:
+            value: Value to sanitize
+
+        Returns:
+            Sanitized value compatible with ChromaDB
+        """
+        # Handle None
+        if value is None:
+            return None
+
+        # Handle primitive types (already compatible)
+        if isinstance(value, str | int | float | bool):
+            return value
+
+        # Handle lists - convert to comma-separated string
+        if isinstance(value, list):
+            if not value:  # Empty list
+                return ""
+
+            # Handle list of primitives
+            try:
+                # Convert each element to string, handling nested structures
+                str_elements = []
+                for item in value:
+                    if isinstance(item, str | int | float | bool):
+                        str_elements.append(str(item))
+                    elif isinstance(item, dict):
+                        # Convert nested dict to JSON
+                        str_elements.append(json.dumps(item, separators=(",", ":")))
+                    elif isinstance(item, list):
+                        # Convert nested list to JSON
+                        str_elements.append(json.dumps(item, separators=(",", ":")))
+                    else:
+                        str_elements.append(str(item))
+
+                return ",".join(str_elements)
+            except (TypeError, ValueError) as e:
+                logger.warning("Failed to convert list to string: %s", e)
+                return str(value)
+
+        # Handle dictionaries - convert to JSON string
+        if isinstance(value, dict):
+            try:
+                return json.dumps(value, separators=(",", ":"))
+            except (TypeError, ValueError) as e:
+                logger.warning("Failed to convert dict to JSON: %s", e)
+                return str(value)
+
+        # Handle other types - convert to string
+        return str(value)
 
     def _calculate_file_hash(self, file_path: Path) -> str:
         """Calculate SHA256 hash of file content.
