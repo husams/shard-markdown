@@ -1,5 +1,12 @@
 name: End-to-End Tests
 
+# This workflow provides comprehensive E2E testing with real ChromaDB:
+# - CLI workflow testing with multiple ChromaDB versions
+# - Package installation testing (wheel, source, editable)
+# - ChromaDB configuration and version compatibility testing
+# - Performance and load testing (scheduled runs)
+# All tests use real ChromaDB instances, not mocks
+
 on:
   push:
     branches: [main]
@@ -21,9 +28,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest] # Only test on Ubuntu, Windows not needed
-        # Use stable ChromaDB version for reliable testing
+        # Test with multiple ChromaDB versions for compatibility
+        # 0.5.23: Stable version with v1 API
         # 1.0.16: Latest stable version with v1/v2 API support
-        chromadb-version: ["1.0.16"]
+        chromadb-version: ["0.5.23", "1.0.16"]
 
     steps:
       - name: Checkout code
@@ -160,6 +168,16 @@ jobs:
           # Get collection info
           uv run shard-md --config shard-md-config.yaml collections info test-collection
 
+      - name: Run pytest E2E tests
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+          SHARD_MD_USE_MOCK_CHROMADB: "false" # Ensure we're using real ChromaDB
+        run: |
+          echo "🧪 Running pytest E2E tests with real ChromaDB"
+          uv run pytest tests/e2e/ -v --tb=short --strict-markers
+          echo "✅ All E2E tests passed"
+
       - name: Test document processing
         env:
           CHROMA_HOST: localhost
@@ -287,8 +305,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Use only the latest stable ChromaDB version
+        # Test with multiple stable ChromaDB versions
         chromadb-version:
+          - "0.5.23" # Stable version with v1 API
           - "1.0.16" # Latest stable with full v1/v2 API support
 
     steps:

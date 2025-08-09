@@ -1,5 +1,14 @@
 name: CI
 
+# This workflow runs comprehensive testing including:
+# - Unit tests across multiple OS and Python versions
+# - Integration tests with and without ChromaDB
+# - E2E tests with real ChromaDB (multiple versions)
+# - Coverage reporting with real ChromaDB
+# - Performance benchmarks
+# - Security scanning
+# - Build and packaging validation
+
 on:
   push:
     branches: [main, develop]
@@ -154,8 +163,9 @@ jobs:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
           COVERAGE_FILE: .coverage
+          SHARD_MD_USE_MOCK_CHROMADB: "false" # Ensure real ChromaDB is used
         run: |
-          # Run tests and capture the exit code
+          # Run ALL tests including e2e with real ChromaDB
           uv run pytest \
             --cov=shard_markdown \
             --cov-report=xml \
@@ -194,7 +204,7 @@ jobs:
   # Build and package testing
   build:
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    needs: [lint, test, e2e-tests] # Also wait for e2e tests to pass
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -295,12 +305,72 @@ jobs:
           path: |
             bandit-report.json
 
+  # E2E tests with real ChromaDB
+  e2e-tests:
+    runs-on: ubuntu-latest
+    needs: [lint] # Run after linting passes
+    strategy:
+      matrix:
+        chromadb-version: ["0.5.23", "1.0.16"] # Test with multiple versions
+
+    services:
+      chromadb:
+        image: chromadb/chroma:${{ matrix.chromadb-version }}
+        ports:
+          - 8000:8000
+        options: >-
+          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev --extra chromadb
+
+      - name: Wait for ChromaDB
+        run: |
+          echo "🔍 Waiting for ChromaDB to be ready..."
+          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/heartbeat >/dev/null 2>&1; do sleep 5; echo -n "."; done'
+          echo "✅ ChromaDB is ready"
+
+      - name: Run E2E tests with real ChromaDB
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+          SHARD_MD_USE_MOCK_CHROMADB: "false"
+        run: |
+          echo "🧪 Running E2E tests with ChromaDB ${{ matrix.chromadb-version }}"
+          uv run pytest tests/e2e/ -v --tb=short --strict-markers
+          echo "✅ E2E tests passed with ChromaDB ${{ matrix.chromadb-version }}"
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-test-results-${{ matrix.chromadb-version }}
+          path: |
+            .pytest_cache/
+            *.log
+
   # ChromaDB integration test with version matrix
   chromadb-integration:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chromadb-version: ["0.5.23"] # Test stable version
+        chromadb-version: ["0.5.23", "1.0.16"] # Test stable versions
 
     steps:
       - name: Checkout code
@@ -332,8 +402,12 @@ jobs:
         run: |
           echo "🧪 Running ChromaDB integration tests with version ${{ matrix.chromadb-version }}"
 
-          # Run ChromaDB-specific tests (they handle ChromaDB connection internally)
-          uv run pytest tests/e2e/ -v --tb=short --strict-markers -m "chromadb"
+          # Run ALL e2e tests (not just ones marked with chromadb)
+          # E2E tests should work with real ChromaDB
+          uv run pytest tests/e2e/ -v --tb=short --strict-markers
+
+          # Also run integration tests that require ChromaDB
+          uv run pytest tests/integration/ -v --tb=short --strict-markers -m "chromadb" || echo "No tests marked with chromadb in integration"
 
           # Run basic CLI integration test with real ChromaDB
           # First test that ChromaDB is accessible
