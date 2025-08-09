@@ -102,13 +102,30 @@ class MockChromaDBClient:
         self._connection_validated = False
 
         # Use temp directory for storage to avoid polluting project directory
+        import os
         import tempfile
 
-        temp_dir = Path(tempfile.gettempdir()) / "shard_markdown_mock"
+        # Create a unique subdirectory for each process to avoid conflicts
+        # This is especially important on Windows where file locking is stricter
+        process_id = os.getpid()
+        temp_dir = Path(tempfile.gettempdir()) / f"shard_markdown_mock_{process_id}"
         # Ensure parent directories exist with parents=True
         temp_dir.mkdir(parents=True, exist_ok=True)
         self.storage_path = temp_dir / "mock_chromadb_storage.json"
+        self._temp_dir = temp_dir  # Store for cleanup
         self._load_storage()
+
+    def __del__(self) -> None:
+        """Clean up temporary directory on destruction."""
+        try:
+            # Clean up the temp directory if it exists
+            if hasattr(self, "_temp_dir") and self._temp_dir.exists():
+                import shutil
+
+                shutil.rmtree(self._temp_dir, ignore_errors=True)
+        except Exception as e:  # noqa: S110
+            # Log cleanup errors but don't raise - we don't want cleanup to fail
+            logger.debug(f"Failed to clean up temp directory: {e}")
 
     def connect(self) -> bool:
         """Mock connection - always succeeds."""

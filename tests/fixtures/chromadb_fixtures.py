@@ -207,23 +207,26 @@ class ChromaDBTestFixture:
             logger.debug(f"Collection {name} doesn't exist, will create new")
 
         # Create new collection
-        collection_metadata = metadata or {}
-        collection_metadata.update(
-            {
-                "created_by": "test",
-                "test": True,
-                "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            }
-        )
+        # Note: For ChromaDB 0.5.x compatibility, we don't pass metadata to real
+        # ChromaDB but MockChromaDBClient still accepts it for testing purposes
 
         # Both ChromaDBClient and MockChromaDBClient support these methods
         if hasattr(self.client, "get_or_create_collection"):
             # ChromaDBClient has get_or_create_collection
+            # ChromaDBClient ignores metadata for ChromaDB 0.5.x compatibility
             collection = self.client.get_or_create_collection(
-                name=name, create_if_missing=True, metadata=collection_metadata
+                name=name, create_if_missing=True, metadata=None
             )
         else:
-            # MockChromaDBClient uses create_collection
+            # MockChromaDBClient uses create_collection and can accept metadata
+            collection_metadata = metadata or {}
+            collection_metadata.update(
+                {
+                    "created_by": "test",
+                    "test": True,
+                    "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+            )
             # Use getattr to avoid mypy union-attr error
             create_fn = getattr(self.client, "create_collection", None)
             if create_fn:
