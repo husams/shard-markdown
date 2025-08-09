@@ -128,4 +128,4 @@ class AppConfig(BaseModel):
         default_factory=list, description="List of plugin modules to load"
     )
 
-    model_config = ConfigDict(env_prefix="SHARD_MD_", case_sensitive=False)
+    model_config = ConfigDict()
