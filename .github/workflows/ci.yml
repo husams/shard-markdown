@@ -103,7 +103,7 @@ jobs:
             .pytest_cache/
             *.log
 
-  # Coverage testing with ChromaDB service using version-aware detection
+  # Coverage testing with ChromaDB service - simplified approach
   coverage:
     runs-on: ubuntu-latest
     services:
@@ -111,11 +111,13 @@ jobs:
         image: chromadb/chroma:1.0.16 # Minimum supported version
         ports:
           - 8000:8000
+        env:
+          ANONYMIZED_TELEMETRY: "false"
+          ALLOW_RESET: "true"
+          IS_PERSISTENT: "true"
+        # Remove built-in health checks - handle externally
         options: >-
-          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 15
+          --name chromadb-service
 
     steps:
       - name: Checkout code
@@ -133,30 +135,83 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev --extra chromadb
 
-      - name: Wait for ChromaDB with version-aware detection
+      - name: Wait for ChromaDB to be ready
         run: |
-          echo "🔍 Waiting for ChromaDB to be ready with version detection..."
-          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/heartbeat >/dev/null 2>&1; do sleep 5; echo -n "."; done'
+          echo "🔍 Waiting for ChromaDB service to be ready..."
+          timeout=180
+          elapsed=0
+          interval=5
 
-          echo "✅ ChromaDB is ready"
+          echo "📋 Container status:"
+          docker ps --filter name=chromadb-service --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-          # Detect and log API version
-          if [ -f "./scripts/detect-chromadb-version.sh" ]; then
-            echo "📋 Running version detection..."
-            ./scripts/detect-chromadb-version.sh --host localhost --port 8000
-          else
-            echo "📋 Manual API version detection..."
-            if curl -f -s http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1; then
-              echo "✅ ChromaDB v2 API detected"
-            elif curl -f -s http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1; then
-              echo "✅ ChromaDB v1 API detected"
-            elif curl -f -s http://localhost:8000/heartbeat >/dev/null 2>&1; then
-              echo "✅ ChromaDB root API detected"
-            else
-              echo "❌ No compatible API found"
-              exit 1
+          while [ $elapsed -lt $timeout ]; do
+            echo "⏳ Waiting... ($elapsed/${timeout}s elapsed)"
+            
+            # Check if we can connect to any compatible API endpoint
+            if curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v2 API is ready"
+              break
+            elif curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v1 API is ready"
+              break
+            elif curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB root API is ready"
+              break
             fi
+            
+            # Show debug info every 30 seconds
+            if [ $((elapsed % 30)) -eq 0 ] && [ $elapsed -gt 0 ]; then
+              echo "🔍 Debug info at ${elapsed}s:"
+              echo "Container status:"
+              docker ps --filter name=chromadb-service --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+              echo "Container logs (last 10 lines):"
+              docker logs --tail 10 chromadb-service 2>/dev/null || true
+              echo "Port connectivity:"
+              nc -z localhost 8000 && echo "Port 8000 is reachable" || echo "Port 8000 is not reachable"
+            fi
+            
+            sleep $interval
+            elapsed=$((elapsed + interval))
+          done
+
+          if [ $elapsed -ge $timeout ]; then
+            echo "❌ ChromaDB failed to start within ${timeout} seconds"
+            echo "📋 Final debug info:"
+            echo "Container status:"
+            docker ps -a --filter name=chromadb-service --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+            echo "Container logs:"
+            docker logs chromadb-service || true
+            echo "Network connectivity test:"
+            curl -v --max-time 10 http://localhost:8000/api/v2/heartbeat || true
+            exit 1
           fi
+
+          echo "✅ ChromaDB is ready and accessible"
+
+      - name: Verify ChromaDB API endpoints
+        run: |
+          echo "🔍 Verifying ChromaDB API endpoints..."
+
+          # Test the available endpoints
+          base_url="http://localhost:8000"
+
+          echo "Testing v2 API (preferred):"
+          if curl -f -s --max-time 10 "${base_url}/api/v2/heartbeat"; then
+            echo "✅ v2 API working"
+            api_version="v2"
+          elif curl -f -s --max-time 10 "${base_url}/api/v1/heartbeat"; then
+            echo "✅ v1 API working"
+            api_version="v1"
+          elif curl -f -s --max-time 10 "${base_url}/heartbeat"; then
+            echo "✅ Root API working"
+            api_version="root"
+          else
+            echo "❌ No working API found"
+            exit 1
+          fi
+
+          echo "🎉 Using ChromaDB API version: $api_version"
 
       - name: Run tests with coverage
         env:
@@ -315,11 +370,13 @@ jobs:
         image: chromadb/chroma:1.0.16 # Minimum supported version
         ports:
           - 8000:8000
+        env:
+          ANONYMIZED_TELEMETRY: "false"
+          ALLOW_RESET: "true"
+          IS_PERSISTENT: "true"
+        # Remove built-in health checks - handle externally
         options: >-
-          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1"
-          --health-interval 30s
-          --health-timeout 10s
-          --health-retries 15
+          --name chromadb-e2e-service
 
     steps:
       - name: Checkout code
@@ -337,11 +394,59 @@ jobs:
       - name: Install dependencies
         run: uv sync --dev --extra chromadb
 
-      - name: Wait for ChromaDB
+      - name: Wait for ChromaDB to be ready
         run: |
-          echo "🔍 Waiting for ChromaDB to be ready..."
-          timeout 120 bash -c 'until curl -f http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1 || curl -f http://localhost:8000/heartbeat >/dev/null 2>&1; do sleep 5; echo -n "."; done'
-          echo "✅ ChromaDB is ready"
+          echo "🔍 Waiting for ChromaDB service to be ready..."
+          timeout=180
+          elapsed=0
+          interval=5
+
+          echo "📋 Container status:"
+          docker ps --filter name=chromadb-e2e-service --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+          while [ $elapsed -lt $timeout ]; do
+            echo "⏳ Waiting... ($elapsed/${timeout}s elapsed)"
+            
+            # Check if we can connect to any compatible API endpoint
+            if curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v2 API is ready"
+              break
+            elif curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v1 API is ready"
+              break
+            elif curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB root API is ready"
+              break
+            fi
+            
+            # Show debug info every 30 seconds
+            if [ $((elapsed % 30)) -eq 0 ] && [ $elapsed -gt 0 ]; then
+              echo "🔍 Debug info at ${elapsed}s:"
+              echo "Container status:"
+              docker ps --filter name=chromadb-e2e-service --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+              echo "Container logs (last 10 lines):"
+              docker logs --tail 10 chromadb-e2e-service 2>/dev/null || true
+              echo "Port connectivity:"
+              nc -z localhost 8000 && echo "Port 8000 is reachable" || echo "Port 8000 is not reachable"
+            fi
+            
+            sleep $interval
+            elapsed=$((elapsed + interval))
+          done
+
+          if [ $elapsed -ge $timeout ]; then
+            echo "❌ ChromaDB failed to start within ${timeout} seconds"
+            echo "📋 Final debug info:"
+            echo "Container status:"
+            docker ps -a --filter name=chromadb-e2e-service --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" || true
+            echo "Container logs:"
+            docker logs chromadb-e2e-service || true
+            echo "Network connectivity test:"
+            curl -v --max-time 10 http://localhost:8000/api/v2/heartbeat || true
+            exit 1
+          fi
+
+          echo "✅ ChromaDB is ready and accessible"
 
       - name: Run E2E tests with real ChromaDB
         env:
