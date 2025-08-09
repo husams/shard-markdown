@@ -1,7 +1,7 @@
 """Metadata extraction and enhancement for documents and chunks."""
 
 import hashlib
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -163,7 +163,7 @@ class MetadataExtractor:
             enhanced["context_depth"] = len(structural_context.split(" > "))
 
         # Add processing timestamp
-        enhanced["processed_at"] = datetime.utcnow().isoformat()
+        enhanced["processed_at"] = datetime.now(UTC).isoformat()
         enhanced["processor_version"] = "0.1.0"
 
         return enhanced

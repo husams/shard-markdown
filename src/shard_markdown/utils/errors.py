@@ -1,6 +1,6 @@
 """Error handling and exception classes."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -30,7 +30,7 @@ class ShardMarkdownError(Exception):
         self.category = category
         self.context = context or {}
         self.cause = cause
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(UTC)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary for logging/reporting."""
