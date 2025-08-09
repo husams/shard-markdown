@@ -294,7 +294,7 @@ class TestFileMetadataExtraction:
         assert metadata["file_name"] == "test.md"
         assert metadata["file_stem"] == "test"
         assert metadata["file_suffix"] == ".md"
-        assert metadata["file_size"] == len(test_content.encode())
+        assert metadata["file_size"] == test_file.stat().st_size
         assert "file_hash" in metadata
         assert metadata["file_hash_algorithm"] == "sha256"
         assert "file_modified" in metadata
