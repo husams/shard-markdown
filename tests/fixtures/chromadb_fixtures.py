@@ -140,10 +140,13 @@ class ChromaDBTestFixture:
         for attempt in range(max_attempts):
             try:
                 # Always use our ChromaDBClient wrapper for real connections
+                # Get auth token from environment if available
+                auth_token = os.environ.get("CHROMA_AUTH_TOKEN")
                 config = ChromaDBConfig(
                     host=self.host,
                     port=self.port,
                     timeout=10,
+                    auth_token=auth_token,
                 )
                 client = ChromaDBClient(config)
 
@@ -367,7 +370,20 @@ def wait_for_chromadb(
                 try:
                     if chromadb is None:
                         raise ImportError("chromadb not available")
-                    client = chromadb.HttpClient(host=host, port=port)
+                    # Get auth token from environment if available
+                    auth_token = os.environ.get("CHROMA_AUTH_TOKEN")
+                    settings = None
+                    if auth_token:
+                        # Create settings with authentication
+                        settings = chromadb.config.Settings(
+                            chroma_client_auth_provider="chromadb.auth.token_authn.TokenAuthClientProvider",
+                            chroma_client_auth_credentials=auth_token,
+                        )
+                    client = (
+                        chromadb.HttpClient(host=host, port=port, settings=settings)
+                        if settings
+                        else chromadb.HttpClient(host=host, port=port)
+                    )
                     client.heartbeat()
                     logger.info(f"ChromaDB is ready at {host}:{port}")
                     return True
