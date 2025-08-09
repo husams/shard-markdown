@@ -305,17 +305,14 @@ jobs:
           path: |
             bandit-report.json
 
-  # E2E tests with real ChromaDB
+  # E2E and integration tests with real ChromaDB
   e2e-tests:
     runs-on: ubuntu-latest
     needs: [lint] # Run after linting passes
-    strategy:
-      matrix:
-        chromadb-version: ["1.0.16"] # Minimum supported version (1.0.16+)
 
     services:
       chromadb:
-        image: chromadb/chroma:${{ matrix.chromadb-version }}
+        image: chromadb/chroma:1.0.16 # Minimum supported version
         ports:
           - 8000:8000
         options: >-
@@ -352,91 +349,51 @@ jobs:
           CHROMA_PORT: 8000
           SHARD_MD_USE_MOCK_CHROMADB: "false"
         run: |
-          echo "🧪 Running E2E tests with ChromaDB ${{ matrix.chromadb-version }}"
+          echo "🧪 Running E2E tests with ChromaDB 1.0.16"
           uv run pytest tests/e2e/ -v --tb=short --strict-markers
-          echo "✅ E2E tests passed with ChromaDB ${{ matrix.chromadb-version }}"
+          echo "✅ E2E tests passed"
 
-      - name: Upload E2E test results
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: e2e-test-results-${{ matrix.chromadb-version }}
-          path: |
-            .pytest_cache/
-            *.log
-
-  # ChromaDB integration test with version matrix
-  chromadb-integration:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        chromadb-version: ["1.0.16"] # Minimum supported version (1.0.16+)
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Set up Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
-        run: uv sync --dev --extra chromadb
-
-      - name: Setup ChromaDB
-        uses: ./.github/actions/setup-chromadb
-        with:
-          chromadb-version: ${{ matrix.chromadb-version }}
-          port: 8000
-          timeout: 120
-
-      - name: Run ChromaDB integration tests
+      - name: Run integration tests with ChromaDB marker
         env:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
         run: |
-          echo "🧪 Running ChromaDB integration tests with version ${{ matrix.chromadb-version }}"
-
-          # Run ALL e2e tests (not just ones marked with chromadb)
-          # E2E tests should work with real ChromaDB
-          uv run pytest tests/e2e/ -v --tb=short --strict-markers
-
-          # Also run integration tests that require ChromaDB
+          echo "🧪 Running integration tests that require ChromaDB"
           uv run pytest tests/integration/ -v --tb=short --strict-markers -m "chromadb" || echo "No tests marked with chromadb in integration"
 
-          # Run basic CLI integration test with real ChromaDB
-          # First test that ChromaDB is accessible
-          if curl -f -s http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1 || \
-             curl -f -s http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1 || \
-             curl -f -s http://localhost:8000/heartbeat >/dev/null 2>&1; then
-            echo "✅ ChromaDB is accessible, running CLI integration tests"
-            
-            uv run shard-md collections create ci-test-${{ matrix.chromadb-version }} || {
-              echo "⚠️ Failed to create collection, checking ChromaDB status..."
-              curl -v http://localhost:8000/api/v2/heartbeat || curl -v http://localhost:8000/api/v1/heartbeat || true
-              echo "Skipping CLI integration tests due to ChromaDB connection issues"
-              exit 0
-            }
-            
-            echo "# CI Test" > ci-test.md
-            echo "Testing ChromaDB integration in CI." >> ci-test.md
-            uv run shard-md process --collection ci-test-${{ matrix.chromadb-version }} ci-test.md
-            uv run shard-md query search "integration" --collection ci-test-${{ matrix.chromadb-version }}
-            uv run shard-md collections delete ci-test-${{ matrix.chromadb-version }} || echo "Collection already deleted or doesn't exist"
-          else
-            echo "⚠️ ChromaDB not accessible, skipping CLI integration tests"
-          fi
+      - name: Test CLI with real ChromaDB
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+        run: |
+          echo "🧪 Testing CLI commands with real ChromaDB"
 
-      - name: Upload integration test results
+          # Create a test collection
+          uv run shard-md collections create ci-test-collection || {
+            echo "⚠️ Failed to create collection"
+            exit 1
+          }
+
+          # Create test document
+          echo "# CI Test Document" > ci-test.md
+          echo "Testing ChromaDB integration in CI pipeline." >> ci-test.md
+
+          # Process document
+          uv run shard-md process --collection ci-test-collection ci-test.md
+
+          # Query document
+          uv run shard-md query search "integration" --collection ci-test-collection
+
+          # Clean up
+          uv run shard-md collections delete ci-test-collection || echo "Collection cleanup failed"
+
+          echo "✅ CLI tests passed"
+
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: integration-test-results-${{ matrix.chromadb-version }}
+          name: e2e-test-results
           path: |
             .pytest_cache/
             *.log
