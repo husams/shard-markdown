@@ -3,7 +3,7 @@ name: CI
 # This workflow runs comprehensive testing including:
 # - Unit tests across multiple OS and Python versions
 # - Integration tests with and without ChromaDB
-# - E2E tests with real ChromaDB (multiple versions)
+# - E2E tests with real ChromaDB (v1.0.16+)
 # - Coverage reporting with real ChromaDB
 # - Performance benchmarks
 # - Security scanning
@@ -108,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       chromadb:
-        image: chromadb/chroma:0.5.23 # Use stable version instead of latest
+        image: chromadb/chroma:1.0.16 # Minimum supported version
         ports:
           - 8000:8000
         options: >-
@@ -311,7 +311,7 @@ jobs:
     needs: [lint] # Run after linting passes
     strategy:
       matrix:
-        chromadb-version: ["0.5.23", "1.0.16"] # Test with multiple versions
+        chromadb-version: ["1.0.16"] # Minimum supported version (1.0.16+)
 
     services:
       chromadb:
@@ -370,7 +370,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chromadb-version: ["0.5.23", "1.0.16"] # Test stable versions
+        chromadb-version: ["1.0.16"] # Minimum supported version (1.0.16+)
 
     steps:
       - name: Checkout code

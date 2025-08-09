@@ -1,9 +1,9 @@
 name: End-to-End Tests
 
 # This workflow provides comprehensive E2E testing with real ChromaDB:
-# - CLI workflow testing with multiple ChromaDB versions
+# - CLI workflow testing with ChromaDB v1.0.16+
 # - Package installation testing (wheel, source, editable)
-# - ChromaDB configuration and version compatibility testing
+# - ChromaDB configuration and compatibility testing
 # - Performance and load testing (scheduled runs)
 # All tests use real ChromaDB instances, not mocks
 
@@ -28,10 +28,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest] # Only test on Ubuntu, Windows not needed
-        # Test with multiple ChromaDB versions for compatibility
-        # 0.5.23: Stable version with v1 API
-        # 1.0.16: Latest stable version with v1/v2 API support
-        chromadb-version: ["0.5.23", "1.0.16"]
+        # ChromaDB 1.0.16+ is required for this tool
+        # 1.0.16: Minimum supported version with v1/v2 API support
+        chromadb-version: ["1.0.16"]
 
     steps:
       - name: Checkout code
@@ -305,10 +304,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Test with multiple stable ChromaDB versions
+        # ChromaDB 1.0.16+ is required for this tool
         chromadb-version:
-          - "0.5.23" # Stable version with v1 API
-          - "1.0.16" # Latest stable with full v1/v2 API support
+          - "1.0.16" # Minimum supported version with full v1/v2 API support
 
     steps:
       - name: Checkout code
