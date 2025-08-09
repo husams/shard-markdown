@@ -156,6 +156,5 @@ chroma_data/
 mock_chromadb_storage.json
 
 # Claude files
-.claude/
 .plans/
 .serena/

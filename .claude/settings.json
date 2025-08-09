@@ -1,0 +1,45 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_RESULT_FILE_PATH\" == *.py ]]; then uv run ruff format \"$CLAUDE_TOOL_RESULT_FILE_PATH\" 2>/dev/null && echo \"✓ Ruff formatted: $CLAUDE_TOOL_RESULT_FILE_PATH\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_RESULT_FILE_PATH\" == *.py ]]; then uv run ruff check --fix \"$CLAUDE_TOOL_RESULT_FILE_PATH\" 2>/dev/null && echo \"✓ Ruff linted: $CLAUDE_TOOL_RESULT_FILE_PATH\"; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_RESULT_FILE_PATH\" == *.py ]]; then uv run ruff format \"$CLAUDE_TOOL_RESULT_FILE_PATH\" 2>/dev/null && echo \"✓ Ruff formatted: $CLAUDE_TOOL_RESULT_FILE_PATH\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_RESULT_FILE_PATH\" == *.py ]]; then uv run ruff check --fix \"$CLAUDE_TOOL_RESULT_FILE_PATH\" 2>/dev/null && echo \"✓ Ruff linted: $CLAUDE_TOOL_RESULT_FILE_PATH\"; fi"
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_RESULT_FILE_PATH\" == *.py ]]; then uv run ruff format \"$CLAUDE_TOOL_RESULT_FILE_PATH\" 2>/dev/null && echo \"✓ Ruff formatted: $CLAUDE_TOOL_RESULT_FILE_PATH\"; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [[ \"$CLAUDE_TOOL_RESULT_FILE_PATH\" == *.py ]]; then uv run ruff check --fix \"$CLAUDE_TOOL_RESULT_FILE_PATH\" 2>/dev/null && echo \"✓ Ruff linted: $CLAUDE_TOOL_RESULT_FILE_PATH\"; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
