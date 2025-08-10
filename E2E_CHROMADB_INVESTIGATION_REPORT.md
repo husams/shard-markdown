@@ -111,22 +111,34 @@ The setup-chromadb action has platform-specific implementations:
 
 ## RECOMMENDED SOLUTIONS
 
-### Immediate Fix (Recommended)
-Update line 41 in `.github/actions/setup-chromadb/action.yml`:
+### Implemented Fix
+Removed Docker health checks entirely and switched to manual polling from the host (like macOS setup).
 
-**Current (broken)**:
-```bash
---health-cmd "wget --spider -q http://localhost:8000/api/v1 || exit 1" \
-```
+**Why this approach**:
+- ChromaDB 1.0.16 container lacks `curl`, `nc`, and other networking tools
+- Docker health checks run inside the container and fail due to missing tools
+- Manual polling from the host is more reliable and doesn't depend on container tools
+- This approach already works successfully on macOS
 
-**Fixed version**:
+**Implementation**:
 ```bash
---health-cmd "wget --spider -q http://localhost:8000/api/v1/heartbeat || wget --spider -q http://localhost:8000/heartbeat || exit 1" \
-```
+# Start ChromaDB without health checks
+docker run -d \
+  --name chromadb \
+  -p 8000:8000 \
+  -e ANONYMIZED_TELEMETRY=false \
+  -e ALLOW_RESET=true \
+  -e IS_PERSISTENT=true \
+  chromadb/chroma:1.0.16
 
-Or use curl for consistency:
-```bash
---health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1" \
+# Poll from host until ready
+while [ $elapsed -lt 120 ]; do
+  if nc -z localhost 8000 2>/dev/null || wget --spider -q http://localhost:8000 2>/dev/null; then
+    echo "✅ ChromaDB is ready"
+    break
+  fi
+  sleep 3
+done
 ```
 
 ### Alternative Solutions
