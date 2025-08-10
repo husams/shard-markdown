@@ -84,7 +84,6 @@ shard-md process \
   --chunk-size 1200 \
   --chunk-overlap 150 \
   --batch-size 20 \
-  --max-workers 8 \
   --create-collection \
   docs/
 ```
@@ -139,7 +138,6 @@ chunking:
 
 processing:
   batch_size: 10
-  max_workers: 4
   recursive: false
   pattern: "*.md"
   include_frontmatter: true
@@ -444,7 +442,7 @@ shard-md preview --chunk-method semantic --chunk-size 1200 large-document.md
 time shard-md process --collection benchmark-test large-docs/
 
 # Monitor memory usage (with external tools)
-/usr/bin/time -v shard-md process --collection memory-test --max-workers 1 docs/
+/usr/bin/time -v shard-md process --collection memory-test docs/
 
 # Profile processing performance
 shard-md process --collection perf-test --show-stats docs/
@@ -518,7 +516,7 @@ jobs:
 set -e
 
 COLLECTION_NAME="docs-$(date +%Y%m%d)"
-DOCS_DIR="./documentation"
+DOCS_PATH="./documentation"
 BACKUP_DIR="./backups"
 
 echo "Processing documentation updates..."
@@ -538,7 +536,7 @@ shard-md process \
     --chunk-size 1200 \
     --chunk-overlap 200 \
     --custom-metadata "{\"updated\": \"$(date -Iseconds)\", \"version\": \"$1\"}" \
-    "$DOCS_DIR"
+    "$DOCS_PATH"
 
 # Update alias to point to new collection
 shard-md collections alias docs-current "$COLLECTION_NAME"
@@ -627,7 +625,6 @@ file problematic-file.md
 shard-md process \
     --collection large-docs \
     --batch-size 5 \
-    --max-workers 2 \
     large-dataset/
 
 # Monitor memory usage

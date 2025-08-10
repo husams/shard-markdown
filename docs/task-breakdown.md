@@ -599,7 +599,7 @@ This document provides a comprehensive task breakdown for implementing the shard
 
 - [ ] Processing performance benchmarks
 - [ ] Memory usage profiling
-- [ ] Concurrent processing tests
+- [ ] Sequential processing tests
 - [ ] Large document handling tests
 - [ ] ChromaDB performance tests
 - [ ] Performance regression detection

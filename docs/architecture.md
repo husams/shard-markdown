@@ -137,7 +137,7 @@ class DocumentProcessor:
         pass
 
     def process_batch(self, file_paths: List[Path]) -> BatchResult:
-        """Process multiple documents with concurrency"""
+        """Process multiple documents sequentially"""
         pass
 ```
 
@@ -260,7 +260,7 @@ Input Files
     ▼
 ┌─────────────────┐
 │ Batch Grouping  │ ──── Group files for efficient processing
-│ & Scheduling    │      Load balancing across workers
+│ & Scheduling    │      Sequential processing order
 └─────────────────┘
     │
     ▼
@@ -389,33 +389,36 @@ chunk_document = {
 }
 ```
 
-## 5. Concurrency and Performance
+## 5. Sequential Processing Architecture
 
-### 5.1 Threading Model
+### 5.1 Processing Model
 
 ```python
-class ProcessingPool:
-    """Manages concurrent document processing"""
+class SequentialProcessor:
+    """Manages sequential document processing for reliability and simplicity"""
 
-    def __init__(self, max_workers: int = 4):
-        self.executor = ThreadPoolExecutor(max_workers=max_workers)
-        self.semaphore = Semaphore(max_workers)
+    def __init__(self, config: ProcessingConfig):
+        self.config = config
+        self.processor = DocumentProcessor(config)
 
-    async def process_batch(self, documents: List[Path]) -> List[ProcessingResult]:
-        """Process documents concurrently with resource management"""
-        tasks = []
-        for doc in documents:
-            task = self.executor.submit(self._process_single, doc)
-            tasks.append(task)
-
-        return await asyncio.gather(*tasks)
+    def process_batch(self, documents: List[Path]) -> List[ProcessingResult]:
+        """Process documents one at a time for predictable resource usage"""
+        results = []
+        for doc_path in documents:
+            try:
+                result = self.processor.process_document(doc_path)
+                results.append(result)
+            except Exception as e:
+                results.append(ProcessingResult.failed(doc_path, str(e)))
+        
+        return results
 ```
 
 ### 5.2 Memory Management
 
 ```python
 class MemoryManager:
-    """Manages memory usage during processing"""
+    """Manages memory usage during sequential processing"""
 
     def __init__(self, max_memory_mb: int = 512):
         self.max_memory = max_memory_mb * 1024 * 1024

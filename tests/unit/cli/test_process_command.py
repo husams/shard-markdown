@@ -319,12 +319,11 @@ class TestProcessCommand:
 
         result = cli_runner.invoke(
             process,
-            ["--collection", "test-collection", "--batch", "--max-workers", "4"]
-            + file_paths,
+            ["--collection", "test-collection", "--batch"] + file_paths,
             obj=mock_context,
         )
 
-        # Note: This test assumes --batch and --max-workers options exist
+        # Note: This test assumes --batch option exists
         # The actual command structure may differ
         assert result.exit_code == 0 or "batch" in result.output.lower()
 

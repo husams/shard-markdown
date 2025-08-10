@@ -28,7 +28,6 @@ chunking:
 
 processing:
   batch_size: 10
-  max_workers: 4
   recursive: false
   pattern: "*.md"
   include_frontmatter: true
@@ -54,7 +53,6 @@ _ENV_VAR_MAPPINGS = {
     "SHARD_MD_CHUNK_SIZE": "chunking.default_size",
     "SHARD_MD_CHUNK_OVERLAP": "chunking.default_overlap",
     "SHARD_MD_BATCH_SIZE": "processing.batch_size",
-    "SHARD_MD_MAX_WORKERS": "processing.max_workers",
     "SHARD_MD_LOG_LEVEL": "logging.level",
 }
 

@@ -73,12 +73,6 @@ console = Console()
     help="Show what would be processed without executing",
 )
 @click.option(
-    "--max-workers",
-    default=4,
-    type=int,
-    help="Maximum worker threads for processing [default: 4]",
-)
-@click.option(
     "--collection-metadata",
     help="Additional metadata for new collections (JSON format)",
 )
@@ -99,7 +93,6 @@ def process(  # noqa: C901
     create_collection: bool,
     clear_collection: bool,
     dry_run: bool,
-    max_workers: int,
     collection_metadata: str | None,
     use_mock: bool,
 ) -> None:
@@ -172,7 +165,6 @@ def process(  # noqa: C901
             processor,
             chroma_client,
             collection_obj,
-            max_workers,
             verbose,
         )
 
@@ -250,7 +242,6 @@ def _process_files_with_progress(
     processor: Any,
     chroma_client: Any,
     collection_obj: Any,
-    max_workers: int,
     verbose: int,
 ) -> None:
     """Process files with progress tracking."""
@@ -279,7 +270,6 @@ def _process_files_with_progress(
                 processor,
                 chroma_client,
                 collection_obj,
-                max_workers,
                 verbose,
                 progress,
             )
@@ -325,14 +315,11 @@ def _process_batch_files(
     processor: Any,
     chroma_client: Any,
     collection_obj: Any,
-    max_workers: int,
     verbose: int,
     progress: Any,
 ) -> None:
     """Process multiple files in batch."""
-    batch_result = processor.process_batch(
-        validated_paths, collection, max_workers=max_workers
-    )
+    batch_result = processor.process_batch(validated_paths, collection)
 
     # Collect all chunks from successful results
     all_chunks = []

@@ -42,9 +42,7 @@ class TestDocumentProcessingIntegration:
         """Test batch processing with real documents."""
         file_paths = list(test_documents.values())
 
-        result = processor.process_batch(
-            file_paths, "batch-integration-test", max_workers=2
-        )
+        result = processor.process_batch(file_paths, "batch-integration-test")
 
         # Verify batch processing results
         assert result.total_files == len(file_paths)
@@ -388,7 +386,7 @@ features:
         file_paths = list(test_documents.values())
 
         start_time = time.time()
-        result = processor.process_batch(file_paths, "performance-test", max_workers=1)
+        result = processor.process_batch(file_paths, "performance-test")
         end_time = time.time()
 
         # Basic performance checks
@@ -398,28 +396,6 @@ features:
         elapsed_time = max(end_time - start_time, 0.001)
         assert result.total_processing_time <= elapsed_time + 0.001
         assert result.processing_speed > 0  # chunks per second
-
-    def test_concurrent_processing_safety(
-        self, processor: DocumentProcessor, test_documents: dict[str, Any]
-    ) -> None:
-        """Test that concurrent processing is safe and consistent."""
-        file_paths = list(test_documents.values())
-
-        # Process with different worker counts
-        result_1_worker = processor.process_batch(
-            file_paths, "concurrent-test-1", max_workers=1
-        )
-
-        result_4_workers = processor.process_batch(
-            file_paths, "concurrent-test-4", max_workers=4
-        )
-
-        # Results should be consistent regardless of worker count
-        assert result_1_worker.total_files == result_4_workers.total_files
-        assert result_1_worker.successful_files == result_4_workers.successful_files
-        # Total chunks might vary slightly due to threading, but should be close
-        chunk_diff = abs(result_1_worker.total_chunks - result_4_workers.total_chunks)
-        assert chunk_diff <= 1
 
 
 class TestDocumentProcessingErrors:

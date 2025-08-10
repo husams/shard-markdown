@@ -42,9 +42,9 @@
 #### 1.1.6 System Errors (Category: SYSTEM)
 
 - **Code Range**: 1500-1599
-- **Description**: System-level errors including memory, threading, and resource constraints
+- **Description**: System-level errors including memory and resource constraints
 - **Recovery Strategy**: Resource adjustment or system configuration changes
-- **Examples**: Out of memory, thread pool exhaustion, resource limits exceeded
+- **Examples**: Out of memory, resource limits exceeded
 
 #### 1.1.7 Network Errors (Category: NETWORK)
 

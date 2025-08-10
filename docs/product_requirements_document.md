@@ -213,7 +213,7 @@ The Shard-Markdown CLI utility is a Python-based command-line tool designed to p
 - Process 1MB markdown file in under 5 seconds
 - Handle files up to 100MB within 60 seconds
 - Memory usage should not exceed 2x input file size
-- Support concurrent processing of multiple files
+- Support sequential processing of multiple files
 
 #### TR-004: Storage Performance
 
@@ -401,15 +401,15 @@ The Shard-Markdown CLI utility is a Python-based command-line tool designed to p
 - Progress reporting for long operations
 - Graceful handling of memory constraints
 
-#### PR-002: Concurrent Processing
+#### PR-002: Sequential Processing
 
 **Priority:** Medium
-**Description:** Support concurrent file processing where applicable.
+**Description:** Support sequential file processing with batch operations.
 
 **Acceptance Criteria:**
 
-- Thread-safe operations
-- Configurable concurrency levels
+- Sequential file operations
+- Configurable batch sizes
 - Resource usage monitoring
 - Clean shutdown handling
 

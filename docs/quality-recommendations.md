@@ -291,7 +291,7 @@ class OptimizedDocumentProcessor:
         all_chunks = []
 
         # Process files in parallel
-        with ThreadPoolExecutor(max_workers=self.config.processing.max_workers) as executor:
+        # Sequential processing - no threading required as executor:
             futures = [
                 executor.submit(self._process_file_to_chunks, path)
                 for path in file_paths

@@ -16,7 +16,7 @@ Shard Markdown is a powerful CLI tool that intelligently processes markdown docu
 - **Multiple Chunking Strategies**: Structure-aware, fixed-size, and semantic chunking
 - **ChromaDB Integration**: Native support for ChromaDB collections and operations
 - **Metadata Preservation**: Extracts and enhances document metadata
-- **Batch Processing**: Efficiently process multiple files with concurrent execution
+- **Batch Processing**: Efficiently process multiple files with sequential processing
 - **Rich CLI Interface**: Beautiful terminal output with progress tracking
 - **Flexible Configuration**: YAML-based configuration with environment variable support
 
@@ -125,7 +125,6 @@ chunking:
 
 processing:
   batch_size: 10
-  max_workers: 4
   recursive: false
   include_frontmatter: true
 
@@ -156,13 +155,13 @@ Process markdown files into ChromaDB collections:
 shard-md process --collection my-docs document.md
 
 # Advanced processing
-shard-md process \\
-  --collection technical-docs \\
-  --chunk-size 1500 \\
-  --chunk-overlap 300 \\
-  --chunk-method structure \\
-  --recursive \\
-  --create-collection \\
+shard-md process \
+  --collection technical-docs \
+  --chunk-size 1500 \
+  --chunk-overlap 300 \
+  --chunk-method structure \
+  --recursive \
+  --create-collection \
   docs/
 
 # Dry run (preview what would be processed)

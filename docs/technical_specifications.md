@@ -353,7 +353,7 @@ class IntegrationTests:
     def test_large_file_processing(self):
         """Test processing of 50MB+ markdown files."""
 
-    def test_concurrent_processing(self):
+    def test_sequential_processing(self):
         """Test multiple instances processing different files."""
 
     def test_error_recovery(self):
