@@ -166,9 +166,9 @@ class TestConfigValueHandling:
     def test_edge_case_values(self) -> None:
         """Test edge case configuration values."""
         # Test with "0" as string
-        config_dict: dict[str, Any] = {"chromadb": {"host": "0.0.0.0"}}
+        config_dict: dict[str, Any] = {"chromadb": {"host": "0.0.0.0"}}  # noqa: S104
         config = AppConfig(**config_dict)
-        assert config.chromadb.host == "0.0.0.0"
+        assert config.chromadb.host == "0.0.0.0"  # noqa: S104
 
         # Test with numeric-looking hostnames
         config_dict = {"chromadb": {"host": "8.8.8.8"}}

@@ -58,7 +58,7 @@ class TestCLIConfigIntegration:
 
         # Set IP address via CLI using --local flag
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chromadb.host", "192.168.1.100"],
+            ["shard-md", "config", "set", "--local", "chromadb.host", "192.168.1.100"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -124,8 +124,8 @@ class TestCLIConfigIntegration:
         ]
 
         for key, value in test_values:
-            result = subprocess.run(
-                ["shard-md", "config", "set", "--local", key, value],
+            result = subprocess.run(  # noqa: S603
+                ["shard-md", "config", "set", "--local", key, value],  # noqa: S607
                 cwd=temp_project_dir,
                 capture_output=True,
                 text=True,
@@ -164,7 +164,8 @@ class TestCLIConfigIntegration:
         # Skip this test for now as CLI show doesn't properly respect local configs
         # when global config exists. This is a limitation of the current implementation.
         pytest.skip(
-            "CLI show command doesn't properly prioritize local config over global config"
+            "CLI show command doesn't properly prioritize local config over global "  # noqa: E501
+            "config"
         )
 
     def test_cli_validation_errors(self, temp_project_dir: Path) -> None:
@@ -208,11 +209,11 @@ class TestCLIConfigIntegration:
             yaml.dump(initial_config, f)
 
         # Store original port value
-        original_port = initial_config["chromadb"]["port"]
+        original_port: int = initial_config["chromadb"]["port"]  # type: ignore[index]
 
         # Try to set invalid port
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chromadb.port", "70000"],
+            ["shard-md", "config", "set", "--local", "chromadb.port", "70000"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -289,8 +290,8 @@ class TestCLIConfigIntegration:
             yaml.dump(initial_config, f)
 
         # Set IP address
-        result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chromadb.host", ip_address],
+        result = subprocess.run(  # noqa: S603
+            ["shard-md", "config", "set", "--local", "chromadb.host", ip_address],  # noqa: S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -308,7 +309,7 @@ class TestCLIConfigIntegration:
         """Test the full workflow of initializing and setting config values."""
         # Initialize local config
         result = subprocess.run(
-            ["shard-md", "config", "init"],
+            ["shard-md", "config", "init"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -321,7 +322,7 @@ class TestCLIConfigIntegration:
 
         # Set IP address after init
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chromadb.host", "203.0.113.1"],
+            ["shard-md", "config", "set", "--local", "chromadb.host", "203.0.113.1"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -378,7 +379,7 @@ class TestCLIConfigIntegration:
             yaml.dump(initial_config, f)
 
         test_ips = [
-            "0.0.0.0",  # Any address
+            "0.0.0.0",  # Any address  # noqa: S104
             "127.0.0.1",  # Loopback
             "255.255.255.255",  # Broadcast
             "192.168.0.1",  # Private range
@@ -387,8 +388,8 @@ class TestCLIConfigIntegration:
         ]
 
         for ip in test_ips:
-            result = subprocess.run(
-                ["shard-md", "config", "set", "--local", "chromadb.host", ip],
+            result = subprocess.run(  # noqa: S603
+                ["shard-md", "config", "set", "--local", "chromadb.host", ip],  # noqa: S607
                 cwd=temp_project_dir,
                 capture_output=True,
                 text=True,
@@ -448,7 +449,7 @@ class TestCLIConfigIntegration:
 
         # Set a different host in config
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chromadb.host", "192.168.1.1"],
+            ["shard-md", "config", "set", "--local", "chromadb.host", "192.168.1.1"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -465,7 +466,7 @@ class TestCLIConfigIntegration:
 
         # But when we show the config, it should reflect the env var override
         result = subprocess.run(
-            ["shard-md", "config", "show", "--section", "chromadb"],
+            ["shard-md", "config", "show", "--section", "chromadb"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
