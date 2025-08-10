@@ -4,7 +4,9 @@
 
 **Issue**: The End-to-End Tests CI job is failing during ChromaDB container setup on Ubuntu due to an incorrect health check endpoint.
 
-**Root Cause**: The Docker health check command uses `wget --spider` on `/api/v1` instead of `/api/v1/heartbeat`, causing the health check to fail with HTTP 404.
+**Root Cause**: Two issues were found:
+1. The health check was using the wrong endpoint (`/api/v1` instead of `/api/v1/heartbeat`)
+2. After fixing to use `curl`, it failed because ChromaDB 1.0.16 container doesn't have `curl` installed
 
 **Impact**: All E2E tests are blocked and cannot run, preventing validation of ChromaDB integration features.
 
