@@ -1,4 +1,8 @@
-"""Shared configuration utilities."""
+"""Configuration utility functions.
+
+This module provides utilities for manipulating configuration dictionaries.
+Type conversion is handled by Pydantic models, not by these utilities.
+"""
 
 from typing import Any
 
@@ -22,38 +26,3 @@ def set_nested_value(data: dict[str, Any], path: str, value: Any) -> None:
 
     # Set the final value
     current[keys[-1]] = value
-
-
-def parse_config_value(value: str) -> Any:
-    """Parse configuration value to appropriate type.
-
-    Args:
-        value: String value to parse
-
-    Returns:
-        Converted value (str, int, float, bool, or None)
-    """
-    # Handle boolean values
-    if value.lower() in ("true", "1", "yes", "on"):
-        return True
-    elif value.lower() in ("false", "0", "no", "off"):
-        return False
-
-    # Handle None/null values
-    elif value.lower() in ("null", "none", ""):
-        return None
-
-    # Try to convert to integer
-    try:
-        return int(value)
-    except ValueError:
-        pass
-
-    # Try to convert to float
-    try:
-        return float(value)
-    except ValueError:
-        pass
-
-    # Return as string
-    return value

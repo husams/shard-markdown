@@ -1,5 +1,7 @@
 """Configuration schema definitions using Pydantic."""
 
+import ipaddress
+import re
 from enum import Enum
 from pathlib import Path
 from typing import Any
@@ -27,10 +29,45 @@ class ChromaDBConfig(BaseModel):
     @field_validator("host")
     @classmethod
     def validate_host(cls, v: str) -> str:
-        """Validate host is not empty."""
+        """Validate host is not empty and is a valid hostname or IP address."""
         if not v or not v.strip():
             raise ValueError("Host cannot be empty")
-        return v.strip()
+
+        host = v.strip()
+
+        # Check if it's a valid IP address
+        try:
+            ipaddress.ip_address(host)
+            return host
+        except ValueError:
+            pass
+
+        # Check if it's localhost
+        if host in ("localhost", "127.0.0.1", "::1"):
+            return host
+
+        # Check if it looks like an IP address but failed validation
+        # This prevents invalid or incomplete IP addresses from passing
+        # hostname validation
+        ipv4_like_pattern = re.compile(r"^\d+(\.\d+)+$")
+        if ipv4_like_pattern.match(host):
+            raise ValueError(
+                f"Invalid host: '{host}'. Must be a valid IP address or hostname."
+            )
+
+        # Validate as hostname (RFC 1123)
+        hostname_regex = re.compile(
+            r"^(?=.{1,253}$)"  # Total length check
+            r"(?!-)[A-Za-z0-9-]{1,63}(?<!-)"  # Label regex
+            r"(\.[A-Za-z0-9-]{1,63})*$"  # Additional labels
+        )
+
+        if not hostname_regex.match(host):
+            raise ValueError(
+                f"Invalid host: '{host}'. Must be a valid IP address or hostname."
+            )
+
+        return host
 
 
 class ChunkingConfig(BaseModel):

@@ -45,6 +45,7 @@ def chromadb_env(chromadb_test_fixture: ChromaDBTestFixture) -> dict[str, str]:
     env = os.environ.copy()
     env["CHROMA_HOST"] = chromadb_test_fixture.host
     env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+    env["CHROMA_SSL"] = "false"  # Explicitly set SSL to false for local testing
     env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105
     return env
 
@@ -82,6 +83,7 @@ class TestBasicCLIWorkflows:
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_SSL"] = "false"  # Explicitly set SSL to false for local testing
         env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105  # Set authentication token
 
         # Process a document with --create-collection flag to ensure collection exists
@@ -144,6 +146,7 @@ class TestBasicCLIWorkflows:
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_SSL"] = "false"  # Explicitly set SSL to false for local testing
         env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105  # Set authentication token
 
         result = cli_runner.invoke(
@@ -311,6 +314,7 @@ class TestAdvancedCLIWorkflows:
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_SSL"] = "false"  # Explicitly set SSL to false for local testing
         env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105  # Set authentication token
 
         for method, size, overlap in strategies:
@@ -869,6 +873,7 @@ This concludes document {i}.
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_SSL"] = "false"  # Explicitly set SSL to false for local testing
         env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105
 
         result = cli_runner.invoke(
@@ -914,6 +919,7 @@ This concludes document {i}.
         env = os.environ.copy()
         env["CHROMA_HOST"] = chromadb_test_fixture.host
         env["CHROMA_PORT"] = str(chromadb_test_fixture.port)
+        env["CHROMA_SSL"] = "false"  # Explicitly set SSL to false for local testing
         env["CHROMA_AUTH_TOKEN"] = "test-token"  # noqa: S105
 
         # Process the large document

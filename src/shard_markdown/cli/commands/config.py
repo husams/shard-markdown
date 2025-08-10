@@ -10,7 +10,7 @@ from rich.table import Table
 
 from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
-from ...config.utils import parse_config_value, set_nested_value
+from ...config.utils import set_nested_value
 from ...utils.logging import get_logger
 
 
@@ -54,8 +54,8 @@ def show(ctx: click.Context, format: str, section: str) -> None:
     verbose = ctx.obj.get("verbose", 0)
 
     try:
-        # Get configuration as dictionary
-        config_dict = config_obj.model_dump()
+        # Get configuration as dictionary with mode='json' to properly serialize enums
+        config_dict = config_obj.model_dump(mode="json")
 
         # Filter to specific section if requested
         if section:
@@ -136,8 +136,8 @@ def set(
         current_config = ctx.obj["config"]
         config_dict = current_config.model_dump()
 
-        # Parse and set the value
-        set_nested_value(config_dict, key, parse_config_value(value))
+        # Pass string value directly to Pydantic for proper type conversion
+        set_nested_value(config_dict, key, value)
 
         # Validate the new configuration
         from ...config.settings import AppConfig
@@ -151,7 +151,7 @@ def set(
         # Save the configuration
         save_config(updated_config, config_path)
 
-        console.print(f"[green]✓ Set {key} = {value}[/green]")
+        console.print(f"[green][OK] Set {key} = {value}[/green]")
         console.print(f"[dim]Saved to: {config_path}[/dim]")
 
     except (OSError, ValueError, RuntimeError) as e:
@@ -204,7 +204,9 @@ def init(ctx: click.Context, is_global: bool, force: bool, template: str) -> Non
         # Create default configuration
         create_default_config(config_path, force=force)
 
-        console.print(f"[green]✓ Initialized configuration file: {config_path}[/green]")
+        console.print(
+            f"[green][OK] Initialized configuration file: {config_path}[/green]"
+        )
         console.print(
             "You can now edit the file or use 'shard-md config set' to modify values."
         )
@@ -228,7 +230,7 @@ def path(ctx: click.Context) -> None:
     )
 
     for i, location in enumerate(DEFAULT_CONFIG_LOCATIONS, 1):
-        exists = "✓" if location.exists() else "✗"
+        exists = "YES" if location.exists() else "NO"
         status = (
             "[green]exists[/green]" if location.exists() else "[dim]not found[/dim]"
         )
