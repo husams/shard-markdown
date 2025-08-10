@@ -31,14 +31,14 @@ runs:
         docker rm chromadb 2>/dev/null || true
 
         # Start ChromaDB with version-aware health checks
-        # Use v1 heartbeat for compatibility with older versions, will be verified later
+        # Check v2, v1, and root heartbeat endpoints for compatibility across versions
         docker run -d \
           --name chromadb \
           -p ${{ inputs.port }}:8000 \
           -e ANONYMIZED_TELEMETRY=false \
           -e ALLOW_RESET=true \
           -e IS_PERSISTENT=true \
-          --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1" \
+          --health-cmd "curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/heartbeat || exit 1" \
           --health-interval 5s \
           --health-timeout 10s \
           --health-retries 24 \
