@@ -10,32 +10,29 @@ from .protocol import ChromaDBClientProtocol
 logger = get_logger(__name__)
 
 
-def create_chromadb_client(
-    config: ChromaDBConfig, use_mock: bool | None = None
-) -> ChromaDBClientProtocol:
-    """Create ChromaDB client with optional mock support.
+def create_chromadb_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
+    """Create ChromaDB client based on environment.
 
     Args:
         config: ChromaDB configuration
-        use_mock: Whether to use mock client. If None, auto-detect based on
-            environment
 
     Returns:
-        ChromaDB client (real or mock) conforming to ChromaDBClientProtocol
+        ChromaDB client (real or mock) based on environment
     """
-    # Auto-detect if we should use mock
-    if use_mock is None:
-        # Use mock if SHARD_MD_USE_MOCK_CHROMADB is set or if ChromaDB is not
-        # available
-        mock_env_var = os.getenv("SHARD_MD_USE_MOCK_CHROMADB", "")
-        use_mock = (
-            mock_env_var.lower() in ("true", "1", "yes")
-            or not _is_chromadb_available()
-            or not _test_chromadb_connectivity(config)
-        )
+    # Check if we should use mock based on environment variable
+    mock_env_var = os.getenv("SHARD_MD_USE_MOCK_CHROMADB", "")
+    use_mock = mock_env_var.lower() in ("true", "1", "yes")
 
-    if use_mock or not _is_chromadb_available():
-        logger.info("Using mock ChromaDB client for development/testing")
+    # Use mock if explicitly requested or if ChromaDB is not available
+    if (
+        use_mock
+        or not _is_chromadb_available()
+        or not _test_chromadb_connectivity(config)
+    ):
+        if use_mock:
+            logger.info("Using mock ChromaDB client (SHARD_MD_USE_MOCK_CHROMADB=true)")
+        else:
+            logger.info("Using mock ChromaDB client (ChromaDB not available)")
         from .mock_client import MockChromaDBClient
 
         return MockChromaDBClient(config)

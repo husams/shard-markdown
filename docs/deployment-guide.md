@@ -451,7 +451,9 @@ find docs/ -name "*.md" | tail -n +101 | head -100 | xargs shard-md process --co
 curl http://localhost:8000/api/v1/heartbeat
 
 # Use mock client for testing
-shard-md process --use-mock --collection test *.md
+# For testing with mock ChromaDB, set environment variable:
+# export SHARD_MD_USE_MOCK_CHROMADB=true
+shard-md process --collection test *.md
 ```
 
 #### Permission Denied
