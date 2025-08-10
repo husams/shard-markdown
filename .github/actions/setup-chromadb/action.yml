@@ -30,34 +30,44 @@ runs:
         docker stop chromadb 2>/dev/null || true
         docker rm chromadb 2>/dev/null || true
 
-        # Start ChromaDB with version-aware health checks
-        # Check v2, v1, and root heartbeat endpoints for compatibility across versions
+        # Start ChromaDB without health checks (will use manual polling like macOS)
         docker run -d \
           --name chromadb \
           -p ${{ inputs.port }}:8000 \
           -e ANONYMIZED_TELEMETRY=false \
           -e ALLOW_RESET=true \
           -e IS_PERSISTENT=true \
-          --health-cmd "nc -z localhost 8000 || exit 1" \
-          --health-interval 5s \
-          --health-timeout 10s \
-          --health-retries 24 \
-          --health-start-period 30s \
           chromadb/chroma:${{ inputs.chromadb-version }}
 
-        echo "⏳ Waiting for ChromaDB to become healthy..."
+        echo "⏳ Waiting for ChromaDB API to be ready..."
 
-        # Wait for container to be healthy with extended timeout
-        if ! timeout ${{ inputs.timeout }} bash -c 'until docker inspect chromadb --format="{{.State.Health.Status}}" 2>/dev/null | grep -q healthy; do sleep 2; echo -n "."; done'; then
-          echo "❌ ChromaDB health check failed on Linux"
+        # Manual polling for API readiness (like macOS approach)
+        elapsed=0
+        api_ready=false
+
+        while [ $elapsed -lt ${{ inputs.timeout }} ] && [ "$api_ready" = "false" ]; do
+          # Try connecting to the port
+          if nc -z localhost ${{ inputs.port }} 2>/dev/null || wget --spider -q http://localhost:${{ inputs.port }} 2>/dev/null; then
+            echo "✅ ChromaDB is responding on port ${{ inputs.port }}"
+            api_ready=true
+            break
+          fi
+          
+          sleep 3
+          elapsed=$((elapsed + 3))
+          echo -n "."
+        done
+
+        if [ "$api_ready" = "false" ]; then
+          echo "❌ ChromaDB startup timeout on Linux"
           echo "📋 Container logs:"
           docker logs chromadb
-          echo "🔍 Container inspect:"
-          docker inspect chromadb
+          echo "🔍 Container status:"
+          docker ps -a --filter name=chromadb
           exit 1
         fi
 
-        echo "✅ ChromaDB is healthy on Linux"
+        echo "✅ ChromaDB is ready on Linux"
 
     - name: Setup ChromaDB on macOS
       if: runner.os == 'macOS'
