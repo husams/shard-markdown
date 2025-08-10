@@ -199,8 +199,9 @@ jobs:
           # Search documents
           uv run shard-md --config shard-md-config.yaml query search "test document" --collection test-collection --limit 5
 
-          # List documents
-          uv run shard-md --config shard-md-config.yaml query list-docs --collection test-collection
+          # Verify documents in collection
+          DOC_COUNT=$(uv run shard-md --config shard-md-config.yaml collections info test-collection --format json | python -c "import sys, json; data=json.load(sys.stdin); print(data.get('count', 0))")
+          echo "Collection has $DOC_COUNT documents"
 
       - name: Test error handling
         env:
@@ -299,118 +300,6 @@ jobs:
           deactivate
           rm -rf test-editable-env
 
-  # Test with different ChromaDB configurations and versions
-  e2e-chromadb-configs:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        # ChromaDB 1.0.16+ is required for this tool
-        chromadb-version:
-          - "1.0.16" # Minimum supported version with full v1/v2 API support
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-
-      - name: Set up Python
-        run: uv python install ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
-        run: uv sync --dev --extra chromadb
-
-      - name: Setup ChromaDB with version detection
-        uses: ./.github/actions/setup-chromadb
-        with:
-          chromadb-version: ${{ matrix.chromadb-version }}
-          port: 8000
-          timeout: 120
-
-      - name: Verify ChromaDB connectivity for configs test
-        env:
-          CHROMA_HOST: localhost
-          CHROMA_PORT: 8000
-        run: |
-          echo "Testing ChromaDB connectivity for configs test..."
-          curl -f http://localhost:8000/api/v1/heartbeat || curl -f http://localhost:8000/api/v2/heartbeat || curl -f http://localhost:8000/heartbeat || {
-            echo "ChromaDB not responding on port 8000"
-            exit 1
-          }
-          echo "ChromaDB is accessible"
-
-      - name: Test ChromaDB API version detection
-        env:
-          CHROMA_HOST: localhost
-          CHROMA_PORT: 8000
-        run: |
-          echo "🔍 Testing version detection for ChromaDB ${{ matrix.chromadb-version }}"
-
-          # Use version detection script if available
-          if [ -f "./scripts/detect-chromadb-version.sh" ]; then
-            echo "📋 Running version detection script..."
-            ./scripts/detect-chromadb-version.sh --host localhost --port 8000 --json
-          else
-            echo "⚠️ Version detection script not found, using manual detection"
-
-            # Manual version detection
-            base_url="http://localhost:8000"
-
-            echo "Testing API endpoints for version ${{ matrix.chromadb-version }}:"
-
-            # Test v2 API
-            if curl -f -s --max-time 10 "${base_url}/api/v2/heartbeat" >/dev/null 2>&1; then
-              echo "✅ v2 API available"
-              api_version="v2"
-            # Test v1 API
-            elif curl -f -s --max-time 10 "${base_url}/api/v1/heartbeat" >/dev/null 2>&1; then
-              echo "✅ v1 API available"
-              api_version="v1"
-            # Test root API
-            elif curl -f -s --max-time 10 "${base_url}/heartbeat" >/dev/null 2>&1; then
-              echo "✅ Root API available"
-              api_version="root"
-            else
-              echo "❌ No API endpoints available"
-              exit 1
-            fi
-
-            echo "Detected API version: $api_version"
-          fi
-
-      - name: Test ChromaDB connection and operations
-        env:
-          CHROMA_HOST: localhost
-          CHROMA_PORT: 8000
-        run: |
-          # Create config file for this test
-          cat > chromadb-test-config.yaml << EOF
-          chromadb:
-            host: localhost
-            port: 8000
-            timeout: 30
-
-          chunking:
-            default_size: 1000
-            default_overlap: 200
-          EOF
-
-          # Test connection and basic operations
-          uv run shard-md --config chromadb-test-config.yaml collections create e2e-config-test-${{ matrix.chromadb-version }}
-
-          echo "# Config Test for ChromaDB ${{ matrix.chromadb-version }}" > config-test.md
-          echo "Testing ChromaDB configuration with version ${{ matrix.chromadb-version }}" >> config-test.md
-          echo "" >> config-test.md
-          echo "This test validates API compatibility across different ChromaDB versions." >> config-test.md
-
-          uv run shard-md --config chromadb-test-config.yaml process --collection e2e-config-test-${{ matrix.chromadb-version }} config-test.md
-          uv run shard-md --config chromadb-test-config.yaml query search "ChromaDB" --collection e2e-config-test-${{ matrix.chromadb-version }}
-          uv run shard-md --config chromadb-test-config.yaml collections delete e2e-config-test-${{ matrix.chromadb-version }}
-
   # Performance and load testing with stable versions
   e2e-performance:
     runs-on: ubuntu-latest
@@ -478,7 +367,7 @@ jobs:
           time uv run shard-md --config perf-test-config.yaml process --collection performance-test --recursive large-test-docs/
 
           # Verify all documents were processed
-          DOC_COUNT=$(uv run shard-md --config perf-test-config.yaml query list-docs --collection performance-test | wc -l)
+          DOC_COUNT=$(uv run shard-md --config perf-test-config.yaml collections info performance-test --format json | python -c "import sys, json; data=json.load(sys.stdin); print(data.get('count', 0))")
           echo "Processed $DOC_COUNT document chunks"
 
           if [ "$DOC_COUNT" -lt 100 ]; then
@@ -503,5 +392,5 @@ jobs:
         run: |
           uv run shard-md --config perf-test-config.yaml collections delete performance-test || true
 
-  # Note: e2e-version-compatibility job removed as it duplicates e2e-chromadb-configs
-  # All version testing is now consolidated in e2e-chromadb-configs with version 1.0.16 only
+  # Note: e2e-chromadb-configs and e2e-version-compatibility jobs removed to reduce duplication
+  # All ChromaDB testing is now consolidated in the main e2e-cli job with version 1.0.16

@@ -192,38 +192,75 @@ class MockChromaDBClient:
         return False
 
     def bulk_insert(self, collection: Any, chunks: list[DocumentChunk]) -> InsertResult:
-        """Bulk insert chunks into collection."""
+        """Bulk insert chunks into collection.
+
+        Implements batching to match the real ChromaDB client behavior.
+        """
         start_time = time.time()
 
         try:
-            ids = [chunk.id or f"chunk_{i}" for i, chunk in enumerate(chunks)]
-            documents = [chunk.content for chunk in chunks]
-            metadatas = [chunk.metadata for chunk in chunks]
+            if not chunks:
+                return InsertResult(
+                    success=True,
+                    chunks_inserted=0,
+                    processing_time=0.0,
+                    collection_name=(
+                        collection.name if hasattr(collection, "name") else "unknown"
+                    ),
+                )
 
-            collection.add(ids, documents, metadatas)
+            # Match the real client's batch size
+            batch_size = 100
+            total_inserted = 0
+
+            for batch_start in range(0, len(chunks), batch_size):
+                batch_end = min(batch_start + batch_size, len(chunks))
+                batch_chunks = chunks[batch_start:batch_end]
+
+                ids = [
+                    chunk.id or f"chunk_{batch_start + i}"
+                    for i, chunk in enumerate(batch_chunks)
+                ]
+                documents = [chunk.content for chunk in batch_chunks]
+                metadatas = [chunk.metadata for chunk in batch_chunks]
+
+                collection.add(ids, documents, metadatas)
+                total_inserted += len(batch_chunks)
+
+                # Log progress for large batches (matching real client)
+                if len(chunks) > batch_size:
+                    logger.debug(
+                        f"Mock: Inserted batch {batch_start // batch_size + 1} "
+                        f"({total_inserted}/{len(chunks)} chunks)"
+                    )
+
             self._save_storage()
 
             processing_time = time.time() - start_time
             logger.info(
-                f"Mock bulk insert: {len(chunks)} chunks in {processing_time:.2f}s"
+                f"Mock bulk insert: {total_inserted} chunks in {processing_time:.2f}s"
             )
 
             return InsertResult(
                 success=True,
-                chunks_inserted=len(chunks),
+                chunks_inserted=total_inserted,
                 processing_time=processing_time,
-                collection_name=collection.name,
+                collection_name=(
+                    collection.name if hasattr(collection, "name") else "unknown"
+                ),
             )
 
-        except (ValueError, RuntimeError, OSError) as e:
+        except Exception as e:
             processing_time = time.time() - start_time
-            logger.error("Mock bulk insert failed: %s", e)
+            logger.error(f"Mock bulk insert failed: {e}")
 
             return InsertResult(
                 success=False,
                 error=str(e),
                 processing_time=processing_time,
-                collection_name=collection.name,
+                collection_name=(
+                    collection.name if hasattr(collection, "name") else "unknown"
+                ),
             )
 
     def _load_storage(self) -> None:

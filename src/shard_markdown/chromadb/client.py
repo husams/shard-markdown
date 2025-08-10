@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     pass
 
 from ..config.settings import ChromaDBConfig
+from ..core.metadata import MetadataExtractor
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.errors import ChromaDBError, NetworkError
 from ..utils.logging import get_logger
@@ -75,6 +76,9 @@ class ChromaDBClient:
         self.client: Any | None = None  # ClientAPI when connected
         self._connection_validated = False
         self._version_info: APIVersionInfo | None = None
+
+        # Initialize metadata extractor for sanitization
+        self._metadata_extractor = MetadataExtractor()
 
         # Initialize version detector
         self.version_detector = ChromaDBVersionDetector(
@@ -408,46 +412,75 @@ class ChromaDBClient:
                     collection_name=getattr(collection, "name", "unknown"),
                 )
 
-            # Prepare data for insertion
-            ids = [chunk.id or f"chunk_{i}" for i, chunk in enumerate(chunks)]
-            documents = [chunk.content for chunk in chunks]
-            # Cast metadata to the type expected by ChromaDB
-            metadatas = [
-                cast(dict[str, str | int | float | bool | None], chunk.metadata)
-                for chunk in chunks
-            ]
+            # Batch size for ChromaDB inserts (to avoid payload size limits)
+            batch_size = 100  # Process chunks in batches of 100
 
-            # Add API version info to metadata
-            if self._version_info:
-                for metadata in metadatas:
-                    metadata["api_version"] = self._version_info.version
-                    if self._version_info.chromadb_version:
-                        metadata["chromadb_version"] = (
-                            self._version_info.chromadb_version
+            total_inserted = 0
+            collection_name = getattr(collection, "name", "unknown")
+
+            # Process chunks in batches
+            for batch_start in range(0, len(chunks), batch_size):
+                batch_end = min(batch_start + batch_size, len(chunks))
+                batch_chunks = chunks[batch_start:batch_end]
+
+                # Prepare data for insertion
+                ids = [
+                    chunk.id or f"chunk_{batch_start + i}"
+                    for i, chunk in enumerate(batch_chunks)
+                ]
+                documents = [chunk.content for chunk in batch_chunks]
+
+                # Sanitize metadata for ChromaDB compatibility
+                metadatas = []
+                for chunk in batch_chunks:
+                    sanitized_metadata = (
+                        self._metadata_extractor.sanitize_metadata_for_chromadb(
+                            chunk.metadata
                         )
+                    )
+                    metadatas.append(sanitized_metadata)
 
-            # Validate data before insertion
-            self._validate_insertion_data(ids, documents, metadatas)
+                # Add API version info to metadata
+                if self._version_info:
+                    for metadata in metadatas:
+                        metadata["api_version"] = self._version_info.version
+                        if self._version_info.chromadb_version:
+                            metadata["chromadb_version"] = (
+                                self._version_info.chromadb_version
+                            )
 
-            # Insert into collection - cast metadatas for ChromaDB compatibility
-            collection.add(ids=ids, documents=documents, metadatas=cast(Any, metadatas))
+                # Validate data before insertion
+                self._validate_insertion_data(ids, documents, metadatas)
+
+                # Insert batch into collection
+                collection.add(
+                    ids=ids, documents=documents, metadatas=cast(Any, metadatas)
+                )
+
+                total_inserted += len(batch_chunks)
+
+                # Log progress for large batches
+                if len(chunks) > batch_size:
+                    logger.debug(
+                        f"Inserted batch {batch_start // batch_size + 1} "
+                        f"({total_inserted}/{len(chunks)} chunks)"
+                    )
 
             processing_time = time.time() - start_time
 
-            collection_name = getattr(collection, "name", "unknown")
             api_version = (
                 self._version_info.version if self._version_info else "unknown"
             )
             logger.info(
-                f"Inserted {len(chunks)} chunks into '{collection_name}' "
+                f"Inserted {total_inserted} chunks into '{collection_name}' "
                 f"in {processing_time:.2f}s using {api_version} API"
             )
 
             return InsertResult(
                 success=True,
-                chunks_inserted=len(chunks),
+                chunks_inserted=total_inserted,
                 processing_time=processing_time,
-                collection_name=getattr(collection, "name", "unknown"),
+                collection_name=collection_name,
             )
 
         except (ValueError, RuntimeError, OSError, TypeError) as e:
