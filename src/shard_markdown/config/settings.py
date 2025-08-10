@@ -76,9 +76,6 @@ class ProcessingConfig(BaseModel):
         le=100,
         description="Number of documents to process in batch",
     )
-    max_workers: int = Field(
-        default=4, ge=1, le=16, description="Maximum worker threads"
-    )
     recursive: bool = Field(
         default=False, description="Process directories recursively by default"
     )

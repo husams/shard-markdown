@@ -154,17 +154,15 @@ class TestProcessingConfig:
 
     def test_valid_config(self) -> None:
         """Test valid processing configuration."""
-        config = ProcessingConfig(batch_size=10, max_workers=4)
+        config = ProcessingConfig(batch_size=10)
 
         assert config.batch_size == 10
-        assert config.max_workers == 4
 
     def test_default_values(self) -> None:
         """Test default configuration values."""
         config = ProcessingConfig()
 
         assert config.batch_size == 10
-        assert config.max_workers == 4
 
     def test_batch_size_validation(self) -> None:
         """Test batch size validation."""
@@ -179,20 +177,6 @@ class TestProcessingConfig:
         for size in invalid_sizes:
             with pytest.raises(ValidationError):
                 ProcessingConfig(batch_size=size)
-
-    def test_max_workers_validation(self) -> None:
-        """Test max workers validation."""
-        # Valid worker counts
-        valid_workers = [1, 2, 4, 8, 16]
-        for workers in valid_workers:
-            config = ProcessingConfig(max_workers=workers)
-            assert config.max_workers == workers
-
-        # Invalid worker counts
-        invalid_workers = [0, -1]
-        for workers in invalid_workers:
-            with pytest.raises(ValidationError):
-                ProcessingConfig(max_workers=workers)
 
 
 class TestAppConfig:
@@ -218,14 +202,14 @@ class TestAppConfig:
         config = AppConfig(
             chromadb=ChromaDBConfig(host="remote-host", port=9000),
             chunking=ChunkingConfig(default_size=1500, method=ChunkingMethod._FIXED),
-            processing=ProcessingConfig(max_workers=8),
+            processing=ProcessingConfig(batch_size=20),
         )
 
         assert config.chromadb.host == "remote-host"
         assert config.chromadb.port == 9000
         assert config.chunking.default_size == 1500
         assert config.chunking.method == ChunkingMethod._FIXED
-        assert config.processing.max_workers == 8
+        assert config.processing.batch_size == 20
 
     def test_nested_validation(self) -> None:
         """Test that nested configuration validation works."""
@@ -324,10 +308,6 @@ class TestConfigValidationScenarios:
         chunking_config = ChunkingConfig(default_size=10000)
         assert chunking_config.default_size == 10000
 
-        # Maximum allowed worker count
-        processing_config = ProcessingConfig(max_workers=16)
-        assert processing_config.max_workers == 16
-
         # Very large timeout
         chromadb_config = ChromaDBConfig(timeout=3600)
         assert chromadb_config.timeout == 3600
@@ -351,20 +331,20 @@ class TestConfigValidationScenarios:
         # High performance configuration
         high_perf_config = AppConfig(
             chunking=ChunkingConfig(default_size=2000, default_overlap=400),
-            processing=ProcessingConfig(max_workers=16, batch_size=50),
+            processing=ProcessingConfig(batch_size=50),
         )
 
         assert high_perf_config.chunking.default_size == 2000
-        assert high_perf_config.processing.max_workers == 16
+        assert high_perf_config.processing.batch_size == 50
 
         # Conservative configuration
         conservative_config = AppConfig(
             chunking=ChunkingConfig(default_size=500, default_overlap=50),
-            processing=ProcessingConfig(max_workers=1, batch_size=1),
+            processing=ProcessingConfig(batch_size=1),
         )
 
         assert conservative_config.chunking.default_size == 500
-        assert conservative_config.processing.max_workers == 1
+        assert conservative_config.processing.batch_size == 1
 
     def test_config_field_types(self) -> None:
         """Test that configuration fields have correct types."""
@@ -376,7 +356,6 @@ class TestConfigValidationScenarios:
         assert isinstance(config.chromadb.ssl, bool)
         assert isinstance(config.chunking.default_size, int)
         assert isinstance(config.chunking.respect_boundaries, bool)
-        assert isinstance(config.processing.max_workers, int)
 
     def test_config_validation_error_messages(self) -> None:
         """Test that validation errors provide helpful messages."""
