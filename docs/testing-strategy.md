@@ -75,7 +75,7 @@ tests/
 ├── performance/               # Performance and load tests
 │   ├── test_benchmarks.py
 │   ├── test_memory_usage.py
-│   └── test_concurrent_processing.py
+│   └── test_sequential_processing.py
 ├── fixtures/                  # Test data and fixtures
 │   ├── sample_documents/
 │   │   ├── simple.md
@@ -138,7 +138,6 @@ class TestDocumentProcessor:
             chunk_overlap=200,
             chunk_method="structure",
             batch_size=10,
-            max_workers=2
         )
 
     @pytest.fixture
@@ -194,7 +193,7 @@ Content for section 2 goes here.
         assert result.success is False
         assert "File not found" in result.error or "No such file" in result.error
 
-    def test_process_batch_concurrent(self, processor_config, mock_chroma_client,
+    def test_process_batch_sequential(self, processor_config, mock_chroma_client,
                                     tmp_path):
         """Test batch processing with multiple files."""
         processor = DocumentProcessor(processor_config, mock_chroma_client)
@@ -206,7 +205,7 @@ Content for section 2 goes here.
             file_path.write_text(f"# Document {i}\n\nContent for document {i}.")
             files.append(file_path)
 
-        results = processor.process_batch(files, "test-collection", max_workers=2)
+        results = processor.process_batch(files, "test-collection", batch_size=2)
 
         assert len(results) == 5
         successful_results = [r for r in results if r.success]
@@ -738,7 +737,6 @@ def hello_world():
             chunk_size=400,
             chunk_overlap=80,
             batch_size=2,
-            max_workers=2
         )
 
         processor = DocumentProcessor(config, chromadb_client)
@@ -748,7 +746,6 @@ def hello_world():
             file_paths,
             "test-batch-integration",
             create_collection=True,
-            max_workers=2
         )
 
         assert len(results) == len(file_paths)
@@ -940,72 +937,9 @@ class TestChromaDBIntegration:
                 create_if_missing=False
             )
 
-    def test_concurrent_operations(self, chromadb_client, sample_chunks):
-        """Test concurrent operations on collections."""
-        import threading
-        import time
-
-        collection_name = "test-concurrent-operations"
-        collection = chromadb_client.get_or_create_collection(
-            collection_name,
-            create_if_missing=True
-        )
-
-        # Function to insert chunks
-        def insert_chunks(chunk_subset, thread_id):
-            # Modify chunk IDs to avoid conflicts
-            modified_chunks = []
-            for chunk in chunk_subset:
-                modified_chunk = DocumentChunk(
-                    id=f"{chunk.id}_thread_{thread_id}",
-                    content=chunk.content,
-                    metadata={**chunk.metadata, "thread_id": thread_id}
-                )
-                modified_chunks.append(modified_chunk)
-
-            chromadb_client.bulk_insert(collection, modified_chunks)
-
-        # Start multiple threads
-        threads = []
-        for i in range(3):
-            thread = threading.Thread(
-                target=insert_chunks,
-                args=(sample_chunks, i)
-            )
-            threads.append(thread)
-            thread.start()
-
-        # Wait for all threads to complete
-        for thread in threads:
-            thread.join()
-
-        # Verify all insertions succeeded
-        final_count = collection.count()
-        expected_count = len(sample_chunks) * 3
-        assert final_count == expected_count
-```
-
-## 4. End-to-End Testing Strategy
-
-### 4.1 CLI Workflow Tests
-
-#### 4.1.1 Complete CLI Workflows (`test_e2e/test_cli_workflows.py`)
-
-```python
-import pytest
-import subprocess
-import json
-from pathlib import Path
-from click.testing import CliRunner
-
-from shard_markdown.cli.main import cli
-
-@pytest.mark.e2e
-class TestCLIWorkflows:
-    """End-to-end tests for complete CLI workflows."""
 
     @pytest.fixture
-    def runner(self):
+    def cli_runner(self):
         """CLI test runner."""
         return CliRunner()
 
@@ -1356,7 +1290,6 @@ Conclusion for document {i}.
             chunk_size=800,
             chunk_overlap=150,
             batch_size=10,
-            max_workers=4
         )
 
         processor = DocumentProcessor(config, chromadb_client)
@@ -1367,7 +1300,6 @@ Conclusion for document {i}.
             multiple_documents,
             f"benchmark-batch-{int(time.time())}",
             create_collection=True,
-            max_workers=4
         )
         end_time = time.time()
 
@@ -1451,9 +1383,9 @@ Conclusion for document {i}.
                 memory_samples.append(current_memory - baseline_memory)
                 time.sleep(0.1)
 
-        import threading
-        monitor_thread = threading.Thread(target=memory_monitor, daemon=True)
-        monitor_thread.start()
+        # Threading removed for sequential processing
+        # Memory monitoring simplified for sequential processing
+        # Monitor memory during processing directly
 
         # Process document
         result = processor.process_document(

@@ -268,7 +268,7 @@ class EnhancedMockChromaDBClient:
 ### Performance Optimization Opportunities
 1. **ChromaDB Connection Overhead:** 50-80% reduction possible
 2. **Large Document Processing:** Streaming implementation needed
-3. **Concurrent Processing:** Multi-threading implementation
+3. **Sequential Processing:** Sequential processing implementation
 4. **Caching Strategy:** Parser result caching
 
 ## Conclusion

@@ -83,7 +83,6 @@ chunking:
 # Processing Configuration
 processing:
   batch_size: 10
-  max_workers: 4
   recursive: false
   pattern: "*.md"
   include_frontmatter: true
@@ -114,7 +113,6 @@ export CHROMA_AUTH_TOKEN=your-token
 export SHARD_MD_CHUNK_SIZE=1500
 export SHARD_MD_CHUNK_OVERLAP=300
 export SHARD_MD_BATCH_SIZE=20
-export SHARD_MD_MAX_WORKERS=8
 export SHARD_MD_LOG_LEVEL=DEBUG
 export SHARD_MD_USE_MOCK_CHROMADB=true
 ```
@@ -282,11 +280,10 @@ LOG_FILE="/var/log/shard-md/processing.log"
 shard-md collections create "$COLLECTION_NAME" \
   --description "Daily documentation update $(date)"
 
-# Process documents
+# Process documents sequentially for reliability
 shard-md process \
   --collection "$COLLECTION_NAME" \
   --recursive \
-  --max-workers 8 \
   --log-file "$LOG_FILE" \
   "$DOCS_PATH"
 
@@ -425,14 +422,14 @@ shard-md config show > /dev/null && echo "Config OK" || echo "Config Error"
 ### Processing Optimization
 
 ```bash
-# Increase worker threads for large batches
-shard-md process --max-workers 16 --collection large-docs *.md
-
 # Optimize chunk size for your use case
 shard-md process --chunk-size 2000 --chunk-overlap 400 *.md
 
 # Use fixed chunking for consistent performance
 shard-md process --chunk-method fixed *.md
+
+# Process in smaller batches for memory efficiency
+shard-md process --batch-size 5 --collection large-docs *.md
 ```
 
 ### Memory Management
@@ -471,11 +468,11 @@ chmod 644 /path/to/docs/*.md
 #### Out of Memory
 
 ```bash
-# Reduce worker threads
-shard-md process --max-workers 2 *.md
-
 # Use smaller chunk sizes
 shard-md process --chunk-size 500 *.md
+
+# Use smaller batch sizes
+shard-md process --batch-size 1 *.md
 
 # Process files individually
 for file in *.md; do

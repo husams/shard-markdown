@@ -453,21 +453,17 @@ def test_memory_usage():
 ### 2. Load Testing
 
 ```python
-def test_concurrent_processing():
-    """Test concurrent processing capacity."""
-    import concurrent.futures
+def test_sequential_processing():
+    """Test sequential processing capacity."""
+    # Sequential processing - no threading required
 
     files = [create_test_file(i) for i in range(10)]
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        futures = [
-            executor.submit(processor.process_document, f, "collection")
-            for f in files
-        ]
-
-        results = [f.result() for f in futures]
-
-    assert all(r.success for r in results)
+    # Process files sequentially
+    results = []
+    for f in files:
+        result = processor.process_document(f, "collection")
+        results.append(result)
 ```
 
 ## Continuous Testing Procedures

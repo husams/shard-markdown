@@ -219,13 +219,13 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[File List] --> B[Thread Pool Executor]
-    B --> C[Concurrent Processing]
+    A[File List] --> B[Sequential Processor]
+    B --> C[Sequential Processing]
     
-    subgraph "Worker Threads"
-        D[Worker 1]
-        E[Worker 2]
-        F[Worker N]
+    subgraph "Sequential Processing Steps"
+        D[Process File 1]
+        E[Process File 2]
+        F[Process File N]
     end
     
     C --> D
@@ -483,16 +483,16 @@ classDiagram
 
 ```mermaid
 graph TD
-    subgraph "Main Thread"
+    subgraph "Main Process"
         A[CLI Interface]
         B[Batch Coordinator]
     end
 
-    subgraph "Worker Thread Pool"
-        C[Worker 1]
-        D[Worker 2]
-        E[Worker 3]
-        F[Worker N]
+    subgraph "Sequential Processing"
+        C[Process File 1]
+        D[Process File 2]
+        E[Process File 3]
+        F[Process File N]
     end
 
     subgraph "I/O Operations"

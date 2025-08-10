@@ -349,19 +349,19 @@ shard-md process --collection test-memory manual_tests/large/large_doc.md
 - [ ] No memory leaks during repeated operations
 - [ ] Memory usage scales appropriately with document size
 
-#### Concurrent Processing
+#### Sequential Processing
 
 ```bash
 # Test multiple simultaneous processes
-shard-md process --collection test-concurrent-1 manual_tests/large/large_doc.md &
-shard-md process --collection test-concurrent-2 manual_tests/complex/with_frontmatter.md &
+shard-md process --collection test-sequential-1 manual_tests/large/large_doc.md &
+shard-md process --collection test-sequential-2 manual_tests/complex/with_frontmatter.md &
 wait
 ```
 
 - [ ] Multiple processes can run simultaneously
 - [ ] No resource conflicts between processes
 - [ ] Database operations don't interfere
-- [ ] Performance is reasonable with concurrent access
+- [ ] Performance is consistent with sequential access
 
 ## Performance Testing
 

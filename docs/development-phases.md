@@ -696,14 +696,14 @@ This document defines the development phases for the shard-markdown CLI project,
 
 - [ ] Processing performance benchmarks
 - [ ] Memory usage profiling
-- [ ] Concurrent processing tests
+- [ ] Sequential processing tests
 - [ ] Performance regression detection
 
 **Quality Criteria**:
 
 - Performance benchmarks meet requirements
 - Memory usage is within acceptable limits
-- Concurrent processing works correctly
+- Sequential processing works correctly
 
 ### Exit Criteria
 

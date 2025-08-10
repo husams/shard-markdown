@@ -433,7 +433,7 @@ class TestPerformanceBenchmarks:
     def test_large_document_processing(self):
         # Validate processing speed for various document sizes
 
-    def test_concurrent_processing(self):
+    def test_sequential_processing(self):
         # Test parallel processing capabilities
 
     def test_memory_usage(self):

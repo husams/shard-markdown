@@ -328,7 +328,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import hashlib
 import asyncio
-from concurrent.futures import ThreadPoolExecutor
 
 from .parser import MarkdownParser
 from .chunking import ChunkingEngine
@@ -399,29 +398,23 @@ class DocumentProcessor:
             )
 
     def process_batch(self, file_paths: List[Path], collection_name: str,
-                     create_collection: bool = False, max_workers: int = 4) -> List[ProcessingResult]:
-        """Process multiple documents with concurrency."""
+                     create_collection: bool = False) -> List[ProcessingResult]:
+        """Process multiple documents sequentially for reliability."""
 
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = [
-                executor.submit(
-                    self.process_document,
-                    path,
-                    collection_name,
-                    create_collection
-                )
-                for path in file_paths
-            ]
+        results = []
+        for path in file_paths:
+            try:
+                result = self.process_document(path, collection_name, create_collection)
+                results.append(result)
+            except Exception as e:
+                logger.error(f"Batch processing error for {path}: {str(e)}")
+                results.append(ProcessingResult(
+                    file_path=path,
+                    success=False,
+                    error=str(e)
+                ))
 
-            results = []
-            for future in futures:
-                try:
-                    result = future.result()
-                    results.append(result)
-                except Exception as e:
-                    logger.error(f"Batch processing error: {str(e)}")
-
-            return results
+        return results
 
     def _read_file(self, file_path: Path) -> str:
         """Read file content with encoding detection."""
@@ -828,8 +821,6 @@ class ProcessingConfig(BaseModel):
 
     batch_size: int = Field(default=10, ge=1, le=100,
                            description="Number of documents to process in batch")
-    max_workers: int = Field(default=4, ge=1, le=16,
-                            description="Maximum worker threads")
     recursive: bool = Field(default=False,
                            description="Process directories recursively by default")
     pattern: str = Field(default="*.md",
