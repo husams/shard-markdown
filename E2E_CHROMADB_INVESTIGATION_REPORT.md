@@ -1,171 +1,153 @@
-# ChromaDB 1.0.16 E2E Test Failure Investigation Report
+# E2E Test Failure Investigation Report
 
-## Executive Summary
+## 1. EXECUTIVE SUMMARY
 
-**Issue**: E2E tests are failing with ChromaDB 1.0.16 due to incorrect API version detection.
+**Issue**: E2E tests failing with "No such command 'list-docs'" error
+**Root Cause**: Workflow uses non-existent CLI command `shard-md query list-docs`
+**Impact**: CI/CD pipeline blocked on all PRs
+**Priority**: HIGH - Blocks all development
 
-**Root Cause**: ChromaDB 1.0.16 has **deprecated the v1 API entirely** and only supports v2 API endpoints. Our code incorrectly assumes v1 API for ChromaDB 1.0.x versions.
-
-**Impact**: Critical - All CI/CD E2E tests fail when using ChromaDB 1.0.16.
-
-**Priority**: HIGH - Blocks all PR merges and deployments.
-
-## Issue Details
+## 2. ISSUE DETAILS
 
 ### Problem Description
-The E2E test workflow `e2e-cli (ubuntu-latest, 1.0.16)` consistently fails during ChromaDB connection attempts. The failure occurs when our client attempts to connect using v1 API endpoints, which ChromaDB 1.0.16 no longer supports.
+The End-to-End Tests workflow is failing during the "Test document querying" step when it attempts to execute:
+```bash
+uv run shard-md --config shard-md-config.yaml query list-docs --collection test-collection
+```
+
+### Error Message
+```
+Error: No such command 'list-docs'.
+Process completed with exit code 2.
+```
 
 ### Affected Components
-- `src/shard_markdown/chromadb/version_detector.py` - Incorrect version detection logic
-- `.github/actions/setup-chromadb/action.yml` - Hardcoded v1 API assumption for 1.0.16
-- E2E test workflows in GitHub Actions
+- File: `.github/workflows/e2e.yml`
+- Lines: 203, 369
+- Test steps: "Test document querying" and "Run performance tests"
 
-### Evidence of the Issue
-Direct testing against ChromaDB 1.0.16 container reveals:
+### Frequency
+- 100% failure rate on this command
+- Affects all CI runs since the workflow was created
 
-```bash
-# v1 endpoint returns 410 (Gone) with deprecation message
-curl http://localhost:8000/api/v1/heartbeat
-Response: {"error":"Unimplemented","message":"The v1 API is deprecated. Please use /v2 apis"}
-Status: 410 Gone
+## 3. INVESTIGATION FINDINGS
 
-# v2 endpoint works correctly
-curl http://localhost:8000/api/v2/heartbeat
-Response: {"nanosecond heartbeat": 1754795294785820252}
-Status: 200 OK
+### Evidence Analyzed
+1. **GitHub Actions Logs**: Retrieved latest run #16856653685
+2. **CLI Command Structure**: Analyzed `src/shard_markdown/cli/commands/query.py`
+3. **Available Commands**: Verified all registered Click commands
+4. **Workflow File**: Examined `.github/workflows/e2e.yml`
 
-# Root endpoint doesn't exist
-curl http://localhost:8000/heartbeat
-Status: 404 Not Found
+### Root Cause Analysis
+The `query` command group only has two subcommands:
+- `search`: Search for documents using similarity search
+- `get`: Get a specific document by ID
+
+There is NO `list-docs` subcommand implemented. The workflow incorrectly assumes this command exists.
+
+### Test Flow Analysis
+1. ChromaDB starts successfully ✅
+2. Health check passes ✅
+3. Collections are created ✅
+4. Documents are processed and inserted ✅
+5. Search query works ✅
+6. **list-docs command fails** ❌
+
+## 4. TECHNICAL ANALYSIS
+
+### Available CLI Commands
+```
+Collections:
+- shard-md collections list        # Lists all collections
+- shard-md collections info <name>  # Shows collection details with doc count
+- shard-md collections create       # Creates a collection
+- shard-md collections delete       # Deletes a collection
+
+Query:
+- shard-md query search <text>      # Searches documents
+- shard-md query get <id>           # Gets document by ID
 ```
 
-## Investigation Findings
+### Missing Functionality
+The workflow expects to list all documents in a collection, but this functionality doesn't exist in the query module.
 
-### 1. ChromaDB 1.0.16 API Architecture
+## 5. RECOMMENDED SOLUTIONS
 
-**FACT**: ChromaDB 1.0.16 exclusively uses v2 API endpoints:
-- `/api/v2/heartbeat` - Working health check endpoint
-- `/api/v2/version` - Returns "1.0.0" (semantic versioning)
-- `/api/v2/*` - All other API operations
-
-**DEPRECATED**: v1 API endpoints return HTTP 410 (Gone) with explicit deprecation message.
-
-### 2. Current Code Assumptions
-
-Our `ChromaDBVersionDetector` class tests endpoints in this order:
-1. v2 API - `/api/v2/heartbeat` (ChromaDB 1.0+)
-2. v1 API - `/api/v1/heartbeat` (ChromaDB 0.5.x)
-3. Root API - `/heartbeat` (older versions)
-
-However, the GitHub Actions setup script hardcodes v1 for ChromaDB 1.0.16:
+### Immediate Fix (Recommended)
+Replace the non-existent command with `collections info` which provides document count:
 
 ```yaml
-# Line 233-236 in .github/actions/setup-chromadb/action.yml
-api_version="v1"
-heartbeat_url="${base_url}/api/v1"
-version_url="${base_url}/api/v1/version"
+# Old (broken):
+uv run shard-md --config shard-md-config.yaml query list-docs --collection test-collection
+
+# New (working):
+uv run shard-md --config shard-md-config.yaml collections info test-collection --format json | jq '.count'
 ```
 
-### 3. Version Detection Mismatch
+### Alternative Solutions
 
-The version detector should work correctly (tests v2 first), but the CI/CD action overrides this with incorrect assumptions about ChromaDB 1.0.16 using v1 API.
+#### Option A: Remove the verification step
+Simply remove lines attempting to list documents since document insertion is already verified by the search command working.
 
-### 4. Client-Server Compatibility
-
-- **Client Version**: chromadb>=1.0.16 (in pyproject.toml)
-- **Server Version**: chromadb/chroma:1.0.16 (Docker image)
-- **Compatibility**: MATCHED - Both are 1.0.16
-
-The issue is not a version mismatch but incorrect API endpoint detection.
-
-## Technical Analysis
-
-### Why the Tests Fail
-
-1. **CI/CD Health Check**: The setup-chromadb action incorrectly defaults to v1 API for ChromaDB 1.0.16
-2. **410 vs 200**: When checking `/api/v1/heartbeat`, it gets 410 (Gone) instead of 200 (OK)
-3. **Connection Validation**: Our client connection validation fails because heartbeat returns an error
-
-### ChromaDB Version History
-
-Based on testing and documentation:
-- **ChromaDB 0.5.x and earlier**: Used v1 API (`/api/v1/*`)
-- **ChromaDB 1.0.0+**: Transitioned to v2 API (`/api/v2/*`)
-- **ChromaDB 1.0.16**: v1 API completely deprecated, returns 410 with deprecation message
-
-## Recommended Solutions
-
-### Immediate Fix (Priority 1)
-
-Update `.github/actions/setup-chromadb/action.yml` to correctly detect v2 API for ChromaDB 1.0.x:
-
-```yaml
-# Around line 100-107 (macOS) and similar sections
-# Try v2 API first for ChromaDB 1.0+
-if wget --spider -q http://localhost:${{ inputs.port }}/api/v2/heartbeat 2>/dev/null; then
-  echo "✅ ChromaDB v2 API heartbeat is ready"
-  detected_version="v2"
-  api_ready=true
-  break
-fi
-
-# Then try v1 API for older versions
-if wget --spider -q http://localhost:${{ inputs.port }}/api/v1/heartbeat 2>/dev/null; then
-  echo "✅ ChromaDB v1 API heartbeat is ready"
-  detected_version="v1"
-  api_ready=true
-  break
-fi
+#### Option B: Implement list-docs command
+Add a new `list` command to the query module (requires code changes):
+```python
+@query.command("list")
+@click.option("--collection", "-c", required=True)
+@click.option("--limit", default=10)
+def list_docs(collection: str, limit: int):
+    """List all documents in a collection."""
+    # Implementation here
 ```
 
-### Long-term Solution (Priority 2)
-
-1. **Version-aware Detection**: Update the setup script to properly detect API version based on ChromaDB semantic version:
-   - ChromaDB >= 1.0.0: Use v2 API
-   - ChromaDB < 1.0.0: Use v1 API
-
-2. **Remove Hardcoded Assumptions**: Around line 233-236, replace the hardcoded v1 assumption with dynamic detection.
-
-3. **Enhanced Error Handling**: Handle 410 (Gone) responses specifically as API deprecation indicators.
-
-### Preventive Measures
-
-1. **Add Version Matrix Testing**: Test against multiple ChromaDB versions (0.5.x, 1.0.x, latest)
-2. **Document API Transitions**: Create documentation about ChromaDB version compatibility
-3. **Monitor ChromaDB Releases**: Set up alerts for ChromaDB releases that might affect API compatibility
-
-## Testing & Validation Plan
-
-### Immediate Validation
-
+#### Option C: Use search with wildcard
+Use an empty search query to retrieve all documents:
 ```bash
-# Test ChromaDB 1.0.16 with v2 endpoints
-docker run -d --name chromadb-test -p 8000:8000 chromadb/chroma:1.0.16
-curl http://localhost:8000/api/v2/heartbeat  # Should return 200
-curl http://localhost:8000/api/v1/heartbeat  # Should return 410
+uv run shard-md --config shard-md-config.yaml query search "" --collection test-collection --limit 100
 ```
 
-### Post-Fix Testing
+## 6. TESTING & VALIDATION PLAN
 
-1. Run E2E tests locally with ChromaDB 1.0.16
-2. Verify GitHub Actions CI passes with the fix
-3. Test backward compatibility with older ChromaDB versions
+### Verification Steps
+1. Update `.github/workflows/e2e.yml` with the fix
+2. Run locally: `gh workflow run e2e.yml`
+3. Verify all test steps pass
+4. Check document count is correctly retrieved
 
-## Implementation Priority
+### Expected Outcome
+- All E2E tests should pass
+- Document verification should work using `collections info` command
+- Performance tests should also be updated similarly
 
-1. **URGENT**: Fix `.github/actions/setup-chromadb/action.yml` to use v2 API for ChromaDB 1.0.16
-2. **HIGH**: Update version detection logic to be more robust
-3. **MEDIUM**: Add comprehensive ChromaDB version compatibility tests
-4. **LOW**: Document ChromaDB API version requirements
+## Implementation
+
+Here's the fix for the workflow file:
+
+### Fix 1: Update Test document querying step (line 203)
+```yaml
+# List documents - using collections info to get count
+DOC_COUNT=$(uv run shard-md --config shard-md-config.yaml collections info test-collection --format json | python -c "import sys, json; print(json.load(sys.stdin)['count'])")
+echo "Collection has $DOC_COUNT documents"
+```
+
+### Fix 2: Update Performance test verification (line 369)
+```yaml
+# Verify all documents were processed
+DOC_COUNT=$(uv run shard-md --config perf-test-config.yaml collections info performance-test --format json | python -c "import sys, json; print(json.load(sys.stdin)['count'])")
+echo "Processed $DOC_COUNT document chunks"
+```
+
+## QUALITY ASSURANCE
+
+- ✅ Root cause identified: Command doesn't exist in codebase
+- ✅ Fix targets the actual problem, not symptoms
+- ✅ Solution uses existing, working commands
+- ✅ No breaking changes to application code
+- ✅ Fix is backwards compatible
+- ✅ Minimal changes required (2 lines in workflow)
 
 ## Risk Assessment
 
-- **Current Risk**: HIGH - All E2E tests fail, blocking development
-- **Fix Risk**: LOW - Simple endpoint URL change
-- **Rollback Plan**: Revert to previous commit if issues arise
+**Low Risk**: The fix only modifies the CI workflow file, not application code. Uses existing, tested commands.
 
-## Conclusion
-
-ChromaDB 1.0.16 has completely deprecated the v1 API in favor of v2. Our CI/CD setup incorrectly assumes v1 API for this version, causing all E2E tests to fail. The fix is straightforward: update the endpoint detection to use v2 API for ChromaDB 1.0.x versions.
-
-The Python client code (`ChromaDBVersionDetector`) already correctly tests v2 first, but the GitHub Actions setup script overrides this with incorrect hardcoded assumptions. Fixing the action script will resolve the E2E test failures immediately.
+**Rollback Plan**: If issues arise, revert the workflow file change.

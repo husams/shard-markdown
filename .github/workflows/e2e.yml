@@ -199,8 +199,9 @@ jobs:
           # Search documents
           uv run shard-md --config shard-md-config.yaml query search "test document" --collection test-collection --limit 5
 
-          # List documents
-          uv run shard-md --config shard-md-config.yaml query list-docs --collection test-collection
+          # Verify documents in collection
+          DOC_COUNT=$(uv run shard-md --config shard-md-config.yaml collections info test-collection --format json | python -c "import sys, json; data=json.load(sys.stdin); print(data.get('count', 0))")
+          echo "Collection has $DOC_COUNT documents"
 
       - name: Test error handling
         env:
@@ -366,7 +367,7 @@ jobs:
           time uv run shard-md --config perf-test-config.yaml process --collection performance-test --recursive large-test-docs/
 
           # Verify all documents were processed
-          DOC_COUNT=$(uv run shard-md --config perf-test-config.yaml query list-docs --collection performance-test | wc -l)
+          DOC_COUNT=$(uv run shard-md --config perf-test-config.yaml collections info performance-test --format json | python -c "import sys, json; data=json.load(sys.stdin); print(data.get('count', 0))")
           echo "Processed $DOC_COUNT document chunks"
 
           if [ "$DOC_COUNT" -lt 100 ]; then
