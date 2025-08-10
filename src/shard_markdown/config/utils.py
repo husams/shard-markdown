@@ -1,4 +1,8 @@
-"""Shared configuration utilities."""
+"""Configuration utility functions.
+
+This module provides utilities for manipulating configuration dictionaries.
+Type conversion is handled by Pydantic models, not by these utilities.
+"""
 
 from typing import Any
 

@@ -54,8 +54,8 @@ def show(ctx: click.Context, format: str, section: str) -> None:
     verbose = ctx.obj.get("verbose", 0)
 
     try:
-        # Get configuration as dictionary
-        config_dict = config_obj.model_dump()
+        # Get configuration as dictionary with mode='json' to properly serialize enums
+        config_dict = config_obj.model_dump(mode="json")
 
         # Filter to specific section if requested
         if section:
@@ -136,7 +136,7 @@ def set(
         current_config = ctx.obj["config"]
         config_dict = current_config.model_dump()
 
-        # Set the value directly as a string to avoid auto-conversion issues
+        # Pass string value directly to Pydantic for proper type conversion
         set_nested_value(config_dict, key, value)
 
         # Validate the new configuration

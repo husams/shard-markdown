@@ -64,8 +64,8 @@ def save_config(config: AppConfig, config_path: Path) -> None:
     # Create directory if it doesn't exist
     config_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Convert to dictionary
-    config_dict = config.model_dump()
+    # Convert to dictionary with mode='json' to properly serialize enums
+    config_dict = config.model_dump(mode="json")
 
     # Write to YAML file
     with open(config_path, "w") as f:
@@ -132,6 +132,9 @@ def _load_config_file(config_path: Path) -> dict[str, Any]:
 def _apply_env_overrides(config_data: dict[str, Any]) -> dict[str, Any]:
     """Apply environment variable overrides to configuration.
 
+    Environment variable values are passed directly to Pydantic models,
+    which handle type conversion based on field definitions.
+
     Args:
         config_data: Base configuration data
 
@@ -143,7 +146,7 @@ def _apply_env_overrides(config_data: dict[str, Any]) -> dict[str, Any]:
     for env_var, config_path in ENV_VAR_MAPPINGS.items():
         env_value = os.getenv(env_var)
         if env_value is not None:
-            # Use string values directly to avoid corrupting IP addresses
+            # Pass string values directly to Pydantic for proper type conversion
             set_nested_value(result, config_path, env_value)
 
     return result
