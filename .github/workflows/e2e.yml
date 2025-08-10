@@ -122,7 +122,6 @@ jobs:
 
           processing:
             batch_size: 10
-            max_workers: 4
           EOF
 
           echo "Config file created:"

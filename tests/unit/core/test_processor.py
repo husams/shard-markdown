@@ -414,7 +414,7 @@ class TestDocumentProcessor:
         assert result.failed_files == 0
         assert result.total_chunks == 0
 
-    def test_concurrent_processing(
+    def test_sequential_processing_workflow(
         self,
         processor: DocumentProcessor,
         test_documents: Any,
@@ -423,7 +423,7 @@ class TestDocumentProcessor:
         mock_chunker: Mock,
         mock_metadata_extractor: Mock,
     ) -> None:
-        """Test concurrent processing with multiple workers."""
+        """Test sequential processing workflow."""
         # Setup mocks
         mock_parser.parse.return_value = Mock()
         mock_chunker.chunk_document.return_value = sample_chunks
@@ -459,60 +459,12 @@ class TestDocumentProcessor:
         result = processor.process_batch(file_paths, "test-collection")
         end_time = time.time()
 
-        # With concurrency, should process faster than sequential
+        # Sequential processing should complete successfully
         assert result.successful_files == len(file_paths)
+        # Processing time should be reasonable
         assert (
             result.total_processing_time < end_time - start_time + 1
         )  # Allow some tolerance
-
-    @pytest.mark.parametrize("max_workers", [1, 2, 4, 8])
-    def test_batch_processing_different_worker_counts(
-        self,
-        processor: DocumentProcessor,
-        test_documents: Any,
-        sample_chunks: Any,
-        mock_parser: Mock,
-        mock_chunker: Mock,
-        mock_metadata_extractor: Mock,
-        max_workers: int,
-    ) -> None:
-        """Test batch processing with different worker counts."""
-        # Setup mocks
-        mock_parser.parse.return_value = Mock()
-        mock_chunker.chunk_document.return_value = sample_chunks
-        mock_metadata_extractor.extract_file_metadata.return_value = {
-            "file_type": "markdown"
-        }
-        mock_metadata_extractor.extract_document_metadata.return_value = {
-            "title": "Test"
-        }
-
-        # Mock enhance_chunk_metadata to return the input with additional fields
-        def enhance_mock(metadata, chunk_index, total_chunks, structural_context):
-            enhanced = metadata.copy()
-            enhanced.update(
-                {
-                    "chunk_index": chunk_index,
-                    "total_chunks": total_chunks,
-                    "enhanced": True,
-                    "is_first_chunk": chunk_index == 0,
-                    "is_last_chunk": chunk_index == total_chunks - 1,
-                    "chunk_position_percent": round(
-                        (chunk_index / max(total_chunks - 1, 1)) * 100, 2
-                    ),
-                }
-            )
-            return enhanced
-
-        mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
-
-        file_paths = list(test_documents.values())
-        # NOTE: max_workers parameter removed from process_batch method
-        # This test is kept for now but will be handled separately
-        result = processor.process_batch(file_paths, "test-collection")
-
-        assert result.successful_files == len(file_paths)
-        assert result.total_chunks == len(file_paths) * len(sample_chunks)
 
     def test_processing_time_measurement(
         self,

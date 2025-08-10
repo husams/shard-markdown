@@ -406,34 +406,31 @@ Content here.
         print(f"Error recovery output: {result.output}")
         # Should process what it can, might have partial success
 
-    def test_concurrent_processing_workflow(
+    def test_sequential_processing_workflow(
         self, cli_runner: CliRunner, test_documents: Any, chromadb_env: dict[str, str]
     ) -> None:
-        """Test concurrent processing with different worker counts."""
+        """Test sequential processing of multiple documents."""
         file_paths = [str(path) for path in test_documents.values()]
 
-        for workers in [1, 2, 4]:
-            collection_name = f"concurrent-{workers}-workers"
+        start_time = time.time()
+        result = cli_runner.invoke(
+            cli,
+            [
+                "process",
+                "--collection",
+                "sequential-test",
+                "--create-collection",
+            ]
+            + file_paths,
+            env=chromadb_env,
+        )
+        end_time = time.time()
 
-            start_time = time.time()
-            result = cli_runner.invoke(
-                cli,
-                [
-                    "process",
-                    "--collection",
-                    collection_name,
-                    "--create-collection",
-                ]
-                + file_paths,
-                env=chromadb_env,
-            )
-            end_time = time.time()
+        processing_time = end_time - start_time
+        print(f"Sequential processing: {processing_time:.2f}s")
+        print(f"Sequential processing output: {result.output}")
 
-            processing_time = end_time - start_time
-            print(f"Workers {workers}: {processing_time:.2f}s")
-            print(f"Concurrent {workers} output: {result.output}")
-
-            assert result.exit_code == 0
+        assert result.exit_code == 0
 
     def test_large_document_processing_workflow(
         self, cli_runner: CliRunner, temp_dir: Any, chromadb_env: dict[str, str]

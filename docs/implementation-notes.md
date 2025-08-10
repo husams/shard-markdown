@@ -103,7 +103,7 @@ This document provides implementation notes for the complete shard-markdown CLI 
 
 ### Batch Processing
 
-- **Concurrent Processing**: Multi-threaded document processing
+- **Sequential Processing**: Reliable document processing with clear error reporting
 - **Progress Tracking**: Real-time feedback for long operations
 - **Error Isolation**: Individual file failures don't stop batch processing
 

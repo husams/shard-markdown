@@ -66,7 +66,6 @@ shard-md process [OPTIONS] INPUT [INPUT...]
 --pattern GLOB            File pattern for filtering [default: "*.md"]
 --exclude-pattern GLOB    Exclude files matching pattern
 --batch-size SIZE         Number of documents to process in batch [default: 10]
---max-workers COUNT       Maximum worker threads [default: 4]
 
 # Metadata Options
 --include-frontmatter     Extract YAML frontmatter as metadata [default: true]
@@ -306,7 +305,6 @@ CHROMA_SSL                  Use SSL (true|false)
 SHARD_MD_CHUNK_SIZE         Default chunk size
 SHARD_MD_CHUNK_OVERLAP      Default chunk overlap
 SHARD_MD_BATCH_SIZE         Default batch size
-SHARD_MD_MAX_WORKERS        Default worker count
 ```
 
 ## 6. Configuration File Format
@@ -331,7 +329,6 @@ chunking:
 
 processing:
   batch_size: 10
-  max_workers: 4
   recursive: false
   pattern: "*.md"
   include_frontmatter: true
