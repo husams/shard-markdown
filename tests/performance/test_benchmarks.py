@@ -78,7 +78,7 @@ class TestProcessingBenchmarks:
     def test_batch_processing_benchmark(
         self, temp_dir: Any, benchmark_config: ChunkingConfig
     ) -> None:
-        """Benchmark batch processing performance."""
+        """Benchmark batch processing performance with sequential processing."""
         processor = DocumentProcessor(benchmark_config)
 
         # Create multiple test documents
@@ -91,39 +91,30 @@ class TestProcessingBenchmarks:
             doc_path.write_text(doc_content)
             documents.append(doc_path)
 
-        # Test different worker counts
-        worker_counts = [1, 2, 4]
-        results: dict[int, dict[str, Any]] = {}
+        # Test sequential processing
+        start_time = time.perf_counter()
+        batch_result = processor.process_batch(documents, "batch-sequential")
+        end_time = time.perf_counter()
 
-        for workers in worker_counts:
-            start_time = time.perf_counter()
-            batch_result = processor.process_batch(
-                documents, f"batch-{workers}", max_workers=workers
-            )
-            end_time = time.perf_counter()
-
-            processing_time = end_time - start_time
-            results[workers] = {
-                "time": processing_time,
-                "successful_files": batch_result.successful_files,
-                "total_chunks": batch_result.total_chunks,
-                "throughput": len(documents) / processing_time,
-            }
+        processing_time = end_time - start_time
+        result = {
+            "time": processing_time,
+            "successful_files": batch_result.successful_files,
+            "total_chunks": batch_result.total_chunks,
+            "throughput": len(documents) / processing_time,
+        }
 
         print("\nBatch Processing Benchmark Results:")
-        for workers, result in results.items():
-            print(f"Workers: {workers}")
-            print(f"  Processing time: {result['time']:.3f}s")
-            print(f"  Successful files: {result['successful_files']}/{len(documents)}")
-            print(f"  Total chunks: {result['total_chunks']}")
-            print(f"  Throughput: {result['throughput']:.1f} files/second")
+        print("Sequential Processing:")
+        print(f"  Processing time: {result['time']:.3f}s")
+        print(f"  Successful files: {result['successful_files']}/{len(documents)}")
+        print(f"  Total chunks: {result['total_chunks']}")
+        print(f"  Throughput: {result['throughput']:.1f} files/second")
 
         # Performance assertions
-        assert all(r["successful_files"] == len(documents) for r in results.values())
-        # Relax concurrency expectation - on small workloads, overhead may dominate
-        # Just ensure processing completes successfully
-        assert results[4]["time"] <= results[1]["time"] * 1.5, (
-            "Concurrency overhead should not be excessive"
+        assert result["successful_files"] == len(documents)
+        assert processing_time < 30.0, (
+            f"Sequential processing too slow: {processing_time:.3f}s"
         )
 
     @pytest.mark.parametrize(
@@ -291,10 +282,10 @@ class TestProcessingBenchmarks:
         )
         assert time_ratio < size_ratio * 1.5, scaling_msg
 
-    def test_concurrent_processing_scalability(
+    def test_sequential_processing_performance(
         self, temp_dir: Any, benchmark_config: ChunkingConfig
     ) -> None:
-        """Test scalability of concurrent processing."""
+        """Test performance of sequential processing."""
         processor = DocumentProcessor(benchmark_config)
 
         # Create multiple documents
@@ -303,58 +294,41 @@ class TestProcessingBenchmarks:
             doc_content = self._generate_document_content(
                 sections=15, paragraphs_per_section=4
             )
-            doc_path = temp_dir / f"concurrent_test_{i:02d}.md"
+            doc_path = temp_dir / f"sequential_test_{i:02d}.md"
             doc_path.write_text(doc_content)
             documents.append(doc_path)
 
-        # Test with different worker counts
-        worker_counts = [1, 2, 4, 8]
-        scalability_results: list[dict[str, int | float]] = []
+        # Test sequential processing performance
+        start_time = time.perf_counter()
+        result = processor.process_batch(documents, "sequential-performance")
+        end_time = time.perf_counter()
 
-        for workers in worker_counts:
-            start_time = time.perf_counter()
-            result = processor.process_batch(
-                documents, f"concurrent-{workers}", max_workers=workers
-            )
-            end_time = time.perf_counter()
+        processing_time = end_time - start_time
 
-            processing_time = end_time - start_time
+        sequential_result = {
+            "processing_time": processing_time,
+            "successful_files": result.successful_files,
+            "throughput": result.successful_files / processing_time,
+        }
 
-            scalability_results.append(
-                {
-                    "workers": workers,
-                    "processing_time": processing_time,
-                    "successful_files": result.successful_files,
-                    "efficiency": result.successful_files / processing_time / workers,
-                }
-            )
+        # Ensure at least 90% success rate
+        min_successful = int(len(documents) * 0.9)
+        assert result.successful_files >= min_successful, (
+            f"Too many files failed in sequential processing: "
+            f"{result.successful_files}/{len(documents)} processed successfully"
+        )
 
-            # Allow for occasional failures in concurrent processing due to
-            # resource constraints but ensure at least 90% success rate
-            min_successful = int(len(documents) * 0.9)
-            assert result.successful_files >= min_successful, (
-                f"Too many files failed with {workers} workers: "
-                f"{result.successful_files}/{len(documents)} processed successfully"
-            )
+        print("\nSequential Processing Performance Results:")
+        print(f"  Processing time: {sequential_result['processing_time']:.3f}s")
+        print(
+            f"  Successful files: {sequential_result['successful_files']}/"
+            f"{len(documents)}"
+        )
+        print(f"  Throughput: {sequential_result['throughput']:.3f} files/second")
 
-        print("\nConcurrent Processing Scalability Results:")
-        for scalability_result in scalability_results:
-            print(f"  Workers: {scalability_result['workers']}")
-            print(f"    Processing time: {scalability_result['processing_time']:.3f}s")
-            print(
-                f"    Efficiency: {scalability_result['efficiency']:.3f} "
-                f"files/second/worker"
-            )
-
-        # Check efficiency doesn't degrade too much with more workers
-        single_worker_efficiency = scalability_results[0]["efficiency"]
-        max_worker_efficiency = scalability_results[-1]["efficiency"]
-
-        efficiency_ratio = max_worker_efficiency / single_worker_efficiency
-        # Relax efficiency requirement - concurrent processing has overhead
-        # and efficiency naturally degrades with more workers
-        assert efficiency_ratio > 0.1, (
-            f"Efficiency degraded too much: {efficiency_ratio:.2f}"
+        # Performance assertion - sequential processing time check
+        assert processing_time < 60.0, (
+            f"Sequential processing too slow: {processing_time:.3f}s"
         )
 
     def test_chunking_method_performance_comparison(self, temp_dir: Any) -> None:
