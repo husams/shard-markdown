@@ -127,33 +127,31 @@ class DocumentProcessor:
     def process_batch(
         self, file_paths: list[Path], collection_name: str, max_workers: int = 4
     ) -> BatchResult:
-        """Process multiple documents with concurrency.
+        """Process multiple documents sequentially.
 
         Args:
             file_paths: List of file paths to process
             collection_name: Target collection name
-            max_workers: Maximum number of worker threads
+            max_workers: Maximum worker threads (ignored for compatibility)
 
         Returns:
             BatchResult with aggregated statistics
         """
         start_time = time.time()
         logger.info(
-            "Starting batch processing of %d files with %d workers",
+            "Starting sequential processing of %d files",
             len(file_paths),
-            max_workers,
         )
 
-        # Process files concurrently and collect results
-        results = self._execute_concurrent_processing(
-            file_paths, collection_name, max_workers
-        )
+        # Process files sequentially and collect results
+        results = self._execute_sequential_processing(file_paths, collection_name)
+
         # Build batch result with statistics
         batch_stats = self._calculate_batch_statistics(
             results, file_paths, collection_name, start_time
         )
         logger.info(
-            "Batch processing complete: %d/%d files, %d chunks, %.2fs",
+            "Sequential processing complete: %d/%d files, %d chunks, %.2fs",
             batch_stats.successful_files,
             batch_stats.total_files,
             batch_stats.total_chunks,
@@ -162,36 +160,24 @@ class DocumentProcessor:
 
         return batch_stats
 
-    def _execute_concurrent_processing(
-        self, file_paths: list[Path], collection_name: str, max_workers: int
+    def _execute_sequential_processing(
+        self, file_paths: list[Path], collection_name: str
     ) -> list[ProcessingResult]:
-        """Execute concurrent processing of files."""
+        """Execute sequential processing of files."""
         results = []
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_path = {
-                executor.submit(self.process_document, path, collection_name): path
-                for path in file_paths
-            }
 
-            for future in as_completed(future_to_path):
-                path = future_to_path[future]
-                try:
-                    results.append(future.result())
-                except (
-                    OSError,
-                    ValueError,
-                    RuntimeError,
-                    ProcessingError,
-                    FileSystemError,
-                ) as e:
-                    logger.error("Unexpected error processing %s: %s", path, e)
-                    results.append(
-                        ProcessingResult(
-                            file_path=path,
-                            success=False,
-                            error=f"Unexpected error: {str(e)}",
-                        )
+        for path in file_paths:
+            try:
+                result = self.process_document(path, collection_name)
+                results.append(result)
+            except (OSError, ValueError, RuntimeError) as e:
+                logger.error("Error processing %s: %s", path, e)
+                results.append(
+                    ProcessingResult(
+                        file_path=path, success=False, error=f"Error: {str(e)}"
                     )
+                )
+
         return results
 
     def _calculate_batch_statistics(
