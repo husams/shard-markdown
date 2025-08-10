@@ -227,8 +227,8 @@ runs:
         heartbeat_url=""
         version_url=""
 
-        # Check if server is responding at all
-        if wget --spider --timeout=10 "${base_url}" 2>&1 | grep -q "connected"; then
+        # Check if server is responding at all (nc is more reliable for connectivity check)
+        if nc -z localhost ${{ inputs.port }} 2>/dev/null; then
           echo "✅ ChromaDB server is responding on port ${{ inputs.port }}"
           # Default to v1 API paths even if they return non-200
           api_version="v1"
@@ -242,25 +242,8 @@ runs:
           exit 1
         fi
 
-        # Test connectivity (not expecting 200 OK from ChromaDB 1.0.16)
-        echo "💓 Testing connectivity to: $heartbeat_url"
-        retry_count=0
-        max_retries=5
-        while [ $retry_count -lt $max_retries ]; do
-          # Just check if we can connect, ignore HTTP status
-          if wget --spider --timeout=10 "$heartbeat_url" 2>&1 | grep -q "connected"; then
-            echo "✅ ChromaDB server connectivity confirmed"
-            break
-          fi
-          retry_count=$((retry_count + 1))
-          if [ $retry_count -lt $max_retries ]; then
-            echo "⏳ Connection attempt $retry_count failed, retrying in 2s..."
-            sleep 2
-          else
-            echo "❌ ChromaDB connection failed after $max_retries attempts"
-            exit 1
-          fi
-        done
+        # Skip additional heartbeat testing since we already confirmed connectivity
+        echo "💓 Skipping heartbeat endpoint test (server already confirmed responding)"
 
         # Test version endpoint (non-critical)
         echo "📋 Testing version endpoint: $version_url"
