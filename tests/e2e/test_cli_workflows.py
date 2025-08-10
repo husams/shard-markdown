@@ -154,8 +154,6 @@ class TestBasicCLIWorkflows:
                 collection_name,
                 "--chunk-method",
                 "structure",
-                "--max-workers",
-                "2",
                 "--create-collection",  # Create collection if it doesn't exist
             ]
             + file_paths,
@@ -424,8 +422,6 @@ Content here.
                     "process",
                     "--collection",
                     collection_name,
-                    "--max-workers",
-                    str(workers),
                     "--create-collection",
                 ]
                 + file_paths,
@@ -544,7 +540,6 @@ chunking:
 
 processing:
   batch_size: 15
-  max_workers: 2
 """
         custom_config.write_text(config_content)
 
