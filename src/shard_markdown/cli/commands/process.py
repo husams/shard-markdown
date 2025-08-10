@@ -76,11 +76,6 @@ console = Console()
     "--collection-metadata",
     help="Additional metadata for new collections (JSON format)",
 )
-@click.option(
-    "--use-mock",
-    is_flag=True,
-    help="Force use of mock ChromaDB client for testing",
-)
 @click.pass_context
 def process(  # noqa: C901
     ctx: click.Context,
@@ -94,7 +89,6 @@ def process(  # noqa: C901
     clear_collection: bool,
     dry_run: bool,
     collection_metadata: str | None,
-    use_mock: bool,
 ) -> None:
     """Process markdown files into ChromaDB collections.
 
@@ -114,9 +108,6 @@ def process(  # noqa: C901
 
       # Create new collection and clear it first
       shard-md process -c new-docs --create-collection --clear-collection *.md
-
-      # Use mock ChromaDB for testing
-      shard-md process -c test-docs --use-mock *.md
     """
     # Handle cases where ctx.obj might be None (e.g., in tests)
     if ctx.obj is None:
@@ -148,7 +139,7 @@ def process(  # noqa: C901
 
         # Setup ChromaDB and collection
         chroma_client, collection_obj = _setup_chromadb_and_collection(
-            config, use_mock, collection, clear_collection, create_collection
+            config, collection, clear_collection, create_collection
         )
 
         # Initialize processor
@@ -189,7 +180,6 @@ def _validate_and_prepare(
 
 def _setup_chromadb_and_collection(
     config: Any,
-    use_mock: bool,
     collection: str,
     clear_collection: bool,
     create_collection: bool,
@@ -197,7 +187,7 @@ def _setup_chromadb_and_collection(
     """Set up ChromaDB client and collection."""
     from ...utils.errors import ChromaDBError, NetworkError
 
-    chroma_client = create_chromadb_client(config.chromadb, use_mock=use_mock)
+    chroma_client = create_chromadb_client(config.chromadb)
     try:
         if not chroma_client.connect():
             raise click.ClickException("Failed to connect to ChromaDB")

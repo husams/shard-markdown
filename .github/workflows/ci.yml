@@ -89,9 +89,13 @@ jobs:
         run: uv sync --dev --extra chromadb
 
       - name: Run unit tests
+        env:
+          SHARD_MD_USE_MOCK_CHROMADB: "true" # Use mock for unit tests (no external dependencies)
         run: uv run pytest tests/unit/ -v --tb=short --strict-markers
 
       - name: Run integration tests (without ChromaDB)
+        env:
+          SHARD_MD_USE_MOCK_CHROMADB: "true" # Use mock for tests not requiring real ChromaDB
         run: uv run pytest tests/integration/ -v --tb=short --strict-markers -m "not chromadb"
 
       - name: Upload test results
@@ -317,6 +321,8 @@ jobs:
         run: uv sync --dev
 
       - name: Run benchmarks
+        env:
+          SHARD_MD_USE_MOCK_CHROMADB: "true" # Use mock for consistent benchmark measurements
         run: uv run pytest tests/performance/ --benchmark-only --benchmark-json=benchmark.json
 
       - name: Upload benchmark results
@@ -462,6 +468,7 @@ jobs:
         env:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
+          SHARD_MD_USE_MOCK_CHROMADB: "false" # Use real ChromaDB for integration tests
         run: |
           echo "🧪 Running integration tests that require ChromaDB"
           uv run pytest tests/integration/ -v --tb=short --strict-markers -m "chromadb" || echo "No tests marked with chromadb in integration"

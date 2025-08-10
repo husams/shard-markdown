@@ -104,6 +104,7 @@ jobs:
         env:
           CHROMA_HOST: localhost
           CHROMA_PORT: 8000
+          SHARD_MD_USE_MOCK_CHROMADB: "false" # Ensure real ChromaDB is used for release testing
         run: |
           # Run tests and capture the exit code
           uv run pytest \
