@@ -1,206 +1,171 @@
-# E2E ChromaDB CI Failure Investigation Report
+# ChromaDB 1.0.16 E2E Test Failure Investigation Report
 
-## EXECUTIVE SUMMARY
+## Executive Summary
 
-**Issue**: The End-to-End Tests CI job is failing during ChromaDB container setup on Ubuntu due to an incorrect health check endpoint.
+**Issue**: E2E tests are failing with ChromaDB 1.0.16 due to incorrect API version detection.
 
-**Root Cause**: Three issues were found:
-1. The health check was using the wrong endpoint (`/api/v1` instead of `/api/v1/heartbeat`)
-2. ChromaDB 1.0.16 container doesn't have `curl` or `nc` installed for health checks
-3. ChromaDB 1.0.16 returns 404/410 for heartbeat endpoints but is still running correctly
+**Root Cause**: ChromaDB 1.0.16 has **deprecated the v1 API entirely** and only supports v2 API endpoints. Our code incorrectly assumes v1 API for ChromaDB 1.0.x versions.
 
-**Impact**: All E2E tests are blocked and cannot run, preventing validation of ChromaDB integration features.
+**Impact**: Critical - All CI/CD E2E tests fail when using ChromaDB 1.0.16.
 
-**Priority**: CRITICAL - Blocks all CI/CD pipelines for pull requests and main branch deployments.
+**Priority**: HIGH - Blocks all PR merges and deployments.
 
-## ISSUE DETAILS
+## Issue Details
 
 ### Problem Description
-The GitHub Actions E2E workflow fails consistently during the "Setup ChromaDB with version-aware detection" step when running on Ubuntu with ChromaDB version 1.0.16.
+The E2E test workflow `e2e-cli (ubuntu-latest, 1.0.16)` consistently fails during ChromaDB connection attempts. The failure occurs when our client attempts to connect using v1 API endpoints, which ChromaDB 1.0.16 no longer supports.
 
 ### Affected Components
-- File: `.github/actions/setup-chromadb/action.yml`
-- Workflow: `.github/workflows/e2e.yml`
-- Job: `e2e-cli (ubuntu-latest, 1.0.16)`
-- Platform: Ubuntu (Linux) runners only
+- `src/shard_markdown/chromadb/version_detector.py` - Incorrect version detection logic
+- `.github/actions/setup-chromadb/action.yml` - Hardcoded v1 API assumption for 1.0.16
+- E2E test workflows in GitHub Actions
 
-### Failure Pattern
-- Occurs 100% of the time on Ubuntu runners
-- Fails after 120-second timeout waiting for container health
-- Container is running but health check reports "starting" status with failing streak
+### Evidence of the Issue
+Direct testing against ChromaDB 1.0.16 container reveals:
 
-### User Impact
-- No E2E tests can run
-- Pull requests cannot be merged
-- Deployment pipeline is blocked
-
-## INVESTIGATION FINDINGS
-
-### Evidence Analyzed
-
-1. **GitHub Actions Logs** (Run ID: 16856366396)
-   - Container starts successfully
-   - Health check runs every 5 seconds
-   - All health checks fail with exit code 1
-   - After 120 seconds, the action times out
-
-2. **Health Check Command**
-   ```bash
-   --health-cmd "wget --spider -q http://localhost:8000/api/v1 || exit 1"
-   ```
-
-3. **Actual API Response**
-   ```
-   Testing v1 API:
-   --2025-08-10 02:40:37--  http://localhost:8000/api/v1
-   HTTP request sent, awaiting response... 404 Not Found
-   Remote file does not exist -- broken link!!!
-   ```
-
-4. **Container Status**
-   - Container is running and listening on port 8000
-   - ChromaDB service is operational
-   - Only the health check is failing
-
-### Root Cause Analysis
-
-The health check is using the wrong endpoint. ChromaDB 1.0.16 doesn't expose `/api/v1` as a valid endpoint but requires `/api/v1/heartbeat` for health checks.
-
-**Evidence**:
-1. The Windows PowerShell section (lines 155-169) correctly tries multiple heartbeat endpoints:
-   - `/api/v2/heartbeat`
-   - `/api/v1/heartbeat`
-   - `/heartbeat`
-
-2. The docker-compose.test.yml uses the correct approach:
-   ```bash
-   curl -f http://localhost:8000/api/v2/heartbeat ||
-   curl -f http://localhost:8000/api/v1/heartbeat ||
-   curl -f http://localhost:8000/heartbeat || exit 1
-   ```
-
-3. The Linux health check (line 41) incorrectly uses:
-   ```bash
-   wget --spider -q http://localhost:8000/api/v1 || exit 1
-   ```
-
-### Contributing Factors
-- Inconsistent health check implementation across platforms
-- Missing heartbeat suffix in the URL
-- No fallback to alternative endpoints
-
-## TECHNICAL ANALYSIS
-
-### Code Analysis
-The setup-chromadb action has platform-specific implementations:
-- **Linux**: Uses Docker's built-in health check with wrong endpoint
-- **macOS**: Uses manual polling without Docker health check (works)
-- **Windows**: Uses PowerShell with correct heartbeat endpoints (works)
-
-### System Behavior
-1. Docker starts ChromaDB container successfully
-2. Health check runs `wget --spider` on `/api/v1`
-3. ChromaDB returns 404 for this path
-4. wget exits with code 1
-5. Docker marks health check as failed
-6. After 24 retries over 120 seconds, the action fails
-
-### Performance Implications
-- 120-second delay before failure
-- Unnecessary resource consumption during failed retries
-- No actual service issue, only misconfigured health check
-
-## RECOMMENDED SOLUTIONS
-
-### Implemented Fix
-Removed Docker health checks entirely and switched to manual polling from the host (like macOS setup).
-
-**Why this approach**:
-- ChromaDB 1.0.16 container lacks `curl`, `nc`, and other networking tools
-- Docker health checks run inside the container and fail due to missing tools
-- Manual polling from the host is more reliable and doesn't depend on container tools
-- This approach already works successfully on macOS
-
-**Implementation**:
 ```bash
-# Start ChromaDB without health checks
-docker run -d \
-  --name chromadb \
-  -p 8000:8000 \
-  -e ANONYMIZED_TELEMETRY=false \
-  -e ALLOW_RESET=true \
-  -e IS_PERSISTENT=true \
-  chromadb/chroma:1.0.16
+# v1 endpoint returns 410 (Gone) with deprecation message
+curl http://localhost:8000/api/v1/heartbeat
+Response: {"error":"Unimplemented","message":"The v1 API is deprecated. Please use /v2 apis"}
+Status: 410 Gone
 
-# Poll from host until ready
-while [ $elapsed -lt 120 ]; do
-  if nc -z localhost 8000 2>/dev/null || wget --spider -q http://localhost:8000 2>/dev/null; then
-    echo "✅ ChromaDB is ready"
-    break
-  fi
-  sleep 3
-done
+# v2 endpoint works correctly
+curl http://localhost:8000/api/v2/heartbeat
+Response: {"nanosecond heartbeat": 1754795294785820252}
+Status: 200 OK
+
+# Root endpoint doesn't exist
+curl http://localhost:8000/heartbeat
+Status: 404 Not Found
 ```
 
-### Alternative Solutions
+## Investigation Findings
 
-1. **Remove Docker health check and use manual polling** (like macOS):
-   - Remove health-cmd parameter
-   - Implement wget-based polling loop
-   - More consistent across platforms
+### 1. ChromaDB 1.0.16 API Architecture
 
-2. **Use a custom health check script**:
-   - Create a shell script that tries multiple endpoints
-   - Mount it in the container
-   - Reference it in health-cmd
+**FACT**: ChromaDB 1.0.16 exclusively uses v2 API endpoints:
+- `/api/v2/heartbeat` - Working health check endpoint
+- `/api/v2/version` - Returns "1.0.0" (semantic versioning)
+- `/api/v2/*` - All other API operations
 
-### Long-term Improvements
+**DEPRECATED**: v1 API endpoints return HTTP 410 (Gone) with explicit deprecation message.
 
-1. **Unify health check logic across platforms**
-2. **Create a reusable health check function**
-3. **Add ChromaDB version detection before health check**
-4. **Implement better error messages for debugging**
+### 2. Current Code Assumptions
 
-## TESTING & VALIDATION PLAN
+Our `ChromaDBVersionDetector` class tests endpoints in this order:
+1. v2 API - `/api/v2/heartbeat` (ChromaDB 1.0+)
+2. v1 API - `/api/v1/heartbeat` (ChromaDB 0.5.x)
+3. Root API - `/heartbeat` (older versions)
 
-### Verification Steps
-1. Update the health check command in action.yml
-2. Test locally with Docker:
-   ```bash
-   docker run -d --name test-chromadb \
-     --health-cmd "curl -f http://localhost:8000/api/v1/heartbeat || exit 1" \
-     --health-interval 5s \
-     chromadb/chroma:1.0.16
-   ```
-3. Run the E2E workflow on a test branch
-4. Verify all platforms pass the setup step
+However, the GitHub Actions setup script hardcodes v1 for ChromaDB 1.0.16:
 
-### Regression Testing
-- Test with multiple ChromaDB versions (1.0.16, latest)
-- Verify on all platforms (Ubuntu, macOS, Windows)
-- Ensure health check completes within reasonable time
+```yaml
+# Line 233-236 in .github/actions/setup-chromadb/action.yml
+api_version="v1"
+heartbeat_url="${base_url}/api/v1"
+version_url="${base_url}/api/v1/version"
+```
 
-### Monitoring Post-Fix
-- Watch for health check timing
-- Monitor for any 404 errors in logs
-- Track success rate of E2E runs
+### 3. Version Detection Mismatch
 
-## IMPLEMENTATION
+The version detector should work correctly (tests v2 first), but the CI/CD action overrides this with incorrect assumptions about ChromaDB 1.0.16 using v1 API.
 
-The fix was implemented in three stages:
-1. **First attempt**: Changed endpoint from `/api/v1` to `/api/v1/heartbeat` with `curl` - failed due to missing `curl` in container
-2. **Second attempt**: Removed Docker health checks, used manual polling from host - worked for startup
-3. **Final fix**: Updated verification step to accept non-200 responses - complete success
+### 4. Client-Server Compatibility
 
-The solution removes dependency on tools inside the container and focuses on connectivity verification rather than expecting specific HTTP status codes.
+- **Client Version**: chromadb>=1.0.16 (in pyproject.toml)
+- **Server Version**: chromadb/chroma:1.0.16 (Docker image)
+- **Compatibility**: MATCHED - Both are 1.0.16
 
-### Risk Assessment
-- **Risk Level**: LOW
-- **Impact if not fixed**: HIGH (all E2E tests blocked)
-- **Rollback plan**: Revert the single line change
+The issue is not a version mismatch but incorrect API endpoint detection.
 
-### Deployment Steps
-1. Create a branch with the fix
-2. Test the workflow on the branch
-3. Merge to main after validation
-4. Monitor subsequent E2E runs
+## Technical Analysis
+
+### Why the Tests Fail
+
+1. **CI/CD Health Check**: The setup-chromadb action incorrectly defaults to v1 API for ChromaDB 1.0.16
+2. **410 vs 200**: When checking `/api/v1/heartbeat`, it gets 410 (Gone) instead of 200 (OK)
+3. **Connection Validation**: Our client connection validation fails because heartbeat returns an error
+
+### ChromaDB Version History
+
+Based on testing and documentation:
+- **ChromaDB 0.5.x and earlier**: Used v1 API (`/api/v1/*`)
+- **ChromaDB 1.0.0+**: Transitioned to v2 API (`/api/v2/*`)
+- **ChromaDB 1.0.16**: v1 API completely deprecated, returns 410 with deprecation message
+
+## Recommended Solutions
+
+### Immediate Fix (Priority 1)
+
+Update `.github/actions/setup-chromadb/action.yml` to correctly detect v2 API for ChromaDB 1.0.x:
+
+```yaml
+# Around line 100-107 (macOS) and similar sections
+# Try v2 API first for ChromaDB 1.0+
+if wget --spider -q http://localhost:${{ inputs.port }}/api/v2/heartbeat 2>/dev/null; then
+  echo "✅ ChromaDB v2 API heartbeat is ready"
+  detected_version="v2"
+  api_ready=true
+  break
+fi
+
+# Then try v1 API for older versions
+if wget --spider -q http://localhost:${{ inputs.port }}/api/v1/heartbeat 2>/dev/null; then
+  echo "✅ ChromaDB v1 API heartbeat is ready"
+  detected_version="v1"
+  api_ready=true
+  break
+fi
+```
+
+### Long-term Solution (Priority 2)
+
+1. **Version-aware Detection**: Update the setup script to properly detect API version based on ChromaDB semantic version:
+   - ChromaDB >= 1.0.0: Use v2 API
+   - ChromaDB < 1.0.0: Use v1 API
+
+2. **Remove Hardcoded Assumptions**: Around line 233-236, replace the hardcoded v1 assumption with dynamic detection.
+
+3. **Enhanced Error Handling**: Handle 410 (Gone) responses specifically as API deprecation indicators.
+
+### Preventive Measures
+
+1. **Add Version Matrix Testing**: Test against multiple ChromaDB versions (0.5.x, 1.0.x, latest)
+2. **Document API Transitions**: Create documentation about ChromaDB version compatibility
+3. **Monitor ChromaDB Releases**: Set up alerts for ChromaDB releases that might affect API compatibility
+
+## Testing & Validation Plan
+
+### Immediate Validation
+
+```bash
+# Test ChromaDB 1.0.16 with v2 endpoints
+docker run -d --name chromadb-test -p 8000:8000 chromadb/chroma:1.0.16
+curl http://localhost:8000/api/v2/heartbeat  # Should return 200
+curl http://localhost:8000/api/v1/heartbeat  # Should return 410
+```
+
+### Post-Fix Testing
+
+1. Run E2E tests locally with ChromaDB 1.0.16
+2. Verify GitHub Actions CI passes with the fix
+3. Test backward compatibility with older ChromaDB versions
+
+## Implementation Priority
+
+1. **URGENT**: Fix `.github/actions/setup-chromadb/action.yml` to use v2 API for ChromaDB 1.0.16
+2. **HIGH**: Update version detection logic to be more robust
+3. **MEDIUM**: Add comprehensive ChromaDB version compatibility tests
+4. **LOW**: Document ChromaDB API version requirements
+
+## Risk Assessment
+
+- **Current Risk**: HIGH - All E2E tests fail, blocking development
+- **Fix Risk**: LOW - Simple endpoint URL change
+- **Rollback Plan**: Revert to previous commit if issues arise
+
+## Conclusion
+
+ChromaDB 1.0.16 has completely deprecated the v1 API in favor of v2. Our CI/CD setup incorrectly assumes v1 API for this version, causing all E2E tests to fail. The fix is straightforward: update the endpoint detection to use v2 API for ChromaDB 1.0.x versions.
+
+The Python client code (`ChromaDBVersionDetector`) already correctly tests v2 first, but the GitHub Actions setup script overrides this with incorrect hardcoded assumptions. Fixing the action script will resolve the E2E test failures immediately.

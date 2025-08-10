@@ -69,6 +69,15 @@ class ChromaDBVersionDetector:
             try:
                 with httpx.Client(timeout=self.timeout) as client:
                     response = client.get(url)
+
+                    # Handle 410 (Gone) specifically - API endpoint is deprecated
+                    if response.status_code == 410:
+                        logger.debug(
+                            f"Endpoint {url} returned 410 (Gone) - API deprecated"
+                        )
+                        # Return False but include the deprecation message
+                        return False, response.text
+
                     response.raise_for_status()
                     return True, response.text
             except Exception as e:
