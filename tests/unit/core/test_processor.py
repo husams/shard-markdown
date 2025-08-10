@@ -507,6 +507,8 @@ class TestDocumentProcessor:
         mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
 
         file_paths = list(test_documents.values())
+        # NOTE: max_workers parameter removed from process_batch method
+        # This test is kept for now but will be handled separately
         result = processor.process_batch(file_paths, "test-collection")
 
         assert result.successful_files == len(file_paths)
