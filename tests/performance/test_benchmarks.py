@@ -211,20 +211,7 @@ class TestProcessingBenchmarks:
         # Get baseline memory
         baseline_memory = process.memory_info().rss / 1024 / 1024  # MB
 
-        # Monitor memory during processing
-        memory_samples = []
         start_time = time.perf_counter()
-
-        def memory_monitor() -> None:
-            while True:
-                current_memory = process.memory_info().rss / 1024 / 1024
-                memory_samples.append(current_memory - baseline_memory)
-                time.sleep(0.05)  # Sample every 50ms
-
-        import threading
-
-        monitor_thread = threading.Thread(target=memory_monitor, daemon=True)
-        monitor_thread.start()
 
         # Process document
         result = processor.process_document(large_file, "memory-test")
@@ -234,31 +221,19 @@ class TestProcessingBenchmarks:
         # Let memory stabilize
         time.sleep(1)
 
-        if memory_samples:
-            max_memory_increase = max(memory_samples)
-            avg_memory_increase = statistics.mean(memory_samples)
+        # Measure memory after processing
+        final_memory = process.memory_info().rss / 1024 / 1024
+        memory_increase = final_memory - baseline_memory
 
-            print("\nMemory Usage Benchmark Results:")
-            print(f"  Baseline memory: {baseline_memory:.1f} MB")
-            print(f"  Max memory increase: {max_memory_increase:.1f} MB")
-            print(f"  Average memory increase: {avg_memory_increase:.1f} MB")
-            if result.chunks_created > 0:
-                memory_per_chunk = max_memory_increase / result.chunks_created
-                print(f"  Memory per chunk: {memory_per_chunk:.2f} MB")
-            else:
-                print(f"  Processing failed: {result.error}")
-                pytest.skip(
-                    "Memory benchmark skipped - processing failed due to "
-                    "chunk size limits"
-                )
-            print(f"  Document size: {len(large_content) / 1024:.1f} KB")
-            print(f"  Processing time: {processing_time:.3f}s")
+        print("\nMemory Usage Benchmark Results:")
+        print(f"  Baseline memory: {baseline_memory:.1f} MB")
+        print(f"  Final memory: {final_memory:.1f} MB")
+        print(f"  Memory increase: {memory_increase:.1f} MB")
+        print(f"  Processing time: {processing_time:.3f}s")
 
-            # Memory usage assertions
-            assert max_memory_increase < 500, (
-                f"Memory usage too high: {max_memory_increase:.1f}MB"
-            )
-            assert result.success, f"Processing failed: {result.error}"
+        # Memory usage assertions
+        assert memory_increase < 500, f"Memory usage too high: {memory_increase:.1f}MB"
+        assert result.success, f"Processing failed: {result.error}"
 
     def test_large_document_scalability(
         self, temp_dir: Any, benchmark_config: ChunkingConfig
