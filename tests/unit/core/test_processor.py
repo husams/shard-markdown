@@ -361,7 +361,7 @@ class TestDocumentProcessor:
         mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
 
         file_paths = list(test_documents.values())
-        result = processor.process_batch(file_paths, "test-collection", max_workers=2)
+        result = processor.process_batch(file_paths, "test-collection")
 
         assert isinstance(result, BatchResult)
         assert result.total_files == len(file_paths)
@@ -396,7 +396,7 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_document_metadata.return_value = {}
 
         file_paths = list(test_documents.values())[:2]  # Only test 2 files
-        result = processor.process_batch(file_paths, "test-collection", max_workers=1)
+        result = processor.process_batch(file_paths, "test-collection")
 
         assert result.total_files == 2
         assert (
@@ -456,7 +456,7 @@ class TestDocumentProcessor:
         file_paths = list(test_documents.values())
 
         start_time = time.time()
-        result = processor.process_batch(file_paths, "test-collection", max_workers=4)
+        result = processor.process_batch(file_paths, "test-collection")
         end_time = time.time()
 
         # With concurrency, should process faster than sequential
@@ -507,9 +507,7 @@ class TestDocumentProcessor:
         mock_metadata_extractor.enhance_chunk_metadata.side_effect = enhance_mock
 
         file_paths = list(test_documents.values())
-        result = processor.process_batch(
-            file_paths, "test-collection", max_workers=max_workers
-        )
+        result = processor.process_batch(file_paths, "test-collection")
 
         assert result.successful_files == len(file_paths)
         assert result.total_chunks == len(file_paths) * len(sample_chunks)

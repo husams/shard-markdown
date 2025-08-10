@@ -125,23 +125,19 @@ class DocumentProcessor:
             )
 
     def process_batch(
-        self, file_paths: list[Path], collection_name: str, max_workers: int = 4
+        self, file_paths: list[Path], collection_name: str
     ) -> BatchResult:
         """Process multiple documents sequentially.
 
         Args:
             file_paths: List of file paths to process
             collection_name: Target collection name
-            max_workers: Maximum worker threads (ignored for compatibility)
 
         Returns:
             BatchResult with aggregated statistics
         """
         start_time = time.time()
-        logger.info(
-            "Starting sequential processing of %d files",
-            len(file_paths),
-        )
+        logger.info("Processing %d files", len(file_paths))
 
         # Process files sequentially and collect results
         results = self._execute_sequential_processing(file_paths, collection_name)

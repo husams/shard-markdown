@@ -279,7 +279,6 @@ def _process_files_with_progress(
                 processor,
                 chroma_client,
                 collection_obj,
-                max_workers,
                 verbose,
                 progress,
             )
@@ -325,14 +324,11 @@ def _process_batch_files(
     processor: Any,
     chroma_client: Any,
     collection_obj: Any,
-    max_workers: int,
     verbose: int,
     progress: Any,
 ) -> None:
     """Process multiple files in batch."""
-    batch_result = processor.process_batch(
-        validated_paths, collection, max_workers=max_workers
-    )
+    batch_result = processor.process_batch(validated_paths, collection)
 
     # Collect all chunks from successful results
     all_chunks = []
