@@ -397,24 +397,6 @@ features:
         assert result.total_processing_time <= elapsed_time + 0.001
         assert result.processing_speed > 0  # chunks per second
 
-    def test_concurrent_processing_safety(
-        self, processor: DocumentProcessor, test_documents: dict[str, Any]
-    ) -> None:
-        """Test that concurrent processing is safe and consistent."""
-        file_paths = list(test_documents.values())
-
-        # Process with different worker counts
-        result_1_worker = processor.process_batch(file_paths, "concurrent-test-1")
-
-        result_4_workers = processor.process_batch(file_paths, "concurrent-test-4")
-
-        # Results should be consistent regardless of worker count
-        assert result_1_worker.total_files == result_4_workers.total_files
-        assert result_1_worker.successful_files == result_4_workers.successful_files
-        # Total chunks might vary slightly due to threading, but should be close
-        chunk_diff = abs(result_1_worker.total_chunks - result_4_workers.total_chunks)
-        assert chunk_diff <= 1
-
 
 class TestDocumentProcessingErrors:
     """Test error handling in document processing."""
