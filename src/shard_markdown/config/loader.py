@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 from .defaults import DEFAULT_CONFIG_LOCATIONS, DEFAULT_CONFIG_YAML, ENV_VAR_MAPPINGS
 from .settings import AppConfig
-from .utils import parse_config_value, set_nested_value
+from .utils import set_nested_value
 
 
 def load_config(config_path: Path | None = None) -> AppConfig:
@@ -143,6 +143,7 @@ def _apply_env_overrides(config_data: dict[str, Any]) -> dict[str, Any]:
     for env_var, config_path in ENV_VAR_MAPPINGS.items():
         env_value = os.getenv(env_var)
         if env_value is not None:
-            set_nested_value(result, config_path, parse_config_value(env_value))
+            # Use string values directly to avoid corrupting IP addresses
+            set_nested_value(result, config_path, env_value)
 
     return result

@@ -10,7 +10,7 @@ from rich.table import Table
 
 from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
-from ...config.utils import parse_config_value, set_nested_value
+from ...config.utils import set_nested_value
 from ...utils.logging import get_logger
 
 
@@ -136,8 +136,8 @@ def set(
         current_config = ctx.obj["config"]
         config_dict = current_config.model_dump()
 
-        # Parse and set the value
-        set_nested_value(config_dict, key, parse_config_value(value))
+        # Set the value directly as a string to avoid auto-conversion issues
+        set_nested_value(config_dict, key, value)
 
         # Validate the new configuration
         from ...config.settings import AppConfig
