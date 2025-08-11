@@ -1,5 +1,6 @@
 """Tests for the config command."""
 
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -24,7 +25,7 @@ class TestConfigCommand:
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
             with patch(
-                "shard_markdown.config.defaults.DEFAULT_CONFIG_LOCATIONS",
+                "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "global.yaml", fs_dir / "local.yaml"],
             ):
                 result = runner.invoke(cli, ["config", "path"])
@@ -35,11 +36,10 @@ class TestConfigCommand:
         """Test the 'config init' command."""
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
-            local_config_path = fs_dir / ".shard-md" / "config.yaml"
-            global_config_path = fs_dir / "global.yaml"
+            local_config_path = fs_dir / ".shard-md/config.yaml"
             with patch(
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [global_config_path, local_config_path],
+                [fs_dir / "global.yaml", local_config_path],
             ):
                 result = runner.invoke(cli, ["config", "init"])
                 assert result.exit_code == 0
@@ -50,10 +50,10 @@ class TestConfigCommand:
         """Test the 'config init --global' command."""
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
-            global_config_path = fs_dir / ".shard-md" / "config.yaml"
+            global_config_path = fs_dir / ".shard-md/config.yaml"
             with patch(
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [global_config_path],
+                [global_config_path, fs_dir / "local.yaml"],
             ):
                 result = runner.invoke(cli, ["config", "init", "--global"])
                 assert result.exit_code == 0
@@ -63,7 +63,7 @@ class TestConfigCommand:
         """Test the 'config init --force' command."""
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
-            config_path = fs_dir / ".shard-md" / "config.yaml"
+            config_path = fs_dir / ".shard-md/config.yaml"
             config_path.parent.mkdir()
             config_path.write_text("old content")
             with patch(
@@ -79,7 +79,7 @@ class TestConfigCommand:
         """Test 'config init' when file already exists without --force."""
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
-            config_path = fs_dir / ".shard-md" / "config.yaml"
+            config_path = fs_dir / ".shard-md/config.yaml"
             config_path.parent.mkdir()
             config_path.write_text("old content")
             with patch(
@@ -99,7 +99,11 @@ class TestConfigCommand:
                 "shard_markdown.config.loader._find_config_file",
                 return_value=config_path,
             ):
-                runner.invoke(cli, ["config", "init"])
+                with patch(
+                    "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
+                    [fs_dir / "dummy.yaml", config_path],
+                ):
+                    runner.invoke(cli, ["config", "init"])
                 result = runner.invoke(cli, ["config", "show", "--format", "yaml"])
                 assert result.exit_code == 0
                 data = yaml.safe_load(result.output)
