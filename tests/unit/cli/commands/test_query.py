@@ -8,7 +8,6 @@ import yaml
 from click.testing import CliRunner
 
 from shard_markdown.cli.main import cli
-from shard_markdown.utils.errors import ChromaDBError
 
 
 @pytest.fixture
@@ -166,9 +165,7 @@ class TestQueryCommand:
             "metadatas": [{"source": "test.md"}],
         }
 
-        result = runner.invoke(
-            cli, ["query", "get", "id1", "-c", "test_collection"]
-        )
+        result = runner.invoke(cli, ["query", "get", "id1", "-c", "test_collection"])
 
         assert result.exit_code == 0
         assert "Retrieving document 'id1'" in result.output
@@ -184,9 +181,7 @@ class TestQueryCommand:
         mock_chromadb_client.get_collection.return_value = mock_collection
         mock_collection.get.return_value = {"ids": []}
 
-        result = runner.invoke(
-            cli, ["query", "get", "id1", "-c", "test_collection"]
-        )
+        result = runner.invoke(cli, ["query", "get", "id1", "-c", "test_collection"])
 
         assert result.exit_code == 0
         assert "Document 'id1' not found" in result.output
