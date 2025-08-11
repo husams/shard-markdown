@@ -1,10 +1,11 @@
 """Unit tests for ChromaDBOperations class."""
 
-import pytest
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
-from shard_markdown.chromadb.operations import ChromaDBOperations
+import pytest
+
 from shard_markdown.chromadb.client import ChromaDBClient
+from shard_markdown.chromadb.operations import ChromaDBOperations
 from shard_markdown.utils.errors import ChromaDBError
 
 
@@ -26,17 +27,23 @@ def operations(mock_chromadb_client: Mock) -> ChromaDBOperations:
 class TestChromaDBOperations:
     """Test suite for ChromaDBOperations."""
 
-    def test_initialization(self, operations: ChromaDBOperations, mock_chromadb_client: Mock):
+    def test_initialization(
+        self, operations: ChromaDBOperations, mock_chromadb_client: Mock
+    ) -> None:
         """Test that ChromaDBOperations initializes correctly."""
         assert operations.client == mock_chromadb_client
 
-    def test_query_collection_not_connected(self, operations: ChromaDBOperations):
+    def test_query_collection_not_connected(
+        self, operations: ChromaDBOperations
+    ) -> None:
         """Test query_collection when client is not connected."""
         operations.client._connection_validated = False
         with pytest.raises(ChromaDBError, match="ChromaDB connection not established"):
             operations.query_collection("test_collection", "test query")
 
-    def test_query_collection_success(self, operations: ChromaDBOperations, mock_chromadb_client: Mock):
+    def test_query_collection_success(
+        self, operations: ChromaDBOperations, mock_chromadb_client: Mock
+    ) -> None:
         """Test successful query_collection."""
         mock_collection = Mock()
         mock_chromadb_client.client.get_collection.return_value = mock_collection
@@ -44,7 +51,7 @@ class TestChromaDBOperations:
             "ids": [["id1"]],
             "documents": [["doc1"]],
             "distances": [[0.1]],
-            "metadatas": [[{"source": "test.md"}]]
+            "metadatas": [[{"source": "test.md"}]],
         }
         mock_collection.query.return_value = mock_results
 
@@ -52,29 +59,37 @@ class TestChromaDBOperations:
 
         assert results["total_results"] == 1
         assert results["results"][0]["id"] == "id1"
-        mock_chromadb_client.client.get_collection.assert_called_once_with("test_collection")
+        mock_chromadb_client.client.get_collection.assert_called_once_with(
+            "test_collection"
+        )
         mock_collection.query.assert_called_once()
 
-    def test_query_collection_failure(self, operations: ChromaDBOperations, mock_chromadb_client: Mock):
+    def test_query_collection_failure(
+        self, operations: ChromaDBOperations, mock_chromadb_client: Mock
+    ) -> None:
         """Test query_collection failure."""
-        mock_chromadb_client.client.get_collection.side_effect = ValueError("Test error")
+        mock_chromadb_client.client.get_collection.side_effect = ValueError(
+            "Test error"
+        )
         with pytest.raises(ChromaDBError, match="Failed to query collection"):
             operations.query_collection("test_collection", "test query")
 
-    def test_get_document_not_connected(self, operations: ChromaDBOperations):
+    def test_get_document_not_connected(self, operations: ChromaDBOperations) -> None:
         """Test get_document when client is not connected."""
         operations.client._connection_validated = False
         with pytest.raises(ChromaDBError, match="ChromaDB connection not established"):
             operations.get_document("test_collection", "doc_id")
 
-    def test_get_document_success(self, operations: ChromaDBOperations, mock_chromadb_client: Mock):
+    def test_get_document_success(
+        self, operations: ChromaDBOperations, mock_chromadb_client: Mock
+    ) -> None:
         """Test successful get_document."""
         mock_collection = Mock()
         mock_chromadb_client.client.get_collection.return_value = mock_collection
         mock_results = {
             "ids": ["doc1"],
             "documents": ["doc content"],
-            "metadatas": [{"source": "test.md"}]
+            "metadatas": [{"source": "test.md"}],
         }
         mock_collection.get.return_value = mock_results
 
@@ -83,9 +98,13 @@ class TestChromaDBOperations:
         assert result is not None
         assert result["id"] == "doc1"
         assert result["content"] == "doc content"
-        mock_collection.get.assert_called_once_with(ids=["doc1"], include=['documents', 'metadatas'])
+        mock_collection.get.assert_called_once_with(
+            ids=["doc1"], include=["documents", "metadatas"]
+        )
 
-    def test_get_document_not_found(self, operations: ChromaDBOperations, mock_chromadb_client: Mock):
+    def test_get_document_not_found(
+        self, operations: ChromaDBOperations, mock_chromadb_client: Mock
+    ) -> None:
         """Test get_document when document is not found."""
         mock_collection = Mock()
         mock_chromadb_client.client.get_collection.return_value = mock_collection
@@ -95,7 +114,9 @@ class TestChromaDBOperations:
 
         assert result is None
 
-    def test_list_documents_success(self, operations: ChromaDBOperations, mock_chromadb_client: Mock):
+    def test_list_documents_success(
+        self, operations: ChromaDBOperations, mock_chromadb_client: Mock
+    ) -> None:
         """Test successful list_documents."""
         mock_collection = Mock()
         mock_chromadb_client.client.get_collection.return_value = mock_collection
@@ -103,7 +124,7 @@ class TestChromaDBOperations:
         mock_results = {
             "ids": ["doc1"],
             "documents": ["doc content"],
-            "metadatas": [{"source": "test.md"}]
+            "metadatas": [{"source": "test.md"}],
         }
         mock_collection.get.return_value = mock_results
 
@@ -112,9 +133,13 @@ class TestChromaDBOperations:
         assert results["total_documents"] == 1
         assert len(results["documents"]) == 1
         assert results["documents"][0]["id"] == "doc1"
-        mock_collection.get.assert_called_once_with(limit=100, offset=0, include=['documents', 'metadatas'])
+        mock_collection.get.assert_called_once_with(
+            limit=100, offset=0, include=["documents", "metadatas"]
+        )
 
-    def test_delete_documents_success(self, operations: ChromaDBOperations, mock_chromadb_client: Mock):
+    def test_delete_documents_success(
+        self, operations: ChromaDBOperations, mock_chromadb_client: Mock
+    ) -> None:
         """Test successful delete_documents."""
         mock_collection = Mock()
         mock_chromadb_client.client.get_collection.return_value = mock_collection
@@ -124,13 +149,13 @@ class TestChromaDBOperations:
         assert results["deleted_count"] == 1
         mock_collection.delete.assert_called_once_with(ids=["doc1"])
 
-    def test_process_query_results(self, operations: ChromaDBOperations):
+    def test_process_query_results(self, operations: ChromaDBOperations) -> None:
         """Test _process_query_results filtering and formatting."""
         raw_results = {
             "ids": [["id1", "id2", "id3"]],
             "documents": [["doc1", "doc2", "doc3"]],
             "distances": [[0.1, 0.5, 0.9]],
-            "metadatas": [[{"s": "a"}, {"s": "b"}, {"s": "c"}]]
+            "metadatas": [[{"s": "a"}, {"s": "b"}, {"s": "c"}]],
         }
 
         # similarity = 1 - distance. threshold = 0.6
