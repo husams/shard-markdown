@@ -71,10 +71,24 @@ class MockCollection:
                 "metadatas": [doc["metadata"] for doc in self.documents.values()],
             }
 
-    def query(self, query_texts: list[str], n_results: int = 10) -> dict[str, Any]:
+    def query(
+        self,
+        query_texts: list[str],
+        n_results: int = 10,
+        where: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Mock query implementation."""
-        # Simple mock: return first n_results documents
-        docs = list(self.documents.values())[:n_results]
+        filtered_docs = []
+        if where:
+            for doc in self.documents.values():
+                metadata = doc.get("metadata", {})
+                if all(item in metadata.items() for item in where.items()):
+                    filtered_docs.append(doc)
+        else:
+            filtered_docs = list(self.documents.values())
+
+        docs = filtered_docs[:n_results]
+
         return {
             "ids": [[doc["id"] for doc in docs]],
             "documents": [[doc["document"] for doc in docs]],
