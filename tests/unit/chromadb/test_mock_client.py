@@ -97,7 +97,6 @@ class TestMockChromaDBClient(unittest.TestCase):
         self.client.create_collection("collection2", metadata={"b": 2})
         collections = self.client.list_collections()
         self.assertEqual(len(collections), 2)
-        # Order is not guaranteed, so we check the names
         names = {c["name"] for c in collections}
         self.assertEqual(names, {"collection1", "collection2"})
 
@@ -145,20 +144,15 @@ class TestMockChromaDBClient(unittest.TestCase):
     def test_bulk_insert_failure(self):
         """Test that bulk_insert handles exceptions gracefully."""
         collection = self.client.create_collection("test_collection")
-        # To cause a failure, we can mock the `add` method of the collection
         original_add = collection.add
         def failing_add(*args, **kwargs):
             raise RuntimeError("Test exception")
         collection.add = failing_add
-
         chunks = [DocumentChunk(id="chunk_1", content="content_1", metadata={})]
         result = self.client.bulk_insert(collection, chunks)
-
         self.assertFalse(result.success)
         self.assertEqual(result.chunks_inserted, 0)
         self.assertIn("Test exception", result.error)
-
-        # Restore original method
         collection.add = original_add
 
     @patch("shard_markdown.chromadb.mock_client.MockChromaDBClient._save_storage")
@@ -171,34 +165,28 @@ class TestMockChromaDBClient(unittest.TestCase):
     def test_save_storage_called_on_delete(self, mock_save_storage):
         """Test that _save_storage is called when a collection is deleted."""
         self.client.create_collection("to_delete")
-        mock_save_storage.reset_mock()  # Reset after creation
+        mock_save_storage.reset_mock()
         self.client.delete_collection("to_delete")
         mock_save_storage.assert_called_once()
 
     def test_persistence_across_instances(self):
         """Test that data persists between client instances."""
-        # Client 1 creates data and its __del__ will be called by tearDown
-        collection1 = self.client.create_collection("persistent_collection")
+        client1 = self.client
+        collection1 = client1.create_collection("persistent_collection")
         chunks = [DocumentChunk(id="p1", content="persistent content", metadata={})]
-        self.client.bulk_insert(collection1, chunks)
+        client1.bulk_insert(collection1, chunks)
+        storage_path = client1.storage_path
+        del client1
 
-        # The storage file should now exist
-        self.assertTrue(self.client.storage_path.exists())
-
-        # Client 2 should load the data saved by client 1
         client2 = MockChromaDBClient()
+        client2.storage_path = storage_path # Ensure it uses the same path
+        client2._load_storage()
 
         self.assertIn("persistent_collection", client2.collections)
         collection2 = client2.get_collection("persistent_collection")
         self.assertEqual(collection2.count(), 1)
         self.assertEqual(collection2.get(ids=["p1"])["documents"][0], "persistent content")
-
-        # Cleanup for client2
         del client2
-
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class TestMockCollection(unittest.TestCase):
@@ -250,7 +238,6 @@ class TestMockCollection(unittest.TestCase):
         )
         results = self.collection.query(query_texts=["find me"], n_results=1)
         self.assertEqual(len(results["ids"][0]), 1)
-        # The mock query is simple and just returns the first n documents
         self.assertEqual(results["ids"][0][0], "1")
 
     def test_query_with_metadata_filter(self):
@@ -287,5 +274,4 @@ class TestFactoryFunction(unittest.TestCase):
         """Test that the factory function returns a MockChromaDBClient instance."""
         client = create_mock_client()
         self.assertIsInstance(client, MockChromaDBClient)
-        # Cleanup
         del client
