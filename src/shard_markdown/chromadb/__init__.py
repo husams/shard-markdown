@@ -15,12 +15,10 @@ except ImportError:
 
 from .collections import CollectionManager
 from .factory import create_chromadb_client
-from .mock_client import MockChromaDBClient
 
 
 __all__ = [
     "CHROMADB_CLIENT_CLASS",
-    "MockChromaDBClient",
     "CollectionManager",
     "create_chromadb_client",
     "CHROMADB_AVAILABLE",
