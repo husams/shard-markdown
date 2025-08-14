@@ -5,9 +5,9 @@ import time
 from pathlib import Path
 from typing import Any
 
-from ..config.settings import ChromaDBConfig
-from ..core.models import DocumentChunk, InsertResult
-from ..utils.logging import get_logger
+from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.core.models import DocumentChunk, InsertResult
+from shard_markdown.utils.logging import get_logger
 
 
 logger = get_logger(__name__)
@@ -48,39 +48,100 @@ class MockCollection:
         self,
         ids: list[str] | None = None,
         include: list[str] | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
     ) -> dict[str, Any]:
         """Get documents from collection."""
-        if ids:
+        if ids is not None:
+            # Handle empty list case - return empty results
+            if not ids:
+                return {
+                    "ids": [],
+                    "documents": [],
+                    "metadatas": [],
+                }
+
+            # Only return data for IDs that actually exist
+            existing_ids = [id_ for id_ in ids if id_ in self.documents]
             return {
-                "ids": ids,
-                "documents": [
-                    self.documents[id_]["document"]
-                    for id_ in ids
-                    if id_ in self.documents
-                ],
-                "metadatas": [
-                    self.documents[id_]["metadata"]
-                    for id_ in ids
-                    if id_ in self.documents
-                ],
+                "ids": existing_ids,
+                "documents": [self.documents[id_]["document"] for id_ in existing_ids],
+                "metadatas": [self.documents[id_]["metadata"] for id_ in existing_ids],
             }
         else:
+            # Handle pagination
+            all_docs = list(self.documents.values())
+            start = offset or 0
+            end = start + (limit or len(all_docs))
+            docs_slice = all_docs[start:end]
+
             return {
-                "ids": list(self.documents.keys()),
-                "documents": [doc["document"] for doc in self.documents.values()],
-                "metadatas": [doc["metadata"] for doc in self.documents.values()],
+                "ids": [doc["id"] for doc in docs_slice],
+                "documents": [doc["document"] for doc in docs_slice],
+                "metadatas": [doc["metadata"] for doc in docs_slice],
             }
 
-    def query(self, query_texts: list[str], n_results: int = 10) -> dict[str, Any]:
+    def query(
+        self,
+        query_texts: list[str],
+        n_results: int = 10,
+        include: list[str] | None = None,
+    ) -> dict[str, Any]:
         """Mock query implementation."""
         # Simple mock: return first n_results documents
         docs = list(self.documents.values())[:n_results]
-        return {
+
+        # Build result based on what's included
+        result = {
             "ids": [[doc["id"] for doc in docs]],
-            "documents": [[doc["document"] for doc in docs]],
-            "metadatas": [[doc["metadata"] for doc in docs]],
             "distances": [[0.5] * len(docs)],  # Mock distances
         }
+
+        if include is None or "documents" in include:
+            result["documents"] = [[doc["document"] for doc in docs]]
+
+        if include is None or "metadatas" in include:
+            result["metadatas"] = [[doc["metadata"] for doc in docs]]
+
+        return result
+
+    def delete(self, ids: list[str]) -> None:
+        """Delete documents from collection."""
+        for id_ in ids:
+            if id_ in self.documents:
+                del self.documents[id_]
+                self._count -= 1
+        logger.debug(f"Deleted {len(ids)} documents from mock collection {self.name}")
+
+
+class MockChromaDBClientAdapter:
+    """Adapter to make MockChromaDBClient compatible with operations that expect client.client."""
+
+    def __init__(self, mock_client: "MockChromaDBClient") -> None:
+        """Initialize adapter with mock client."""
+        self._mock_client = mock_client
+
+    def get_collection(self, name: str) -> MockCollection:
+        """Get collection."""
+        return self._mock_client.get_collection(name)
+
+    def list_collections(self) -> list[Any]:
+        """List collections."""
+        # Convert to mock objects that have expected attributes
+        collections = []
+        for name, collection in self._mock_client.collections.items():
+            # Create a mock collection object with expected attributes
+            mock_coll = type(
+                "MockCollectionObj",
+                (),
+                {
+                    "name": name,
+                    "metadata": collection.metadata,
+                    "count": lambda: collection.count(),
+                },
+            )()
+            collections.append(mock_coll)
+        return collections
 
 
 class MockChromaDBClient:
@@ -100,6 +161,9 @@ class MockChromaDBClient:
         self.config = config
         self.collections: dict[str, MockCollection] = {}
         self._connection_validated = False
+
+        # Create adapter that acts as the "real" client for operations
+        self.client = MockChromaDBClientAdapter(self)
 
         # Use temp directory for storage to avoid polluting project directory
         import os
@@ -164,8 +228,10 @@ class MockChromaDBClient:
     ) -> MockCollection:
         """Get existing or create new collection."""
         try:
+            # If collection exists, return it (ignoring metadata parameter)
             return self.get_collection(name)
         except ValueError:
+            # Collection doesn't exist
             if create_if_missing:
                 return self.create_collection(name, metadata)
             raise
