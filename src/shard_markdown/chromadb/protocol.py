@@ -12,6 +12,10 @@ class ChromaDBClientProtocol(Protocol):
     implement the same interface for type safety.
     """
 
+    # Internal attributes that ChromaDBOperations needs
+    _connection_validated: bool
+    client: Any
+
     def connect(self) -> bool:
         """Establish connection to ChromaDB instance.
 

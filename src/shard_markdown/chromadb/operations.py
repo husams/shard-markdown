@@ -4,7 +4,7 @@ from typing import Any, cast
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
-from .client import ChromaDBClient
+from .protocol import ChromaDBClientProtocol
 
 
 logger = get_logger(__name__)
@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 class ChromaDBOperations:
     """High-level ChromaDB operations for querying and retrieval."""
 
-    def __init__(self, client: ChromaDBClient) -> None:
+    def __init__(self, client: ChromaDBClientProtocol) -> None:
         """Initialize operations handler.
 
         Args:

@@ -10,7 +10,6 @@ from unittest.mock import Mock
 import pytest
 from click.testing import CliRunner
 
-from shard_markdown.chromadb.mock_client import MockChromaDBClient
 from shard_markdown.config.settings import AppConfig, ChromaDBConfig
 from shard_markdown.config.settings import ChunkingConfig as SettingsChunkingConfig
 from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
@@ -28,6 +27,7 @@ from tests.fixtures.chromadb_fixtures import (
     test_collection,  # noqa: F401
     wait_for_chromadb,
 )
+from tests.fixtures.mock import MockChromaDBClient
 
 
 @pytest.fixture

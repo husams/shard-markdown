@@ -8,6 +8,8 @@
         "git+https://github.com/oraios/serena",
         "serena",
         "start-mcp-server",
+        "--enable-web-dashboard",
+        "false",
         "--context",
         "ide-assistant",
         "--project",
@@ -19,13 +21,21 @@
       "type": "stdio",
       "command": "uvx",
       "args": [
+        "--from",
+        "git+https://github.com/chroma-core/chroma-mcp.git",
         "chroma-mcp",
         "--client-type",
-        "persistent",
-        "--data-dir",
-        "/Users/husam/workspace/tools/shard-markdown/.data"
+        "http",
+        "--port",
+        "8000",
+        "--host",
+        "192.168.64.3",
+        "--ssl",
+        "false"
       ],
-      "env": {}
+      "env": {
+        "ANONYMIZED_TELEMETRY": "FALSE"
+      }
     },
     "context7": {
       "type": "stdio",
