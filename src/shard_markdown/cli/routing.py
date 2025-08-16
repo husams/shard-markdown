@@ -3,15 +3,22 @@
 import time
 from argparse import Namespace
 from collections.abc import Callable
-from typing import Any
 
+import click
 from rich.console import Console
 
+from ..core.chunking.base import BaseChunker
 from ..core.chunking.fixed import FixedSizeChunker
 from ..core.chunking.structure import StructureAwareChunker
 from ..core.models import ChunkingConfig
 from ..utils.errors import (
     InputValidationError,
+)
+from .bridge import (
+    bridge_collections_command,
+    bridge_config_command,
+    bridge_process_command,
+    bridge_query_command,
 )
 from .patterns import (
     ExitCode,
@@ -23,12 +30,10 @@ from .patterns import (
 
 console = Console()
 
+# Type alias for chunking strategy (using BaseChunker protocol)
+ChunkingStrategy = BaseChunker
 
-# Type alias for chunking strategy
-ChunkingStrategy = Any  # This would be the actual chunking strategy interface
 
-
-# Type alias for processing context
 class ProcessingContext:
     """Context for processing operations."""
 
@@ -120,7 +125,9 @@ def categorize_processing_error(
     return pattern.category, message, pattern.exit_code
 
 
-def process_config_setting(key: str, value: str) -> tuple[str, Any]:
+def process_config_setting(
+    key: str, value: str
+) -> tuple[str, str | int | float | bool]:
     """Process config with pattern matching and type validation.
 
     Args:
@@ -171,68 +178,175 @@ def handle_error_with_recovery(error: Exception, context: ProcessingContext) -> 
             return ExitCode.GENERAL_ERROR
 
 
-# Command handler functions
+# Command handler functions - Now with real implementations via bridge
 def handle_file_processing(args: Namespace) -> int:
     """Handle single file processing."""
-    console.print(f"[blue]Processing file: {args.input_paths[0]}[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        # Create a Click context for bridge usage
+        click_ctx = click.Context(click.Command("process"))
+        click_ctx.obj = {"config": getattr(args, "config", None)}
+
+        # Extract arguments for process command
+        kwargs = {
+            "input_paths": getattr(args, "input_paths", []),
+            "collection": getattr(args, "collection", ""),
+            "chunk_size": getattr(args, "chunk_size", None),
+            "chunk_overlap": getattr(args, "chunk_overlap", None),
+            "method": getattr(args, "method", None),
+            "batch_size": getattr(args, "batch_size", None),
+            "preserve_headers": getattr(args, "preserve_headers", None),
+            "recursive": getattr(args, "recursive", False),
+            "pattern": getattr(args, "pattern", None),
+            "force": getattr(args, "force", False),
+        }
+
+        return bridge_process_command(click_ctx, "", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]File processing failed: {str(e)}[/red]")
+        return ExitCode.PROCESSING_ERROR
 
 
 def handle_directory_processing(args: Namespace) -> int:
     """Handle directory processing."""
-    console.print(f"[blue]Processing directory: {args.input_paths[0]}[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    # Directory processing is the same as file processing with recursive=True
+    args.recursive = True
+    return handle_file_processing(args)
 
 
 def handle_collection_listing(args: Namespace) -> int:
     """Handle collection listing."""
-    console.print("[blue]Listing collections...[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        # Create minimal Click context for bridge
+        ctx = click.Context(click.Command("collections"))
+        ctx.obj = {"config": getattr(args, "config", None)}
+
+        kwargs = {
+            "format": getattr(args, "format", "table"),
+            "show_metadata": getattr(args, "show_metadata", False),
+        }
+
+        return bridge_collections_command(ctx, "list", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]Collection listing failed: {str(e)}[/red]")
+        return ExitCode.DATABASE_ERROR
 
 
 def handle_collection_creation(args: Namespace) -> int:
     """Handle collection creation."""
-    console.print(f"[blue]Creating collection: {args.name}[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        ctx = click.Context(click.Command("collections"))
+        ctx.obj = {"config": getattr(args, "config", None)}
+
+        kwargs = {
+            "name": getattr(args, "name", ""),
+            "description": getattr(args, "description", None),
+        }
+
+        return bridge_collections_command(ctx, "create", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]Collection creation failed: {str(e)}[/red]")
+        return ExitCode.DATABASE_ERROR
 
 
 def handle_collection_deletion(args: Namespace) -> int:
     """Handle collection deletion."""
-    console.print(f"[blue]Deleting collection: {args.name}[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        ctx = click.Context(click.Command("collections"))
+        ctx.obj = {"config": getattr(args, "config", None)}
+
+        kwargs = {
+            "name": getattr(args, "name", ""),
+            "force": getattr(args, "force", False),
+        }
+
+        return bridge_collections_command(ctx, "delete", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]Collection deletion failed: {str(e)}[/red]")
+        return ExitCode.DATABASE_ERROR
 
 
 def handle_search_query(args: Namespace) -> int:
     """Handle search query."""
-    console.print(f"[blue]Searching for: {args.query_text}[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        ctx = click.Context(click.Command("query"))
+        ctx.obj = {"config": getattr(args, "config", None)}
+
+        kwargs = {
+            "collection": getattr(args, "collection", ""),
+            "query_text": getattr(args, "query_text", ""),
+            "limit": getattr(args, "limit", 10),
+            "format": getattr(args, "format", "table"),
+            "include_metadata": getattr(args, "include_metadata", False),
+        }
+
+        return bridge_query_command(ctx, "search", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]Search query failed: {str(e)}[/red]")
+        return ExitCode.DATABASE_ERROR
 
 
 def handle_similarity_search(args: Namespace) -> int:
     """Handle similarity search."""
-    console.print(f"[blue]Finding similar content: {args.query_text}[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        ctx = click.Context(click.Command("query"))
+        ctx.obj = {"config": getattr(args, "config", None)}
+
+        kwargs = {
+            "collection": getattr(args, "collection", ""),
+            "query_text": getattr(args, "query_text", ""),
+            "threshold": getattr(args, "threshold", 0.7),
+            "limit": getattr(args, "limit", 10),
+            "format": getattr(args, "format", "table"),
+        }
+
+        return bridge_query_command(ctx, "similar", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]Similarity search failed: {str(e)}[/red]")
+        return ExitCode.DATABASE_ERROR
 
 
 def handle_config_display(args: Namespace) -> int:
     """Handle configuration display."""
-    console.print("[blue]Displaying configuration...[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        ctx = click.Context(click.Command("config"))
+        ctx.obj = {"config": getattr(args, "config", None)}
+
+        kwargs = {
+            "format": getattr(args, "format", "yaml"),
+            "section": getattr(args, "section", None),
+        }
+
+        return bridge_config_command(ctx, "show", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]Config display failed: {str(e)}[/red]")
+        return ExitCode.CONFIG_ERROR
 
 
 def handle_config_update(args: Namespace) -> int:
     """Handle configuration update."""
-    console.print(f"[blue]Setting {args.key} = {args.value}[/blue]")
-    # Implementation would go here
-    return ExitCode.SUCCESS
+    try:
+        ctx = click.Context(click.Command("config"))
+        ctx.obj = {"config": getattr(args, "config", None)}
+
+        kwargs = {
+            "key": getattr(args, "key", ""),
+            "value": getattr(args, "value", ""),
+            "is_global": getattr(args, "is_global", False),
+            "is_local": getattr(args, "is_local", False),
+        }
+
+        return bridge_config_command(ctx, "set", **kwargs)
+
+    except Exception as e:
+        console.print(f"[red]Config update failed: {str(e)}[/red]")
+        return ExitCode.CONFIG_ERROR
 
 
 # Recovery strategy functions

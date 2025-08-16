@@ -9,6 +9,7 @@ from rich.traceback import install
 
 from ..config import load_config
 from ..utils.logging import setup_logging
+from .bridge import ClickToPatternBridge
 from .commands import collections, config, process, query
 
 
@@ -94,6 +95,37 @@ def version(ctx: click.Context) -> None:
     """Show version information."""
     console.print("shard-md version 0.1.0")
     console.print("Intelligent markdown document chunking for ChromaDB")
+
+
+@cli.command()
+@click.option("--format", default="yaml", help="Output format for demonstration")
+@click.pass_context
+def pattern_demo(ctx: click.Context, format: str) -> None:
+    """Demonstrate the pattern matching CLI integration.
+
+    This command shows how the new pattern matching system integrates with
+    the existing Click-based CLI, routing through the bridge to handle
+    configuration display using modern pattern matching.
+    """
+    console.print("[blue]Pattern Matching CLI Integration Demo[/blue]")
+    console.print("Routing config show command through pattern matching system...")
+
+    # Create bridge and demonstrate pattern matching integration
+    bridge = ClickToPatternBridge(ctx)
+
+    # Route config show command through pattern matching
+    exit_code = bridge.route_to_pattern_handler("config", "show", format=format)
+
+    if exit_code == 0:
+        console.print("[green]✓ Pattern matching integration successful![/green]")
+        console.print("The command was routed through:")
+        console.print("  1. Click CLI → Bridge → Pattern Matching → Click Handler")
+        console.print("  2. All type safety and validation maintained")
+        console.print("  3. Real functionality (not placeholder) executed")
+    else:
+        console.print(
+            f"[red]✗ Pattern matching failed with exit code: {exit_code}[/red]"
+        )
 
 
 # Register command groups

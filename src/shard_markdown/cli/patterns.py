@@ -1,6 +1,6 @@
 """Pattern matching utilities for CLI commands and error handling."""
 
-from collections.abc import Callable
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import IntEnum
 from typing import Any
@@ -53,17 +53,79 @@ class CommandPattern:
         )
 
 
+class ConfigValidator(ABC):
+    """Abstract base class for configuration validators."""
+
+    @abstractmethod
+    def validate(self, value: str) -> Any:
+        """Validate and convert configuration value.
+
+        Args:
+            value: String value to validate and convert
+
+        Returns:
+            Converted value with appropriate type
+
+        Raises:
+            ValueError: If value cannot be validated/converted
+        """
+
+
+class IntegerValidator(ConfigValidator):
+    """Validator for integer configuration values."""
+
+    def validate(self, value: str) -> int:
+        """Validate and convert string to integer."""
+        try:
+            return int(value)
+        except ValueError as e:
+            raise ValueError(f"Invalid integer value: '{value}'") from e
+
+
+class FloatValidator(ConfigValidator):
+    """Validator for float configuration values."""
+
+    def validate(self, value: str) -> float:
+        """Validate and convert string to float."""
+        try:
+            return float(value)
+        except ValueError as e:
+            raise ValueError(f"Invalid float value: '{value}'") from e
+
+
+class BooleanValidator(ConfigValidator):
+    """Validator for boolean configuration values."""
+
+    def validate(self, value: str) -> bool:
+        """Validate and convert string to boolean."""
+        lower_value = value.lower()
+        if lower_value in ("true", "yes", "1", "on", "enable", "enabled"):
+            return True
+        elif lower_value in ("false", "no", "0", "off", "disable", "disabled"):
+            return False
+        else:
+            raise ValueError(f"Invalid boolean value: '{value}'")
+
+
+class StringValidator(ConfigValidator):
+    """Validator for string configuration values."""
+
+    def validate(self, value: str) -> str:
+        """Validate and return string value."""
+        return value
+
+
 @dataclass(frozen=True)
 class ConfigPattern:
     """Represents a configuration pattern for type validation."""
 
     key: str
     type_name: str
-    validator: Callable[[str], Any]
+    validator: ConfigValidator
 
     def validate(self, value: str) -> Any:
         """Validate and convert the configuration value."""
-        return self.validator(value)
+        return self.validator.validate(value)
 
 
 @dataclass(frozen=True)
@@ -279,55 +341,44 @@ def match_error_category(error: Exception) -> str:
             return "UNKNOWN"
 
 
-def _get_config_validator(type_name: str) -> Callable[[str], Any]:
-    """Get validator function for configuration type.
+def _get_config_validator(type_name: str) -> ConfigValidator:
+    """Get validator instance for configuration type.
 
     Args:
         type_name: The type name
 
     Returns:
-        Validator function
+        Validator instance
     """
     match type_name:
         case "integer":
-            return _validate_integer
+            return IntegerValidator()
         case "float":
-            return _validate_float
+            return FloatValidator()
         case "boolean":
-            return _validate_boolean
+            return BooleanValidator()
         case "string":
-            return _validate_string
+            return StringValidator()
         case _:
-            return _validate_string
+            return StringValidator()
 
 
+# Legacy functions for backward compatibility with existing tests
 def _validate_integer(value: str) -> int:
-    """Validate and convert string to integer."""
-    try:
-        return int(value)
-    except ValueError as e:
-        raise ValueError(f"Invalid integer value: '{value}'") from e
+    """Legacy integer validator function."""
+    return IntegerValidator().validate(value)
 
 
 def _validate_float(value: str) -> float:
-    """Validate and convert string to float."""
-    try:
-        return float(value)
-    except ValueError as e:
-        raise ValueError(f"Invalid float value: '{value}'") from e
+    """Legacy float validator function."""
+    return FloatValidator().validate(value)
 
 
 def _validate_boolean(value: str) -> bool:
-    """Validate and convert string to boolean."""
-    match value.lower():
-        case "true" | "yes" | "1" | "on" | "enable" | "enabled":
-            return True
-        case "false" | "no" | "0" | "off" | "disable" | "disabled":
-            return False
-        case _:
-            raise ValueError(f"Invalid boolean value: '{value}'")
+    """Legacy boolean validator function."""
+    return BooleanValidator().validate(value)
 
 
 def _validate_string(value: str) -> str:
-    """Validate and return string value."""
-    return value
+    """Legacy string validator function."""
+    return StringValidator().validate(value)
