@@ -12,6 +12,7 @@ from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
 @pytest.mark.performance
+@pytest.mark.chromadb
 @pytest.mark.asyncio
 class TestAsyncChromaDBPerformance:
     """Performance benchmarks for AsyncChromaDBClient."""
@@ -21,7 +22,7 @@ class TestAsyncChromaDBPerformance:
         """Create test ChromaDB configuration for performance tests."""
         return ChromaDBConfig(
             host="localhost",
-            port=8000,
+            port=9000,
             auth_token=None,
         )
 

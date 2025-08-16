@@ -123,18 +123,18 @@ class TestConfigValueHandling:
 
         # Set various types
         set_nested_value(data, "chromadb.host", "192.168.1.1")
-        set_nested_value(data, "chromadb.port", "8000")
+        set_nested_value(data, "chromadb.port", "9000")
         set_nested_value(data, "chromadb.ssl", "false")
 
         # Values should be preserved as provided
         assert data["chromadb"]["host"] == "192.168.1.1"
-        assert data["chromadb"]["port"] == "8000"  # Still string
+        assert data["chromadb"]["port"] == "9000"  # Still string
         assert data["chromadb"]["ssl"] == "false"  # Still string
 
         # Pydantic will handle conversion
         config = AppConfig(**data)
         assert config.chromadb.host == "192.168.1.1"
-        assert config.chromadb.port == 8000  # Converted by Pydantic
+        assert config.chromadb.port == 9000  # Converted by Pydantic
         assert config.chromadb.ssl is False  # Converted by Pydantic
 
     def test_config_roundtrip_preserves_ip(self) -> None:

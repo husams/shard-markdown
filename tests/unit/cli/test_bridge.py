@@ -129,7 +129,7 @@ class TestClickPatternMatchingBridge:
 
     @patch("shard_markdown.cli.bridge.route_command")
     def test_collections_bridge_calls_pattern_matching(self, mock_route: Mock) -> None:
-        """Test that collections bridge calls pattern matching with correct parameters."""
+        """Test that collections bridge calls pattern matching."""
         mock_route.return_value = ExitCode.SUCCESS
 
         ctx = Mock(spec=click.Context)
@@ -190,7 +190,7 @@ class TestPatternMatchingIntegration:
     """Test integration of pattern matching with existing Click CLI."""
 
     def test_integrate_pattern_matching_modifies_commands(self) -> None:
-        """Test that integration modifies existing Click commands to use pattern matching."""
+        """Test that integration modifies existing Click commands."""
         # Create a mock CLI group with proper attributes
         cli_group = Mock(spec=click.Group)
         cli_group.name = "test-cli"
@@ -224,7 +224,7 @@ class TestPatternMatchingIntegration:
         assert "config" in modified_cli.commands
 
     def test_integration_preserves_click_interface(self) -> None:
-        """Test that integration preserves the Click interface for backward compatibility."""
+        """Test that integration preserves the Click interface."""
         # Test that the bridge module can be imported successfully
         from shard_markdown.cli.bridge import integrate_pattern_matching
 

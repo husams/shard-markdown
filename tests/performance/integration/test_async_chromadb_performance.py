@@ -21,7 +21,7 @@ class TestAsyncChromaDBPerformanceIntegration:
         """Create test ChromaDB configuration for performance tests."""
         return ChromaDBConfig(
             host="localhost",
-            port=8000,
+            port=9000,
             auth_token=None,
         )
 

@@ -51,6 +51,7 @@ def chromadb_env(chromadb_test_fixture: ChromaDBTestFixture) -> dict[str, str]:
 
 
 @pytest.mark.e2e
+@pytest.mark.chromadb
 class TestBasicCLIWorkflows:
     """Test basic end-to-end CLI workflows with real ChromaDB."""
 
@@ -278,6 +279,7 @@ class TestBasicCLIWorkflows:
 
 
 @pytest.mark.e2e
+@pytest.mark.chromadb
 class TestAdvancedCLIWorkflows:
     """Test advanced CLI workflows and combinations."""
 
@@ -532,7 +534,7 @@ Content here.
         config_content = """
 chromadb:
   host: localhost
-  port: 8000
+  port: 9000
 
 chunking:
   default_size: 1200
@@ -680,6 +682,7 @@ processing:
 
 
 @pytest.mark.e2e
+@pytest.mark.chromadb
 class TestCLIErrorScenarios:
     """Test CLI error scenarios and edge cases."""
 
@@ -829,6 +832,7 @@ invalid: yaml: content: here
 
 
 @pytest.mark.e2e
+@pytest.mark.chromadb
 class TestCLIPerformance:
     """Test CLI performance characteristics."""
 

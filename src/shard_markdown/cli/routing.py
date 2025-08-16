@@ -319,7 +319,8 @@ def handle_directory_processing(args: Namespace) -> int:
 
                     # Display batch results
                     console.print(
-                        f"[green]Processed {result.successful_files} files from {path}[/green]"
+                        f"[green]Processed {result.successful_files} files from "
+                        f"{path}[/green]"
                     )
                     if result.failed_files > 0:
                         console.print(
@@ -452,7 +453,8 @@ def handle_collection_deletion(args: Namespace) -> int:
         # Confirm deletion unless forced
         if not force:
             console.print(
-                f"[yellow]Are you sure you want to delete collection '{collection_name}'? [y/N][/yellow]"
+                f"[yellow]Are you sure you want to delete collection "
+                f"'{collection_name}'? [y/N][/yellow]"
             )
             # In a real implementation, this would prompt for user input
             # For now, we'll assume force mode for pattern matching
@@ -497,7 +499,8 @@ def handle_search_query(args: Namespace) -> int:
         collection_manager = CollectionManager(client)
 
         console.print(
-            f"[blue]Searching in collection '{collection_name}' for: {query_text}[/blue]"
+            f"[blue]Searching in collection '{collection_name}' for: "
+            f"{query_text}[/blue]"
         )
 
         # Get collection and perform search (simplified implementation)
@@ -562,7 +565,8 @@ def handle_similarity_search(args: Namespace) -> int:
         collection_manager = CollectionManager(client)
 
         console.print(
-            f"[blue]Finding similar content in '{collection_name}' to: {query_text}[/blue]"
+            f"[blue]Finding similar content in '{collection_name}' to: "
+            f"{query_text}[/blue]"
         )
 
         # Get collection and perform similarity search (simplified implementation)

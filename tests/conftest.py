@@ -272,7 +272,7 @@ def app_config() -> AppConfig:
     return AppConfig(
         chromadb=ChromaDBConfig(
             host="localhost",
-            port=8000,
+            port=9000,
         ),
         chunking=SettingsChunkingConfig(
             default_size=1000,
@@ -428,7 +428,7 @@ def config_file(temp_dir: Path) -> Path:
     config_content = """
 chromadb:
   host: localhost
-  port: 8000
+  port: 9000
 
 chunking:
   default_size: 1000
@@ -556,7 +556,7 @@ def pytest_configure(config: Any) -> None:
 
         if needs_chromadb:
             host = os.environ.get("CHROMA_HOST", "localhost")
-            port = int(os.environ.get("CHROMA_PORT", "8000"))
+            port = int(os.environ.get("CHROMA_PORT", "9000"))
             print(f"CI Environment detected. Waiting for ChromaDB at {host}:{port}...")
             if wait_for_chromadb(host, port, timeout=60):
                 print("ChromaDB is ready for testing")

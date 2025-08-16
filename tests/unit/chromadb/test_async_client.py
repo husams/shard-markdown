@@ -16,7 +16,7 @@ class TestAsyncChromaDBClient:
         """Create test ChromaDB configuration."""
         return ChromaDBConfig(
             host="localhost",
-            port=8000,
+            port=9000,
             auth_token=None,
         )
 
