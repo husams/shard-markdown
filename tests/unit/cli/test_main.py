@@ -303,7 +303,7 @@ class TestCLIIntegration:
 
         # Add realistic attributes that commands might use
         mock_config.chromadb.host = "localhost"
-        mock_config.chromadb.port = 8000
+        mock_config.chromadb.port = 9000
         mock_config.chunking.default_size = 1000
         mock_config.processing.batch_size = 10
 

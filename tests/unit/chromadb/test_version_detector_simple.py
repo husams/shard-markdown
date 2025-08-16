@@ -126,8 +126,8 @@ class TestBasicVersionDetector:
         # Set cached version info
         detector._cached_version_info = APIVersionInfo(
             version="v2",
-            heartbeat_endpoint="http://localhost:8000/api/v2/heartbeat",
-            version_endpoint="http://localhost:8000/api/v2/version",
+            heartbeat_endpoint="http://localhost:9000/api/v2/heartbeat",
+            version_endpoint="http://localhost:9000/api/v2/version",
             detection_time=time.time(),
         )
 
@@ -142,8 +142,8 @@ class TestBasicVersionDetector:
         mock_detector = MagicMock()
         mock_info = APIVersionInfo(
             version="v2",
-            heartbeat_endpoint="http://localhost:8000/api/v2/heartbeat",
-            version_endpoint="http://localhost:8000/api/v2/version",
+            heartbeat_endpoint="http://localhost:9000/api/v2/heartbeat",
+            version_endpoint="http://localhost:9000/api/v2/version",
             detection_time=time.time(),
         )
         mock_detector.detect_api_version.return_value = mock_info
@@ -167,15 +167,15 @@ class TestAPIVersionInfo:
         """Test creating APIVersionInfo instance."""
         info = APIVersionInfo(
             version="v2",
-            heartbeat_endpoint="http://localhost:8000/api/v2/heartbeat",
-            version_endpoint="http://localhost:8000/api/v2/version",
+            heartbeat_endpoint="http://localhost:9000/api/v2/heartbeat",
+            version_endpoint="http://localhost:9000/api/v2/version",
             chromadb_version="1.0.15",
             detection_time=1234567890.0,
         )
 
         assert info.version == "v2"
-        assert info.heartbeat_endpoint == "http://localhost:8000/api/v2/heartbeat"
-        assert info.version_endpoint == "http://localhost:8000/api/v2/version"
+        assert info.heartbeat_endpoint == "http://localhost:9000/api/v2/heartbeat"
+        assert info.version_endpoint == "http://localhost:9000/api/v2/version"
         assert info.chromadb_version == "1.0.15"
         assert info.detection_time == 1234567890.0
         assert info.is_available is True  # Default value
@@ -184,8 +184,8 @@ class TestAPIVersionInfo:
         """Test APIVersionInfo with minimal required fields."""
         info = APIVersionInfo(
             version="v1",
-            heartbeat_endpoint="http://localhost:8000/api/v1/heartbeat",
-            version_endpoint="http://localhost:8000/api/v1/version",
+            heartbeat_endpoint="http://localhost:9000/api/v1/heartbeat",
+            version_endpoint="http://localhost:9000/api/v1/version",
             detection_time=time.time(),
         )
 

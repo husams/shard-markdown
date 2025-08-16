@@ -108,7 +108,7 @@ class TestMetadataSanitization:
     def test_sanitize_simple_dict(self, extractor: MetadataExtractor) -> None:
         """Test that dictionaries are converted to JSON strings."""
         metadata = {
-            "config": {"host": "localhost", "port": 8000},
+            "config": {"host": "localhost", "port": 9000},
             "nested": {"a": 1, "b": {"c": 2}},
             "empty_dict": {},
         }
@@ -116,12 +116,12 @@ class TestMetadataSanitization:
         result = extractor.sanitize_metadata_for_chromadb(metadata)
 
         # Check that dicts are converted to JSON
-        assert result["config"] == '{"host":"localhost","port":8000}'
+        assert result["config"] == '{"host":"localhost","port":9000}'
         assert result["nested"] == '{"a":1,"b":{"c":2}}'
         assert result["empty_dict"] == "{}"
 
         # Verify JSON is valid
-        assert json.loads(result["config"]) == {"host": "localhost", "port": 8000}
+        assert json.loads(result["config"]) == {"host": "localhost", "port": 9000}
         assert json.loads(result["nested"]) == {"a": 1, "b": {"c": 2}}
 
     def test_sanitize_list_of_dicts(self, extractor: MetadataExtractor) -> None:
