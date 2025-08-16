@@ -237,6 +237,218 @@ class TestChromaDBClient:
         assert result.error == "Insert failed"
         assert result.collection_name == "test_collection"
 
+    def test_bulk_insert_batch_processing(self, client: ChromaDBClient) -> None:
+        """Test bulk insert with batch processing using simple chunks."""
+        # Create simple test chunks (more than batch size of 100)
+        chunks = []
+        for i in range(150):  # 150 chunks to trigger batch processing
+            chunks.append(
+                DocumentChunk(
+                    id=f"chunk_{i}",
+                    content=f"Content for chunk {i}",
+                    metadata={"index": i, "type": "test"},
+                    start_position=i * 10,
+                    end_position=(i + 1) * 10,
+                )
+            )
+
+        mock_collection = Mock()
+        mock_collection.name = "batch_test_collection"
+
+        result = client.bulk_insert(mock_collection, chunks)
+
+        assert isinstance(result, InsertResult)
+        assert result.success is True
+        assert result.chunks_inserted == 150
+        assert result.collection_name == "batch_test_collection"
+
+        # Should call add twice (batch_size = 100, so 100 + 50)
+        assert mock_collection.add.call_count == 2
+
+    def test_bulk_insert_metadata_sanitization(self, client: ChromaDBClient) -> None:
+        """Test bulk insert with metadata sanitization."""
+        # Create chunks with various metadata types
+        chunks = [
+            DocumentChunk(
+                id="chunk_1",
+                content="Content 1",
+                metadata={"string_val": "test", "int_val": 42, "float_val": 3.14},
+                start_position=0,
+                end_position=10,
+            ),
+            DocumentChunk(
+                id="chunk_2",
+                content="Content 2",
+                metadata={"bool_val": True, "none_val": None, "list_val": ["a", "b"]},
+                start_position=10,
+                end_position=20,
+            ),
+        ]
+
+        mock_collection = Mock()
+        mock_collection.name = "metadata_test"
+
+        result = client.bulk_insert(mock_collection, chunks)
+
+        assert isinstance(result, InsertResult)
+        assert result.success is True
+        assert result.chunks_inserted == 2
+
+        # Verify metadata was processed through sanitization
+        mock_collection.add.assert_called_once()
+        call_args = mock_collection.add.call_args
+        assert "metadatas" in call_args[1]
+
+    def test_bulk_insert_api_version_injection(self, client: ChromaDBClient) -> None:
+        """Test API version information is added to metadata."""
+        # Create a simple chunk
+        chunk = DocumentChunk(
+            id="version_test_chunk",
+            content="Test content",
+            metadata={"original": "data"},
+            start_position=0,
+            end_position=10,
+        )
+
+        mock_collection = Mock()
+        mock_collection.name = "version_test"
+
+        # Mock version info on client
+        mock_version_info = Mock()
+        mock_version_info.version = "0.5.0"
+        mock_version_info.chromadb_version = "0.4.24"
+        client._version_info = mock_version_info
+
+        result = client.bulk_insert(mock_collection, [chunk])
+
+        assert isinstance(result, InsertResult)
+        assert result.success is True
+        assert result.chunks_inserted == 1
+
+        # Verify API version was added to metadata
+        mock_collection.add.assert_called_once()
+        call_args = mock_collection.add.call_args
+        metadatas = call_args[1]["metadatas"]
+        assert len(metadatas) == 1
+        assert "api_version" in metadatas[0]
+        assert "chromadb_version" in metadatas[0]
+
+    def test_bulk_insert_id_generation(self, client: ChromaDBClient) -> None:
+        """Test automatic ID generation for chunks without IDs."""
+        # Create chunks without IDs
+        chunks = [
+            DocumentChunk(
+                content="Content without ID 1",
+                metadata={"type": "test"},
+                start_position=0,
+                end_position=10,
+            ),
+            DocumentChunk(
+                content="Content without ID 2",
+                metadata={"type": "test"},
+                start_position=10,
+                end_position=20,
+            ),
+        ]
+
+        mock_collection = Mock()
+        mock_collection.name = "id_gen_test"
+
+        result = client.bulk_insert(mock_collection, chunks)
+
+        assert isinstance(result, InsertResult)
+        assert result.success is True
+        assert result.chunks_inserted == 2
+
+        # Verify IDs were generated
+        mock_collection.add.assert_called_once()
+        call_args = mock_collection.add.call_args
+        ids = call_args[1]["ids"]
+        assert len(ids) == 2
+        assert all(id.startswith("chunk_") for id in ids)
+
+    def test_bulk_insert_validation_error(self, client: ChromaDBClient) -> None:
+        """Test bulk insert with data validation errors."""
+        # Create chunk that will cause validation error
+        chunk = DocumentChunk(
+            id="",  # Empty ID should cause validation error
+            content="Test content",
+            metadata={"test": "data"},
+            start_position=0,
+            end_position=10,
+        )
+
+        mock_collection = Mock()
+        mock_collection.name = "validation_test"
+
+        # Mock validation to raise error
+        with patch.object(client, "_validate_insertion_data") as mock_validate:
+            mock_validate.side_effect = ValueError("Invalid ID")
+
+            result = client.bulk_insert(mock_collection, [chunk])
+
+        assert isinstance(result, InsertResult)
+        assert result.success is False
+        assert result.error == "Invalid ID"
+        assert result.collection_name == "validation_test"
+
+    def test_bulk_insert_collection_error(self, client: ChromaDBClient) -> None:
+        """Test bulk insert with collection operation errors."""
+        chunk = DocumentChunk(
+            id="error_test_chunk",
+            content="Test content",
+            metadata={"test": "data"},
+            start_position=0,
+            end_position=10,
+        )
+
+        mock_collection = Mock()
+        mock_collection.name = "error_test"
+        mock_collection.add.side_effect = RuntimeError("Collection error")
+
+        result = client.bulk_insert(mock_collection, [chunk])
+
+        assert isinstance(result, InsertResult)
+        assert result.success is False
+        assert result.error == "Collection error"
+        assert result.collection_name == "error_test"
+
+    def test_bulk_insert_mixed_chunk_sizes(self, client: ChromaDBClient) -> None:
+        """Test bulk insert with chunks of varying content sizes."""
+        chunks = [
+            DocumentChunk(
+                id="small_chunk",
+                content="Small",
+                metadata={"size": "small"},
+                start_position=0,
+                end_position=5,
+            ),
+            DocumentChunk(
+                id="medium_chunk",
+                content="Medium content with more text to test different sizes",
+                metadata={"size": "medium"},
+                start_position=5,
+                end_position=55,
+            ),
+            DocumentChunk(
+                id="large_chunk",
+                content="Large content " * 50,  # Repeat to make larger
+                metadata={"size": "large"},
+                start_position=55,
+                end_position=755,
+            ),
+        ]
+
+        mock_collection = Mock()
+        mock_collection.name = "mixed_size_test"
+
+        result = client.bulk_insert(mock_collection, chunks)
+
+        assert isinstance(result, InsertResult)
+        assert result.success is True
+        assert result.chunks_inserted == 3
+        assert result.processing_time > 0
+
     def test_list_collections_not_connected(self, client: ChromaDBClient) -> None:
         """Test list_collections when not connected."""
         expected_match = "ChromaDB connection not established"
