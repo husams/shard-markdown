@@ -269,10 +269,15 @@ def chunking_config() -> ModelsChunkingConfig:
 @pytest.fixture
 def app_config() -> AppConfig:
     """Create test application configuration."""
+    import os
+
+    # Use environment variables from CI or default to 8000 for consistency
+    host = os.getenv("CHROMA_HOST", "localhost")
+    port = int(os.getenv("CHROMA_PORT", "8000"))
     return AppConfig(
         chromadb=ChromaDBConfig(
-            host="localhost",
-            port=9000,
+            host=host,
+            port=port,
         ),
         chunking=SettingsChunkingConfig(
             default_size=1000,
@@ -411,9 +416,13 @@ def performance_documents(temp_dir: Path, large_document_content: str) -> list[P
 @pytest.fixture
 def benchmark_settings() -> dict:
     """Create pytest-benchmark configuration settings for performance tests."""
+    import os
+
+    # Use more realistic max_time, especially in CI environments
+    max_time = float(os.getenv("BENCHMARK_MAX_TIME", "5.0"))  # 5 seconds default
     return {
         "min_rounds": 5,
-        "max_time": 1.0,
+        "max_time": max_time,
         "disable_gc": False,
         "warmup": False,
         "sort": "min",
@@ -425,10 +434,15 @@ def benchmark_settings() -> dict:
 @pytest.fixture
 def config_file(temp_dir: Path) -> Path:
     """Create a temporary configuration file for testing."""
-    config_content = """
+    import os
+
+    # Use environment variables from CI or default to 8000 for consistency
+    host = os.getenv("CHROMA_HOST", "localhost")
+    port = int(os.getenv("CHROMA_PORT", "8000"))
+    config_content = f"""
 chromadb:
-  host: localhost
-  port: 9000
+  host: {host}
+  port: {port}
 
 chunking:
   default_size: 1000
@@ -556,7 +570,9 @@ def pytest_configure(config: Any) -> None:
 
         if needs_chromadb:
             host = os.environ.get("CHROMA_HOST", "localhost")
-            port = int(os.environ.get("CHROMA_PORT", "9000"))
+            port = int(
+                os.environ.get("CHROMA_PORT", "8000")
+            )  # Use 8000 as default for CI consistency
             print(f"CI Environment detected. Waiting for ChromaDB at {host}:{port}...")
             if wait_for_chromadb(host, port, timeout=60):
                 print("ChromaDB is ready for testing")

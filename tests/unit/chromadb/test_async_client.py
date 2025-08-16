@@ -14,9 +14,14 @@ class TestAsyncChromaDBClient:
     @pytest.fixture
     def config(self) -> ChromaDBConfig:
         """Create test ChromaDB configuration."""
+        import os
+
+        # Use environment variables from CI or default to 8000 for consistency
+        host = os.getenv("CHROMA_HOST", "localhost")
+        port = int(os.getenv("CHROMA_PORT", "8000"))
         return ChromaDBConfig(
-            host="localhost",
-            port=9000,
+            host=host,
+            port=port,
             auth_token=None,
         )
 
