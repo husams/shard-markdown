@@ -3,19 +3,27 @@
 import asyncio
 import logging
 import time
-from typing import Any, cast
+
+# ChromaDB imports with error handling
+from typing import TYPE_CHECKING, Any, cast
 
 from shard_markdown.config.settings import ChromaDBConfig
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
-# ChromaDB imports with error handling
+if TYPE_CHECKING:
+    import chromadb
+else:
+    try:
+        import chromadb
+    except ImportError:
+        chromadb = None  # type: ignore[misc]
+
 try:
     import chromadb
 
     CHROMADB_AVAILABLE = True
 except ImportError:
-    chromadb = None  # type: ignore[assignment]
     CHROMADB_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
