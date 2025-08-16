@@ -9,6 +9,7 @@ from shard_markdown.config.settings import ChromaDBConfig
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
+@pytest.mark.chromadb
 @pytest.mark.integration
 @pytest.mark.asyncio
 class TestAsyncChromaDBIntegration:
