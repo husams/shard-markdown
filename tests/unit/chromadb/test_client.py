@@ -16,7 +16,7 @@ def mock_config() -> ChromaDBConfig:
     """Create mock ChromaDB configuration."""
     return ChromaDBConfig(
         host="localhost",
-        port=9000,
+        port=8000,
         ssl=False,
         timeout=5.0,
         auth_token=None,

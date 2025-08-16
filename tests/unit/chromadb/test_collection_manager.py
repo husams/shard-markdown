@@ -16,7 +16,7 @@ def _create_fresh_mock_client() -> MockChromaDBClient:
 
     f"{os.getpid()}_{int(time.time() * 1000000)}"
 
-    client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=9000))
+    client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
     client.connect()
     # Clear any existing collections from shared storage
     if hasattr(client, "collections"):

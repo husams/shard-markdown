@@ -19,7 +19,7 @@ class TestAsyncChromaDBIntegration:
         """Create test ChromaDB configuration for integration tests."""
         return ChromaDBConfig(
             host="localhost",
-            port=9000,
+            port=8000,
             auth_token=None,
         )
 

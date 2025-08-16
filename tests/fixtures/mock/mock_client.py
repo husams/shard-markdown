@@ -192,7 +192,7 @@ class MockChromaDBClient:
         """
         # Use default config if not provided
         if config is None:
-            config = ChromaDBConfig(host="localhost", port=9000)
+            config = ChromaDBConfig(host="localhost", port=8000)
 
         # Override client attributes for mock
         self.config = config
@@ -428,7 +428,7 @@ class MockAsyncChromaDBClient:
         """
         # Use default config if not provided
         if config is None:
-            config = ChromaDBConfig(host="localhost", port=9000)
+            config = ChromaDBConfig(host="localhost", port=8000)
 
         # Override client attributes for mock
         self.config = config

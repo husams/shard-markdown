@@ -103,7 +103,7 @@ class ChromaDBContainerManager:
     def __init__(
         self,
         image: str = "chromadb/chroma:1.0.16",
-        port: int = 9000,
+        port: int = 8000,
         container_name: str = "shard-md-test-chromadb",
     ) -> None:
         """Initialize ChromaDB container manager.
@@ -251,7 +251,7 @@ class ChromaDBTestFixture:
     """ChromaDB test fixture with real instances only (no Mock fallback)."""
 
     def __init__(
-        self, host: str = "localhost", port: int = 9000, require_real: bool = True
+        self, host: str = "localhost", port: int = 8000, require_real: bool = True
     ) -> None:
         """Initialize ChromaDB test fixture.
 
@@ -483,7 +483,7 @@ def test_collection(
 
 
 def wait_for_chromadb(
-    host: str = "localhost", port: int = 9000, timeout: int = 30
+    host: str = "localhost", port: int = 8000, timeout: int = 30
 ) -> bool:
     """Wait for ChromaDB to be ready.
 
