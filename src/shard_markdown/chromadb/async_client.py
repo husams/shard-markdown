@@ -279,7 +279,7 @@ class AsyncChromaDBClient:
             )
 
             total_inserted = sum(batch_results)
-            processing_time = time.time() - start_time
+            processing_time = max(time.time() - start_time, 1e-9)
 
             api_version = (
                 getattr(self._version_info, "version", "unknown")
@@ -301,7 +301,7 @@ class AsyncChromaDBClient:
             )
 
         except Exception as e:
-            processing_time = time.time() - start_time
+            processing_time = max(time.time() - start_time, 1e-9)
             error_msg = str(e)
 
             logger.error(
