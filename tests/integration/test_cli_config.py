@@ -22,6 +22,7 @@ class TestCLIConfigIntegration:
             config_dir.mkdir()
             yield project_dir
 
+    @pytest.mark.integration
     def test_cli_set_ip_address(self, temp_project_dir: Path) -> None:
         """Test setting IP address via CLI."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
@@ -72,6 +73,7 @@ class TestCLIConfigIntegration:
 
         assert config["chromadb"]["host"] == "192.168.1.100"
 
+    @pytest.mark.integration
     def test_cli_set_multiple_values(self, temp_project_dir: Path) -> None:
         """Test setting multiple configuration values."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
@@ -159,6 +161,7 @@ class TestCLIConfigIntegration:
                     f"Expected {key} to be {value}, got {actual_value}"
                 )
 
+    @pytest.mark.integration
     def test_cli_show_with_ip_address(self, temp_project_dir: Path) -> None:
         """Test showing config with IP addresses."""
         # Skip this test for now as CLI show doesn't properly respect local configs
@@ -168,6 +171,7 @@ class TestCLIConfigIntegration:
             "config"
         )
 
+    @pytest.mark.integration
     def test_cli_validation_errors(self, temp_project_dir: Path) -> None:
         """Test that invalid values are rejected with helpful errors."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
@@ -247,6 +251,7 @@ class TestCLIConfigIntegration:
             "1.1.1.1",
         ],
     )
+    @pytest.mark.integration
     def test_cli_various_ip_formats(
         self, temp_project_dir: Path, ip_address: str
     ) -> None:
@@ -305,6 +310,7 @@ class TestCLIConfigIntegration:
 
         assert config["chromadb"]["host"] == ip_address
 
+    @pytest.mark.integration
     def test_cli_init_and_set_workflow(self, temp_project_dir: Path) -> None:
         """Test the full workflow of initializing and setting config values."""
         # Initialize local config
@@ -338,6 +344,7 @@ class TestCLIConfigIntegration:
 
         assert config["chromadb"]["host"] == "203.0.113.1"
 
+    @pytest.mark.integration
     def test_cli_set_complex_ip_addresses(self, temp_project_dir: Path) -> None:
         """Test setting various edge case IP addresses."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
@@ -403,6 +410,7 @@ class TestCLIConfigIntegration:
 
             assert config["chromadb"]["host"] == ip, f"IP {ip} was not set correctly"
 
+    @pytest.mark.integration
     def test_cli_env_var_override(self, temp_project_dir: Path) -> None:
         """Test that environment variables override config file values."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"

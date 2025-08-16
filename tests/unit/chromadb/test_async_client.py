@@ -36,6 +36,7 @@ class TestAsyncChromaDBClient:
             ),
         ]
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_async_client_initialization(self, config):
         """Test AsyncChromaDBClient can be initialized."""
@@ -46,6 +47,7 @@ class TestAsyncChromaDBClient:
         assert client.client is None
         assert not client._connection_validated
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_async_context_manager(self, config):
         """Test AsyncChromaDBClient works as async context manager."""
@@ -65,6 +67,7 @@ class TestAsyncChromaDBClient:
                 assert client.client == mock_client
                 mock_client_class.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_connect_method(self, config):
         """Test async connect method."""
@@ -87,6 +90,7 @@ class TestAsyncChromaDBClient:
             assert client._connection_validated
             mock_client_class.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_get_collection(self, config):
         """Test async get_collection method."""
@@ -112,6 +116,7 @@ class TestAsyncChromaDBClient:
             assert collection == mock_collection
             mock_client.get_collection.assert_called_once_with("test_collection")
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_get_or_create_collection(self, config):
         """Test async get_or_create_collection method."""
@@ -139,6 +144,7 @@ class TestAsyncChromaDBClient:
             assert collection == mock_collection
             mock_client.get_or_create_collection.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_bulk_insert(self, config, sample_chunks):
         """Test async bulk_insert method."""
@@ -168,6 +174,7 @@ class TestAsyncChromaDBClient:
             assert result.collection_name == "test_collection"
             mock_collection.add.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_bulk_insert_empty_chunks(self, config):
         """Test bulk_insert with empty chunks list."""
@@ -194,6 +201,7 @@ class TestAsyncChromaDBClient:
             assert result.success is True
             assert result.chunks_inserted == 0
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_concurrent_batch_processing(self, config):
         """Test concurrent processing of large chunk batches."""
@@ -232,6 +240,7 @@ class TestAsyncChromaDBClient:
             # Should be called multiple times due to batching
             assert mock_collection.add.call_count > 1
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_list_collections(self, config):
         """Test async list_collections method."""
@@ -257,6 +266,7 @@ class TestAsyncChromaDBClient:
             assert collections == mock_collections
             mock_client.list_collections.assert_called_once()
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_delete_collection(self, config):
         """Test async delete_collection method."""
@@ -280,6 +290,7 @@ class TestAsyncChromaDBClient:
 
             mock_client.delete_collection.assert_called_once_with("test_collection")
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_error_handling_chromadb_exceptions(self, config):
         """Test proper handling of ChromaDB-specific exceptions."""
@@ -307,6 +318,7 @@ class TestAsyncChromaDBClient:
             with pytest.raises(NotFoundError):
                 await client.get_collection("nonexistent_collection")
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_semaphore_concurrency_control(self, config):
         """Test that semaphore properly controls concurrency."""
@@ -328,6 +340,7 @@ class TestAsyncChromaDBClient:
             # Test that semaphore is properly initialized
             assert client._semaphore._value == 2
 
+    @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_performance_tracking(self, config, sample_chunks):
         """Test that performance metrics are properly tracked."""

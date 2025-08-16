@@ -68,12 +68,14 @@ def populated_collection() -> dict[str, Any]:
 class TestChromaDBOperations:
     """Test suite for ChromaDBOperations."""
 
+    @pytest.mark.unit
     def test_initialization(
         self, operations: ChromaDBOperations, mock_chromadb_client: MockChromaDBClient
     ) -> None:
         """Test that ChromaDBOperations initializes correctly."""
         assert operations.client == mock_chromadb_client
 
+    @pytest.mark.unit
     def test_query_collection_not_connected(self) -> None:
         """Test query_collection when client is not connected."""
         # Create client without connecting
@@ -83,6 +85,7 @@ class TestChromaDBOperations:
         with pytest.raises(ChromaDBError, match="ChromaDB connection not established"):
             operations.query_collection("test_collection", "test query")
 
+    @pytest.mark.unit
     def test_query_collection_success(
         self, populated_collection: dict[str, Any]
     ) -> None:
@@ -106,11 +109,13 @@ class TestChromaDBOperations:
             assert "metadata" in result
             assert "similarity_score" in result
 
+    @pytest.mark.unit
     def test_query_collection_nonexistent(self, operations: ChromaDBOperations) -> None:
         """Test query_collection with non-existent collection."""
         with pytest.raises(ChromaDBError, match="Failed to query collection"):
             operations.query_collection("nonexistent_collection", "test query")
 
+    @pytest.mark.unit
     def test_get_document_not_connected(self) -> None:
         """Test get_document when client is not connected."""
         client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
@@ -119,6 +124,7 @@ class TestChromaDBOperations:
         with pytest.raises(ChromaDBError, match="ChromaDB connection not established"):
             operations.get_document("test_collection", "doc_id")
 
+    @pytest.mark.unit
     def test_get_document_success(self, populated_collection: dict[str, Any]) -> None:
         """Test successful get_document with mock data."""
         client = populated_collection["client"]
@@ -133,6 +139,7 @@ class TestChromaDBOperations:
         assert "metadata" in result
         assert result["content"] == "This is the first document about testing"
 
+    @pytest.mark.unit
     def test_get_document_not_found(self, populated_collection: dict[str, Any]) -> None:
         """Test get_document when document is not found."""
         client = populated_collection["client"]
@@ -142,6 +149,7 @@ class TestChromaDBOperations:
         result = operations.get_document(collection_name, "nonexistent_doc")
         assert result is None
 
+    @pytest.mark.unit
     def test_list_documents_success(self, populated_collection: dict[str, Any]) -> None:
         """Test successful list_documents with mock data."""
         client = populated_collection["client"]
@@ -161,6 +169,7 @@ class TestChromaDBOperations:
         assert "content" in doc
         assert "metadata" in doc
 
+    @pytest.mark.unit
     def test_list_documents_with_pagination(
         self, populated_collection: dict[str, Any]
     ) -> None:
@@ -176,6 +185,7 @@ class TestChromaDBOperations:
         assert results["total_documents"] == 3
         assert len(results["documents"]) == 2
 
+    @pytest.mark.unit
     def test_delete_documents_success(
         self, populated_collection: dict[str, Any]
     ) -> None:
@@ -196,6 +206,7 @@ class TestChromaDBOperations:
         result = operations.get_document(collection_name, "doc1")
         assert result is None
 
+    @pytest.mark.unit
     def test_delete_documents_nonexistent(
         self, populated_collection: dict[str, Any]
     ) -> None:
@@ -210,6 +221,7 @@ class TestChromaDBOperations:
         # Mock should still report attempted deletion
         assert delete_results["deleted_count"] == 2
 
+    @pytest.mark.unit
     def test_process_query_results(self, operations: ChromaDBOperations) -> None:
         """Test _process_query_results filtering and formatting."""
         raw_results = {
@@ -229,6 +241,7 @@ class TestChromaDBOperations:
         assert processed["results"][0]["id"] == "id1"
         assert processed["results"][0]["similarity_score"] == 0.9
 
+    @pytest.mark.unit
     def test_operations_with_real_mock_workflow(
         self, mock_chromadb_client: MockChromaDBClient
     ) -> None:
