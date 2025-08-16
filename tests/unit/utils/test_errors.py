@@ -10,7 +10,6 @@ from shard_markdown.utils.errors import (
     NetworkError,
     ProcessingError,
     ShardMarkdownError,
-    SystemError,
 )
 
 
@@ -182,7 +181,7 @@ class TestChromaDBError:
 
         assert error.message == "Connection failed"
         assert error.error_code == 1400
-        assert error.category == "DATABASE"
+        assert error.category == "CHROMADB"
 
     def test_create_custom_chromadb_error(self) -> None:
         """Test creating ChromaDB error with custom error code."""
@@ -190,27 +189,7 @@ class TestChromaDBError:
 
         assert error.message == "Query timeout"
         assert error.error_code == 1450
-        assert error.category == "DATABASE"
-
-
-class TestSystemError:
-    """Test SystemError class."""
-
-    def test_create_default_system_error(self) -> None:
-        """Test creating system error with default error code."""
-        error = SystemError("System failure")
-
-        assert error.message == "System failure"
-        assert error.error_code == 1500
-        assert error.category == "SYSTEM"
-
-    def test_create_custom_system_error(self) -> None:
-        """Test creating system error with custom error code."""
-        error = SystemError("Memory error", error_code=1550)
-
-        assert error.message == "Memory error"
-        assert error.error_code == 1550
-        assert error.category == "SYSTEM"
+        assert error.category == "CHROMADB"
 
 
 class TestNetworkError:
@@ -221,7 +200,7 @@ class TestNetworkError:
         error = NetworkError("Network timeout")
 
         assert error.message == "Network timeout"
-        assert error.error_code == 1600
+        assert error.error_code == 1500
         assert error.category == "NETWORK"
 
     def test_create_custom_network_error(self) -> None:
@@ -244,7 +223,6 @@ class TestErrorInheritance:
             FileSystemError("test"),
             ProcessingError("test"),
             ChromaDBError("test"),
-            SystemError("test"),
             NetworkError("test"),
         ]
 

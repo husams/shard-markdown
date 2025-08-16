@@ -6,6 +6,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+# Import our new type definitions
+from ..types import MetadataDict
+
 
 class MarkdownElement(BaseModel):
     """Represents a single markdown element in the AST."""
@@ -15,7 +18,7 @@ class MarkdownElement(BaseModel):
     level: int | None = Field(default=None, description="Header level (for headers)")
     language: str | None = Field(default=None, description="Language (for code blocks)")
     items: list[str] | None = Field(default=None, description="List items (for lists)")
-    metadata: dict[str, Any] = Field(
+    metadata: MetadataDict = Field(
         default_factory=dict, description="Additional metadata"
     )
 
@@ -24,10 +27,10 @@ class MarkdownAST(BaseModel):
     """Abstract Syntax Tree representation of a markdown document."""
 
     elements: list[MarkdownElement] = Field(description="List of markdown elements")
-    frontmatter: dict[str, Any] = Field(
+    frontmatter: MetadataDict = Field(
         default_factory=dict, description="YAML frontmatter"
     )
-    metadata: dict[str, Any] = Field(
+    metadata: MetadataDict = Field(
         default_factory=dict, description="Document metadata"
     )
 
@@ -51,7 +54,7 @@ class DocumentChunk(BaseModel):
 
     id: str | None = Field(default=None, description="Unique chunk identifier")
     content: str = Field(description="Chunk text content")
-    metadata: dict[str, Any] = Field(default_factory=dict, description="Chunk metadata")
+    metadata: MetadataDict = Field(default_factory=dict, description="Chunk metadata")
     start_position: int = Field(
         default=0, description="Start position in original document"
     )

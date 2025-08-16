@@ -1,11 +1,11 @@
 """Main chunking engine that selects appropriate strategy."""
 
+from functools import lru_cache
 from typing import ClassVar
 
 from ...utils.errors import ProcessingError
 from ...utils.logging import get_logger
 from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
-from .base import BaseChunker
 from .fixed import FixedSizeChunker
 from .structure import StructureAwareChunker
 
@@ -17,9 +17,9 @@ class ChunkingEngine:
     """Main chunking engine with strategy selection and performance optimizations."""
 
     # Class-level strategy cache to avoid recreating strategies for identical configs
-    _strategy_cache: ClassVar[dict[str, dict[str, BaseChunker]]] = {}
+    _strategy_cache: ClassVar[dict[str, dict[str, object]]] = {}
 
-    def __init__(self, config: ChunkingConfig) -> None:
+    def __init__(self, config: ChunkingConfig):
         """Initialize chunking engine with configuration.
 
         Args:
@@ -29,7 +29,7 @@ class ChunkingEngine:
         self.strategies = self._get_strategies(config)
 
     @classmethod
-    def _get_strategies(cls, config: ChunkingConfig) -> dict[str, BaseChunker]:
+    def _get_strategies(cls, config: ChunkingConfig) -> dict[str, object]:
         """Get or create cached strategies for the given configuration.
 
         This method implements caching to avoid recreating strategy instances
@@ -42,10 +42,7 @@ class ChunkingEngine:
             Dictionary of strategy name to strategy instance
         """
         # Create a cache key from config attributes
-        cache_key = (
-            f"{config.chunk_size}_{config.overlap}_{config.method}_"
-            f"{config.respect_boundaries}"
-        )
+        cache_key = f"{config.chunk_size}_{config.overlap}_{config.method}_{config.respect_boundaries}"
 
         if cache_key not in cls._strategy_cache:
             cls._strategy_cache[cache_key] = {
@@ -112,6 +109,7 @@ class ChunkingEngine:
                 cause=e,
             ) from e
 
+    @lru_cache(maxsize=128)
     def _validate_chunks_cached(
         self, chunk_count: int, max_size: int, total_size: int
     ) -> bool:

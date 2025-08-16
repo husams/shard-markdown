@@ -1,8 +1,9 @@
 """Protocol for ChromaDB client interface."""
 
-from typing import Any, Protocol
+from typing import Protocol
 
 from ..core.models import DocumentChunk, InsertResult
+from ..types import ChromaClientProtocol, ChromaCollectionProtocol, MetadataDict
 
 
 class ChromaDBClientProtocol(Protocol):
@@ -14,7 +15,7 @@ class ChromaDBClientProtocol(Protocol):
 
     # Internal attributes that ChromaDBOperations needs
     _connection_validated: bool
-    client: Any
+    client: ChromaClientProtocol | None  # The actual ChromaDB client instance
 
     def connect(self) -> bool:
         """Establish connection to ChromaDB instance.
@@ -24,7 +25,7 @@ class ChromaDBClientProtocol(Protocol):
         """
         ...
 
-    def get_collection(self, name: str) -> Any:
+    def get_collection(self, name: str) -> ChromaCollectionProtocol:
         """Get existing collection.
 
         Args:
@@ -42,8 +43,8 @@ class ChromaDBClientProtocol(Protocol):
         self,
         name: str,
         create_if_missing: bool = False,
-        metadata: dict[str, Any] | None = None,
-    ) -> Any:
+        metadata: MetadataDict | None = None,
+    ) -> ChromaCollectionProtocol:
         """Get existing or create new collection.
 
         Args:
@@ -56,7 +57,9 @@ class ChromaDBClientProtocol(Protocol):
         """
         ...
 
-    def bulk_insert(self, collection: Any, chunks: list[DocumentChunk]) -> InsertResult:
+    def bulk_insert(
+        self, collection: ChromaCollectionProtocol, chunks: list[DocumentChunk]
+    ) -> InsertResult:
         """Bulk insert chunks into collection.
 
         Args:
@@ -68,7 +71,7 @@ class ChromaDBClientProtocol(Protocol):
         """
         ...
 
-    def list_collections(self) -> list[dict[str, Any]]:
+    def list_collections(self) -> list[MetadataDict]:
         """List all available collections.
 
         Returns:

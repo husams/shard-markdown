@@ -16,12 +16,11 @@ from rich.table import Table
 from ...chromadb.collections import CollectionManager
 from ...chromadb.factory import create_chromadb_client
 from ...chromadb.protocol import ChromaDBClientProtocol
-from ...config.settings import AppConfig
 from ...core.models import BatchResult, ChunkingConfig, ProcessingResult
 from ...core.processor import DocumentProcessor
 from ...types import (
     ChromaCollectionProtocol,
-    # ConfigType,
+    ConfigType,
     ProgressProtocol,
 )
 from ...utils.errors import ShardMarkdownError
@@ -185,7 +184,7 @@ def _validate_and_prepare(
 
 
 def _setup_chromadb_and_collection(
-    config: AppConfig,
+    config: ConfigType,
     collection: str,
     clear_collection: bool,
     create_collection: bool,
@@ -206,19 +205,18 @@ def _setup_chromadb_and_collection(
     # Handle collection clearing
     if clear_collection:
         _handle_collection_clearing(chroma_client, collection_manager, collection)
+
     # Get or create collection
     try:
-        if create_collection:
-            # First check if it exists and create if not
-            if collection_manager.collection_exists(collection):
-                collection_obj = collection_manager.get_collection(collection)
-            else:
-                collection_obj = collection_manager.create_collection(collection)
-        else:
-            collection_obj = collection_manager.get_collection(collection)
+        collection_obj = collection_manager.get_or_create_collection(
+            collection, create_if_missing=create_collection
+        )
     except AttributeError:
         # Fallback for mock objects or older implementations
-        collection_obj = chroma_client.get_or_create_collection(collection)
+        collection_obj = chroma_client.get_or_create_collection(
+            collection, create_if_missing=create_collection
+        )
+
     return chroma_client, collection_obj
 
 
@@ -260,7 +258,7 @@ def _process_files_with_progress(
             TimeElapsedColumn(),
             console=console,
         ) as progress:
-            _ = progress.add_task("Processing files...", total=total_files)
+            task = progress.add_task("Processing files...", total=total_files)
             _process_batch_files(
                 validated_paths,
                 collection,
@@ -282,21 +280,16 @@ def _process_single_file(
     """Process a single file."""
     try:
         # Process the document
-        processing_result = processor.process_document(file_path, collection)
+        processing_result = processor.process_file(file_path)
 
-        # Insert into ChromaDB - create placeholder for now
-        from ...core.models import InsertResult
-
-        insert_result = InsertResult(
-            success=processing_result.success,
-            chunks_inserted=(
-                processing_result.chunks_created if processing_result.success else 0
-            ),
-            collection_name=collection,
+        # Insert into ChromaDB
+        insert_result = chroma_client.bulk_insert(
+            collection_obj, processing_result.chunks
         )
 
         # Display results
         _display_single_result(processing_result, insert_result)
+
     except Exception as e:
         console.print(f"[red]Error processing {file_path}: {str(e)}[/red]")
         logger.error("Failed to process file %s: %s", file_path, str(e))
@@ -313,16 +306,25 @@ def _process_batch_files(
 ) -> None:
     """Process multiple files in batch."""
     batch_result = processor.process_batch(validated_paths, collection)
-    # Bulk insert all chunks - placeholder implementation
-    from ...core.models import InsertResult
 
-    total_chunks = sum(r.chunks_created for r in batch_result.results if r.success)
+    # Bulk insert all chunks
+    all_chunks = []
+    for result in batch_result.results:
+        if result.success and hasattr(result, "chunks"):
+            all_chunks.extend(result.chunks)
 
-    insert_result = InsertResult(
-        success=batch_result.success_rate > 0,
-        chunks_inserted=total_chunks,
-        collection_name=collection,
-    )
+    if all_chunks:
+        insert_result = chroma_client.bulk_insert(collection_obj, all_chunks)
+    else:
+        from ...core.models import InsertResult
+
+        insert_result = InsertResult(
+            success=False,
+            chunks_inserted=0,
+            error="No chunks to insert",
+            collection_name=collection,
+        )
+
     # Display results
     _display_batch_results(batch_result, insert_result, verbose)
 

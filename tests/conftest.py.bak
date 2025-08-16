@@ -1,0 +1,366 @@
+"""Pytest configuration and fixtures."""
+
+import os
+import tempfile
+from collections.abc import Generator
+from pathlib import Path
+
+import pytest
+from click.testing import CliRunner
+
+from shard_markdown.config.settings import AppConfig, ChromaDBConfig
+from shard_markdown.config.settings import ChunkingConfig as SettingsChunkingConfig
+from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
+from shard_markdown.core.models import (
+    DocumentChunk,
+    MarkdownAST,
+    MarkdownElement,
+    ProcessingResult,
+)
+
+# Import test constants
+from tests.constants import (
+    DEFAULT_CHUNK_SIZE,
+    DEFAULT_OVERLAP,
+    DEFAULT_PORT,
+    END_POSITION_FIRST,
+    END_POSITION_SECOND,
+    END_POSITION_THIRD,
+    SAMPLE_AGE_ALICE,
+    SAMPLE_AGE_BOB,
+    SAMPLE_AGE_CHARLIE,
+    SAMPLE_READING_TIME,
+    SAMPLE_WORD_COUNT,
+    SMALL_FILE_COUNT,
+    START_POSITION_FIRST,
+    START_POSITION_SECOND,
+    START_POSITION_THIRD,
+    TEST_DATE_STRING,
+)
+
+# Import ChromaDB test fixtures
+from tests.fixtures.chromadb_fixtures import (
+    chromadb_test_client,  # noqa: F401
+    chromadb_test_fixture,  # noqa: F401
+    test_collection,  # noqa: F401
+    wait_for_chromadb,
+)
+from tests.fixtures.mock import MockChromaDBClient
+
+
+@pytest.fixture
+def temp_dir() -> Generator[Path, None, None]:
+    """Create temporary directory for test files."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        yield Path(tmpdir)
+
+
+@pytest.fixture
+def sample_markdown_file(temp_dir: Path) -> Path:
+    """Create sample markdown file for testing."""
+    content = """
+# Sample Document
+
+This is a sample markdown document for testing purposes.
+
+## Section 1
+
+Here's some content in section 1.
+
+### Subsection 1.1
+
+More detailed content here.
+
+## Section 2
+
+Different content in section 2.
+
+```python
+def example_function():
+    return "Hello, World!"
+```
+
+## Conclusion
+
+That's the end of our sample document.
+"""
+
+    file_path = temp_dir / "sample.md"
+    file_path.write_text(content.strip())
+    return file_path
+
+
+@pytest.fixture
+def markdown_with_frontmatter(temp_dir: Path) -> Path:
+    """Create markdown file with YAML frontmatter."""
+    content = f"""---
+title: "Test Document"
+author: "Test Author"
+tags:
+  - test
+  - markdown
+date: "{TEST_DATE_STRING}"
+---
+
+# Test Document with Frontmatter
+
+This document has YAML frontmatter.
+
+## Content Section
+
+Regular markdown content follows the frontmatter.
+"""
+
+    file_path = temp_dir / "frontmatter.md"
+    file_path.write_text(content.strip())
+    return file_path
+
+
+@pytest.fixture
+def complex_markdown_file(temp_dir: Path) -> Path:
+    """Create complex markdown file with multiple sections and tables."""
+    content = f"""# Complex Document
+
+This document has multiple sections, code blocks, and tables.
+
+## Data Table
+
+| Name | Age | City |
+|------|-----|------|
+| Alice | {SAMPLE_AGE_ALICE} | New York |
+| Bob | {SAMPLE_AGE_BOB} | London |
+| Charlie | {SAMPLE_AGE_CHARLIE} | Tokyo |
+
+## Code Examples
+
+### Python Example
+
+```python
+def calculate_factorial(n):
+    if n <= 1:
+        return 1
+    return n * calculate_factorial(n - 1)
+
+# Example usage
+result = calculate_factorial(5)
+print(f"5! = {{result}}")
+```
+
+### JavaScript Example
+
+```javascript
+function fibonacci(n) {{
+    if (n <= 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}}
+
+console.log(fibonacci(10));
+```
+
+## Lists and Nested Content
+
+### Ordered List
+1. First item with detailed explanation
+2. Second item with more content
+3. Third item concluding the list
+
+### Unordered List
+- Bullet point one
+- Bullet point two with **bold text**
+- Bullet point three with *italic text*
+
+## Conclusion
+
+This complex document contains various markdown elements for comprehensive testing.
+
+---
+
+Footer information.
+
+Published on January 1, {TEST_DATE_STRING[:4]}
+"""
+
+    file_path = temp_dir / "complex.md"
+    file_path.write_text(content)
+    return file_path
+
+
+@pytest.fixture
+def sample_chunking_config() -> ModelsChunkingConfig:
+    """Create sample chunking configuration."""
+    return ModelsChunkingConfig(
+        chunk_size=DEFAULT_CHUNK_SIZE,
+        overlap=DEFAULT_OVERLAP,
+        method="structure",
+    )
+
+
+@pytest.fixture
+def sample_app_config() -> AppConfig:
+    """Create sample application configuration."""
+    return AppConfig(
+        chromadb=ChromaDBConfig(
+            host="localhost",
+            port=DEFAULT_PORT,
+        ),
+        chunking=SettingsChunkingConfig(
+            default_size=DEFAULT_CHUNK_SIZE,
+            default_overlap=DEFAULT_OVERLAP,
+        ),
+    )
+
+
+@pytest.fixture
+def sample_chunks() -> list[DocumentChunk]:
+    """Create sample document chunks for testing."""
+    return [
+        DocumentChunk(
+            id="chunk_0001",
+            content="First chunk content with substantial text for testing purposes.",
+            metadata={"chunk_method": "structure", "section": "intro"},
+            start_position=START_POSITION_FIRST,
+            end_position=END_POSITION_FIRST,
+        ),
+        DocumentChunk(
+            id="chunk_0002",
+            content="Second chunk content with different metadata for variety.",
+            metadata={"chunk_method": "structure", "section": "body"},
+            start_position=START_POSITION_SECOND,
+            end_position=END_POSITION_SECOND,
+        ),
+        DocumentChunk(
+            id="chunk_0003",
+            content="Third chunk content concluding our test data set.",
+            metadata={"chunk_method": "structure", "section": "conclusion"},
+            start_position=START_POSITION_THIRD,
+            end_position=END_POSITION_THIRD,
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_processing_result(sample_markdown_file: Path) -> ProcessingResult:
+    """Create sample processing result."""
+    return ProcessingResult(
+        file_path=sample_markdown_file,
+        success=True,
+        chunks_created=3,
+        processing_time=0.150,
+        collection_name="test_collection",
+        metadata={"word_count": SAMPLE_WORD_COUNT, "reading_time": SAMPLE_READING_TIME},
+    )
+
+
+@pytest.fixture
+def mock_chromadb_client() -> MockChromaDBClient:
+    """Create mock ChromaDB client for testing."""
+    return MockChromaDBClient()
+
+
+@pytest.fixture
+def cli_runner() -> CliRunner:
+    """Create Click CLI runner for testing."""
+    return CliRunner()
+
+
+@pytest.fixture
+def large_markdown_content() -> str:
+    """Generate large markdown content for performance testing."""
+    sections = ["# Large Document\n\nThis is a large document for testing.\n\n"]
+
+    for i in range(SMALL_FILE_COUNT):
+        sections.append(f"## Section {i + 1}\n\n")
+        sections.append(f"This is the content for section {i + 1}. " * 10 + "\n\n")
+
+    return "".join(sections)
+
+
+@pytest.fixture
+def multiple_markdown_files(temp_dir: Path) -> list[Path]:
+    """Create multiple markdown files for batch testing."""
+    files = []
+
+    for i in range(SMALL_FILE_COUNT):
+        content = f"""# Document {i + 1}
+
+This is document number {i + 1} for batch testing.
+
+## Content Section
+
+Some content here with various markdown elements.
+
+### Subsection
+
+More detailed content in a subsection.
+"""
+        file_path = temp_dir / f"doc_{i + 1:02d}.md"
+        file_path.write_text(content)
+        files.append(file_path)
+
+    return files
+
+
+@pytest.fixture
+def test_config_yaml() -> str:
+    """Sample YAML configuration for testing."""
+    return f"""
+chromadb:
+  host: localhost
+  port: {DEFAULT_PORT}
+
+chunking:
+  default_size: {DEFAULT_CHUNK_SIZE}
+  default_overlap: {DEFAULT_OVERLAP}
+  method: structure
+
+processing:
+  batch_size: 15
+"""
+
+
+@pytest.fixture
+def sample_markdown_ast() -> MarkdownAST:
+    """Create sample markdown AST for testing."""
+    return MarkdownAST(
+        elements=[
+            MarkdownElement(type="header", text="Test Document", level=1),
+            MarkdownElement(type="paragraph", text="This is a test paragraph."),
+            MarkdownElement(type="header", text="Section 1", level=2),
+            MarkdownElement(type="paragraph", text="Content for section 1."),
+        ],
+        frontmatter={"title": "Test", "date": TEST_DATE_STRING},
+        metadata={"source": "test"},
+    )
+
+
+@pytest.fixture
+def chromadb_config() -> ChromaDBConfig:
+    """Create ChromaDB configuration for testing."""
+    return ChromaDBConfig(
+        host="localhost",
+        port=DEFAULT_PORT,
+    )
+
+
+# Integration test fixtures
+@pytest.fixture(scope="session")
+def integration_test_client():
+    """Create ChromaDB client for integration tests."""
+    try:
+        if os.environ.get("CHROMADB_TEST_URL"):
+            from urllib.parse import urlparse
+
+            import chromadb
+
+            url = os.environ.get("CHROMADB_TEST_URL")
+            parsed = urlparse(url)
+            host = parsed.hostname or "localhost"
+            port = int(os.environ.get("CHROMA_PORT", str(DEFAULT_PORT)))
+
+            if wait_for_chromadb(host, port, timeout=60):
+                return chromadb.HttpClient(host=host, port=port)
+    except ImportError:
+        pass
+
+    # Fallback to mock for environments without ChromaDB
+    return MockChromaDBClient()

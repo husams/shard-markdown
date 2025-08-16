@@ -1,6 +1,6 @@
 """ChromaDB query and retrieval operations."""
 
-from typing import Any, cast
+from typing import Any
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
@@ -71,7 +71,7 @@ class ChromaDBOperations:
 
             # Process results
             processed_results = self._process_query_results(
-                cast(dict[str, Any], results), similarity_threshold, include_metadata
+                results, similarity_threshold, include_metadata
             )
 
             logger.info(

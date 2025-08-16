@@ -1,7 +1,6 @@
 """Error handling and exception classes."""
 
 from datetime import UTC, datetime
-from typing import Any
 
 from ..types import MetadataDict
 
@@ -49,12 +48,7 @@ class ShardMarkdownError(Exception):
 class InputValidationError(ShardMarkdownError):
     """Errors related to invalid input validation."""
 
-    def __init__(
-        self,
-        message: str,
-        error_code: int = 1000,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, error_code: int = 1000, **kwargs) -> None:
         """Initialize the InputValidationError.
 
         Args:
@@ -68,12 +62,7 @@ class InputValidationError(ShardMarkdownError):
 class ConfigurationError(ShardMarkdownError):
     """Errors related to configuration issues."""
 
-    def __init__(
-        self,
-        message: str,
-        error_code: int = 1100,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, error_code: int = 1100, **kwargs) -> None:
         """Initialize the ConfigurationError.
 
         Args:
@@ -87,12 +76,7 @@ class ConfigurationError(ShardMarkdownError):
 class FileSystemError(ShardMarkdownError):
     """Errors related to file system operations."""
 
-    def __init__(
-        self,
-        message: str,
-        error_code: int = 1200,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, error_code: int = 1200, **kwargs) -> None:
         """Initialize the FileSystemError.
 
         Args:
@@ -106,12 +90,7 @@ class FileSystemError(ShardMarkdownError):
 class ProcessingError(ShardMarkdownError):
     """Errors during document processing."""
 
-    def __init__(
-        self,
-        message: str,
-        error_code: int = 1300,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, error_code: int = 1300, **kwargs) -> None:
         """Initialize the ProcessingError.
 
         Args:
@@ -125,12 +104,7 @@ class ProcessingError(ShardMarkdownError):
 class ChromaDBError(ShardMarkdownError):
     """Errors related to ChromaDB operations."""
 
-    def __init__(
-        self,
-        message: str,
-        error_code: int = 1400,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, error_code: int = 1400, **kwargs) -> None:
         """Initialize the ChromaDBError.
 
         Args:
@@ -144,12 +118,7 @@ class ChromaDBError(ShardMarkdownError):
 class NetworkError(ShardMarkdownError):
     """Errors related to network operations."""
 
-    def __init__(
-        self,
-        message: str,
-        error_code: int = 1500,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, error_code: int = 1500, **kwargs) -> None:
         """Initialize the NetworkError.
 
         Args:
@@ -163,12 +132,7 @@ class NetworkError(ShardMarkdownError):
 class ParsingError(ShardMarkdownError):
     """Errors during markdown parsing."""
 
-    def __init__(
-        self,
-        message: str,
-        error_code: int = 1600,
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, error_code: int = 1600, **kwargs) -> None:
         """Initialize the ParsingError.
 
         Args:
@@ -182,12 +146,7 @@ class ParsingError(ShardMarkdownError):
 class ValidationError(InputValidationError):
     """Specific validation errors (inherits from InputValidationError)."""
 
-    def __init__(
-        self,
-        message: str,
-        field_name: str = "",
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, message: str, field_name: str = "", **kwargs) -> None:
         """Initialize the ValidationError.
 
         Args:
@@ -206,7 +165,7 @@ class ValidationError(InputValidationError):
 class ChromaDBConnectionError(ChromaDBError):
     """Specific connection errors for ChromaDB."""
 
-    def __init__(self, message: str, **kwargs: Any) -> None:
+    def __init__(self, message: str, **kwargs) -> None:
         """Initialize the ChromaDBConnectionError.
 
         Args:
