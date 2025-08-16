@@ -77,8 +77,8 @@ class TestChromaDBClient:
 
         mock_version_info = APIVersionInfo(
             version="v2",
-            heartbeat_endpoint="http://localhost:9000/api/v2/heartbeat",
-            version_endpoint="http://localhost:9000/api/v2/version",
+            heartbeat_endpoint="http://localhost:8000/api/v2/heartbeat",
+            version_endpoint="http://localhost:8000/api/v2/version",
             detection_time=1234567890.0,
         )
 

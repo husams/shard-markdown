@@ -29,7 +29,7 @@ class TestCLIConfigIntegration:
 
         # Create initial config
         initial_config = {
-            "chromadb": {"host": "localhost", "port": 9000},
+            "chromadb": {"host": "localhost", "port": 8000},
             "chunking": {
                 "default_size": 1000,
                 "default_overlap": 200,
@@ -82,7 +82,7 @@ class TestCLIConfigIntegration:
         initial_config = {
             "chromadb": {
                 "host": "localhost",
-                "port": 9000,
+                "port": 8000,
                 "ssl": False,
                 "timeout": 30,
                 "auth_token": None,
@@ -121,7 +121,7 @@ class TestCLIConfigIntegration:
         # First, set values one by one and verify each is saved
         test_values = [
             ("chromadb.host", "10.0.0.1"),
-            ("chromadb.port", "9000"),
+            ("chromadb.port", "8000"),
             ("chromadb.ssl", "true"),
         ]
 
@@ -149,8 +149,8 @@ class TestCLIConfigIntegration:
 
             # Type conversion for comparison
             if key == "chromadb.port":
-                assert actual_value == 9000, (
-                    f"Expected {key} to be 9000, got {actual_value}"
+                assert actual_value == 8000, (
+                    f"Expected {key} to be 8000, got {actual_value}"
                 )
             elif key == "chromadb.ssl":
                 assert actual_value is True, (
@@ -180,7 +180,7 @@ class TestCLIConfigIntegration:
         initial_config = {
             "chromadb": {
                 "host": "localhost",
-                "port": 9000,
+                "port": 8000,
                 "ssl": False,
                 "timeout": 30,
                 "auth_token": None,
@@ -262,7 +262,7 @@ class TestCLIConfigIntegration:
         initial_config = {
             "chromadb": {
                 "host": "localhost",
-                "port": 9000,
+                "port": 8000,
                 "ssl": False,
                 "timeout": 30,
                 "auth_token": None,
@@ -353,7 +353,7 @@ class TestCLIConfigIntegration:
         initial_config = {
             "chromadb": {
                 "host": "localhost",
-                "port": 9000,
+                "port": 8000,
                 "ssl": False,
                 "timeout": 30,
                 "auth_token": None,
@@ -419,7 +419,7 @@ class TestCLIConfigIntegration:
         initial_config = {
             "chromadb": {
                 "host": "localhost",
-                "port": 9000,
+                "port": 8000,
                 "ssl": False,
                 "timeout": 30,
                 "auth_token": None,

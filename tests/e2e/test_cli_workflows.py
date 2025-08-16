@@ -534,7 +534,7 @@ Content here.
         config_content = """
 chromadb:
   host: localhost
-  port: 9000
+  port: 8000
 
 chunking:
   default_size: 1200

@@ -17,10 +17,10 @@ class TestChromaDBConfig:
 
     def test_valid_config(self) -> None:
         """Test valid ChromaDB configuration."""
-        config = ChromaDBConfig(host="localhost", port=9000, ssl=False, timeout=30)
+        config = ChromaDBConfig(host="localhost", port=8000, ssl=False, timeout=30)
 
         assert config.host == "localhost"
-        assert config.port == 9000
+        assert config.port == 8000
         assert config.ssl is False
         assert config.timeout == 30
 
@@ -200,13 +200,13 @@ class TestAppConfig:
     def test_custom_config(self) -> None:
         """Test custom configuration."""
         config = AppConfig(
-            chromadb=ChromaDBConfig(host="remote-host", port=9000),
+            chromadb=ChromaDBConfig(host="remote-host", port=8000),
             chunking=ChunkingConfig(default_size=1500, method=ChunkingMethod._FIXED),
             processing=ProcessingConfig(batch_size=20),
         )
 
         assert config.chromadb.host == "remote-host"
-        assert config.chromadb.port == 9000
+        assert config.chromadb.port == 8000
         assert config.chunking.default_size == 1500
         assert config.chunking.method == ChunkingMethod._FIXED
         assert config.processing.batch_size == 20
@@ -273,7 +273,7 @@ class TestAppConfig:
         # Set environment variables
         env_vars = {
             "SHARD_MD_CHROMADB_HOST": "env-host",
-            "SHARD_MD_CHROMADB_PORT": "9000",
+            "SHARD_MD_CHROMADB_PORT": "8000",
             "SHARD_MD_CHUNKING_DEFAULT_SIZE": "1500",
         }
 

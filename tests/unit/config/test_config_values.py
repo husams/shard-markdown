@@ -66,7 +66,7 @@ class TestConfigValueHandling:
         """Test various types from environment variables."""
         env_vars = {
             "CHROMA_HOST": "10.20.30.40",
-            "CHROMA_PORT": "9000",
+            "CHROMA_PORT": "8000",
             "CHROMA_SSL": "true",
             "SHARD_MD_CHUNK_SIZE": "1500",
         }
@@ -79,7 +79,7 @@ class TestConfigValueHandling:
             assert isinstance(config.chromadb.host, str)
 
             # Port should be converted to int by Pydantic
-            assert config.chromadb.port == 9000
+            assert config.chromadb.port == 8000
             assert isinstance(config.chromadb.port, int)
 
             # Boolean should be converted by Pydantic
@@ -123,18 +123,18 @@ class TestConfigValueHandling:
 
         # Set various types
         set_nested_value(data, "chromadb.host", "192.168.1.1")
-        set_nested_value(data, "chromadb.port", "9000")
+        set_nested_value(data, "chromadb.port", "8000")
         set_nested_value(data, "chromadb.ssl", "false")
 
         # Values should be preserved as provided
         assert data["chromadb"]["host"] == "192.168.1.1"
-        assert data["chromadb"]["port"] == "9000"  # Still string
+        assert data["chromadb"]["port"] == "8000"  # Still string
         assert data["chromadb"]["ssl"] == "false"  # Still string
 
         # Pydantic will handle conversion
         config = AppConfig(**data)
         assert config.chromadb.host == "192.168.1.1"
-        assert config.chromadb.port == 9000  # Converted by Pydantic
+        assert config.chromadb.port == 8000  # Converted by Pydantic
         assert config.chromadb.ssl is False  # Converted by Pydantic
 
     def test_config_roundtrip_preserves_ip(self) -> None:
