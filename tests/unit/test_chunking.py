@@ -12,6 +12,7 @@ from shard_markdown.core.parser import MarkdownParser
 class TestChunkingEngine:
     """Test cases for ChunkingEngine."""
 
+    @pytest.mark.unit
     def test_engine_initialization(self, chunking_config: ChunkingConfig) -> None:
         """Test chunking engine initializes correctly."""
         engine = ChunkingEngine(chunking_config)
@@ -19,6 +20,7 @@ class TestChunkingEngine:
         assert "structure" in engine.strategies
         assert "fixed" in engine.strategies
 
+    @pytest.mark.unit
     def test_chunk_document_structure_method(
         self, sample_markdown_content: str, chunking_config: ChunkingConfig
     ) -> None:
@@ -40,6 +42,7 @@ class TestChunkingEngine:
             assert chunk.metadata["total_chunks"] == len(chunks)
             assert chunk.metadata["chunk_method"] == "structure"
 
+    @pytest.mark.unit
     def test_chunk_document_fixed_method(
         self, sample_markdown_content: str, chunking_config: ChunkingConfig
     ) -> None:
@@ -58,6 +61,7 @@ class TestChunkingEngine:
         for chunk in chunks:
             assert len(chunk.content) <= chunking_config.chunk_size * 1.5
 
+    @pytest.mark.unit
     def test_chunk_empty_document(self, chunking_config: ChunkingConfig) -> None:
         """Test chunking empty document."""
         from shard_markdown.core.models import MarkdownAST
@@ -68,6 +72,7 @@ class TestChunkingEngine:
 
         assert len(chunks) == 0
 
+    @pytest.mark.unit
     def test_invalid_chunking_method(
         self, sample_markdown_content: str, chunking_config: ChunkingConfig
     ) -> None:
@@ -87,6 +92,7 @@ class TestChunkingEngine:
 class TestStructureAwareChunker:
     """Test cases for StructureAwareChunker."""
 
+    @pytest.mark.unit
     def test_structure_aware_chunking(
         self, sample_markdown_content: str, chunking_config: ChunkingConfig
     ) -> None:
@@ -105,6 +111,7 @@ class TestStructureAwareChunker:
                 # Should be in first chunk
                 assert chunk == chunks[0]
 
+    @pytest.mark.unit
     def test_code_block_preservation(self, chunking_config: ChunkingConfig) -> None:
         """Test that code blocks are never split."""
         content = """# Code Example
@@ -151,6 +158,7 @@ More content after code.
 class TestFixedSizeChunker:
     """Test cases for FixedSizeChunker."""
 
+    @pytest.mark.unit
     def test_fixed_size_chunking(
         self, sample_markdown_content: str, chunking_config: ChunkingConfig
     ) -> None:
@@ -169,6 +177,7 @@ class TestFixedSizeChunker:
             # Allow some tolerance
             assert len(chunk.content) <= target_size * 1.2
 
+    @pytest.mark.unit
     def test_overlap_functionality(
         self, sample_markdown_content: str, chunking_config: ChunkingConfig
     ) -> None:

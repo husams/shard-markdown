@@ -1,5 +1,7 @@
 """Unit tests for markdown parser."""
 
+import pytest
+
 from shard_markdown.core.models import MarkdownAST
 from shard_markdown.core.parser import MarkdownParser
 
@@ -7,6 +9,7 @@ from shard_markdown.core.parser import MarkdownParser
 class TestMarkdownParser:
     """Test cases for MarkdownParser."""
 
+    @pytest.mark.unit
     def test_parse_simple_markdown(self):
         """Test parsing simple markdown content."""
         content = """
@@ -30,6 +33,7 @@ Another paragraph here.
         assert headers[0].level == 1
         assert "Main Title" in headers[0].text
 
+    @pytest.mark.unit
     def test_parse_with_frontmatter(self):
         """Test parsing markdown with YAML frontmatter."""
         content = """---
@@ -52,6 +56,7 @@ Content goes here.
         headers = [e for e in ast.elements if e.type == "header"]
         assert len(headers) >= 1
 
+    @pytest.mark.unit
     def test_parse_code_blocks(self):
         """Test parsing code blocks."""
         content = """
@@ -85,6 +90,7 @@ function greet() {
         assert len(python_blocks) >= 1
         assert len(js_blocks) >= 1
 
+    @pytest.mark.unit
     def test_parse_lists(self):
         """Test parsing various list types."""
         content = """
@@ -107,6 +113,7 @@ function greet() {
         list_items = [e for e in ast.elements if e.type == "list_item"]
         assert len(list_items) >= 6  # 3 unordered + 3 ordered items
 
+    @pytest.mark.unit
     def test_parse_empty_content(self):
         """Test parsing empty or whitespace-only content."""
         parser = MarkdownParser()
@@ -121,6 +128,7 @@ function greet() {
         assert isinstance(ast, MarkdownAST)
         # May or may not have elements depending on implementation
 
+    @pytest.mark.unit
     def test_parse_complex_structure(self):
         """Test parsing complex nested structures."""
         content = """
@@ -156,6 +164,7 @@ Final content.
         assert 3 in levels
         assert 4 in levels
 
+    @pytest.mark.unit
     def test_parse_malformed_frontmatter(self):
         """Test handling of malformed YAML frontmatter."""
         content = """---

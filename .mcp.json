@@ -8,6 +8,8 @@
         "git+https://github.com/oraios/serena",
         "serena",
         "start-mcp-server",
+        "--enable-web-dashboard",
+        "false",
         "--context",
         "ide-assistant",
         "--project",

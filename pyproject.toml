@@ -126,6 +126,7 @@ strict_equality = true
 [[tool.mypy.overrides]]
 module = [
     "chromadb.*",
+    "fixtures.*",
     "markdown.*",
     "frontmatter.*",
     "tiktoken.*",
@@ -146,6 +147,7 @@ ignore_missing_imports = true
 allow_untyped_defs = true
 allow_untyped_calls = true
 allow_untyped_decorators = true
+
 
 [tool.pytest.ini_options]
 minversion = "6.0"

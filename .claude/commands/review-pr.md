@@ -1,19 +1,22 @@
 ---
-description: Review open pull request.
+description: Comprehensive pull request review with architectural impact and pattern compliance analysis.
 ---
 
-## Context
-Read pull request $ARGUMENTS
+When user requests pull request review:
 
-## Your Task
-1. Fetch the GitHub issue referenced in the pull request.
-    - Underdtand the problem.
-    - read the acceptance criteria
-2. Use the acceptance criteria to review the request
-- make sure the code changes clean a modeller has no application
-- check the CI/CD pull to make sure the issue was fixed
-- generate comprehensive review in the pull request comment
-- make sure the pull request did not introduce unnecessary changes
+Use rapid-context to load the PR changes, description, and related issue context.
 
+Then use graph-builder to analyze how changes affect module dependencies and system architecture.
 
-**IMPORTENET** be very critical of the changes
+Then use semantic-search to verify code follows established patterns and find similar implementations for comparison.
+
+Then use context-synthesizer to assess changes against both code patterns and architectural constraints.
+
+Then use code-intelligence to identify potential bugs, suggest improvements, and verify the solution matches learned patterns.
+
+Then use graph-builder again to verify no architectural principles are violated.
+
+Finally use semantic-search to check if similar changes caused issues in the past.
+
+### Pull Request Number
+$ARGUMENTS

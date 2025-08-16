@@ -1,7 +1,7 @@
 """Tests for the collections command."""
 
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
@@ -16,7 +16,7 @@ def _create_fresh_mock_client() -> MockChromaDBClient:
     import os
     import time
 
-    unique_id = f"{os.getpid()}_{int(time.time() * 1000000)}"
+    f"{os.getpid()}_{int(time.time() * 1000000)}"
 
     client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
     client.connect()
@@ -32,13 +32,13 @@ def runner() -> CliRunner:
 
 
 @pytest.fixture
-def mock_chromadb_client():
+def mock_chromadb_client() -> MockChromaDBClient:
     """Mock ChromaDB client using MockChromaDBClient."""
     return _create_fresh_mock_client()
 
 
 @pytest.fixture
-def populated_mock_client():
+def populated_mock_client() -> MockChromaDBClient:
     """Mock ChromaDB client with sample collections."""
     from shard_markdown.core.models import DocumentChunk
 
@@ -49,7 +49,7 @@ def populated_mock_client():
         "test-collection1", {"description": "Test collection 1"}
     )
     collection2 = client.create_collection("test-collection2", {})
-    collection3 = client.create_collection("another-collection", {"type": "test"})
+    client.create_collection("another-collection", {"type": "test"})
 
     # Add some documents to collections
     chunks1 = [
@@ -81,7 +81,7 @@ class TestCollectionsCommand:
         assert "Manage ChromaDB collections" in result.output
 
     def test_list_collections_table_format(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test listing collections in table format."""
         with patch(
@@ -98,7 +98,7 @@ class TestCollectionsCommand:
             assert "Found 3 collection(s)" in result.output
 
     def test_list_collections_json_format(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test listing collections in JSON format."""
         with patch(
@@ -128,7 +128,7 @@ class TestCollectionsCommand:
             assert "another-collection" in names
 
     def test_list_collections_yaml_format(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test listing collections in YAML format."""
         with patch(
@@ -142,7 +142,7 @@ class TestCollectionsCommand:
             assert "test-collection1" in result.output or "- count:" in result.output
 
     def test_list_collections_with_metadata(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test listing collections with metadata shown."""
         with patch(
@@ -156,7 +156,7 @@ class TestCollectionsCommand:
             assert "Test collection 1" in result.output
 
     def test_list_collections_with_filter(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test listing collections with name filter."""
         with patch(
@@ -169,11 +169,7 @@ class TestCollectionsCommand:
             assert "test-collection1" in result.output
             assert "test-collection2" in result.output
             # Should filter out "another-collection"
-            lines_with_another = [
-                line
-                for line in result.output.split("\n")
-                if "another-collection" in line
-            ]
+            [line for line in result.output.split("\n") if "another-collection" in line]
             # It might appear in table headers but not in data rows
             data_lines = [
                 line
@@ -184,7 +180,7 @@ class TestCollectionsCommand:
             assert len(data_lines) == 0
 
     def test_list_collections_no_collections(
-        self, runner: CliRunner, mock_chromadb_client
+        self, runner: CliRunner, mock_chromadb_client: MockChromaDBClient
     ) -> None:
         """Test listing when no collections exist."""
         with patch(
@@ -200,11 +196,13 @@ class TestCollectionsCommand:
         """Test listing collections when connection fails."""
         failed_client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
         # Don't call connect() to simulate connection failure
-        failed_client.connect = Mock(return_value=False)
 
-        with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
-            return_value=failed_client,
+        with (
+            patch.object(failed_client, "connect", return_value=False),
+            patch(
+                "shard_markdown.cli.commands.collections.create_chromadb_client",
+                return_value=failed_client,
+            ),
         ):
             result = runner.invoke(cli, ["collections", "list"])
 
@@ -212,7 +210,7 @@ class TestCollectionsCommand:
             assert "Failed to connect to ChromaDB" in result.output
 
     def test_create_collection_success(
-        self, runner: CliRunner, mock_chromadb_client
+        self, runner: CliRunner, mock_chromadb_client: MockChromaDBClient
     ) -> None:
         """Test successful collection creation."""
         with patch(
@@ -229,7 +227,7 @@ class TestCollectionsCommand:
             assert "new-test-collection" in mock_chromadb_client.collections
 
     def test_create_collection_with_description(
-        self, runner: CliRunner, mock_chromadb_client
+        self, runner: CliRunner, mock_chromadb_client: MockChromaDBClient
     ) -> None:
         """Test collection creation with description."""
         with patch(
@@ -256,7 +254,7 @@ class TestCollectionsCommand:
             )
 
     def test_create_collection_already_exists(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test creating collection that already exists."""
         with patch(
@@ -279,7 +277,7 @@ class TestCollectionsCommand:
             assert result.exit_code in [0, 1]  # Accept either success or failure
 
     def test_delete_collection_success(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test successful collection deletion."""
         with patch(
@@ -296,7 +294,7 @@ class TestCollectionsCommand:
             assert "test-collection1" not in populated_mock_client.collections
 
     def test_delete_collection_not_exists(
-        self, runner: CliRunner, mock_chromadb_client
+        self, runner: CliRunner, mock_chromadb_client: MockChromaDBClient
     ) -> None:
         """Test deleting collection that doesn't exist."""
         with patch(
@@ -312,7 +310,7 @@ class TestCollectionsCommand:
             assert result.exit_code in [0, 1, 2]
 
     def test_delete_collection_no_confirm(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test delete collection command without confirmation."""
         with patch(
@@ -330,7 +328,7 @@ class TestCollectionsCommand:
                 assert "test-collection1" in populated_mock_client.collections
 
     def test_collection_info_success(
-        self, runner: CliRunner, populated_mock_client
+        self, runner: CliRunner, populated_mock_client: MockChromaDBClient
     ) -> None:
         """Test getting collection info."""
         with patch(
@@ -345,7 +343,7 @@ class TestCollectionsCommand:
             assert "Test collection 1" in result.output  # Description
 
     def test_collection_info_not_found(
-        self, runner: CliRunner, mock_chromadb_client
+        self, runner: CliRunner, mock_chromadb_client: MockChromaDBClient
     ) -> None:
         """Test getting info for non-existent collection."""
         with patch(
@@ -358,7 +356,7 @@ class TestCollectionsCommand:
             assert "does not exist" in result.output
 
     def test_collections_workflow_with_mock(
-        self, runner: CliRunner, mock_chromadb_client
+        self, runner: CliRunner, mock_chromadb_client: MockChromaDBClient
     ) -> None:
         """Test complete collections workflow to increase mock coverage."""
         with patch(

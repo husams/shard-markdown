@@ -15,6 +15,12 @@ on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      run_performance_tests:
+        description: "Run performance tests"
+        required: false
+        default: false
+        type: boolean
 
 env:
   PYTHON_VERSION: "3.12"
@@ -107,7 +113,7 @@ jobs:
             .pytest_cache/
             *.log
 
-  # Coverage testing with ChromaDB service - simplified approach
+  # Coverage testing with ChromaDB service (excludes performance tests)
   coverage:
     runs-on: ubuntu-latest
     services:
@@ -224,13 +230,14 @@ jobs:
           COVERAGE_FILE: .coverage
           SHARD_MD_USE_MOCK_CHROMADB: "false" # Ensure real ChromaDB is used
         run: |
-          # Run ALL tests including e2e with real ChromaDB
+          # Run tests excluding performance tests for coverage measurement
           uv run pytest \
             --cov=shard_markdown \
             --cov-report=xml \
             --cov-report=html \
             --cov-report=term-missing \
-            tests/
+            tests/ \
+            -m "not performance"
           TEST_EXIT_CODE=$?
 
           # Check coverage threshold (informational only, don't fail the build)
@@ -300,7 +307,7 @@ jobs:
           name: dist
           path: dist/
 
-  # Performance benchmarks
+  # Performance benchmarks (lightweight, mock-based)
   benchmark:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
@@ -330,6 +337,92 @@ jobs:
         with:
           name: benchmark-results
           path: benchmark.json
+
+  # Performance testing with real ChromaDB (manual/optional)
+  performance:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.inputs.run_performance_tests == 'true' || 
+      contains(github.event.pull_request.labels.*.name, 'performance-test')
+
+    services:
+      chromadb:
+        image: chromadb/chroma:1.0.16
+        ports:
+          - 8000:8000
+        env:
+          ANONYMIZED_TELEMETRY: "false"
+          ALLOW_RESET: "true"
+          IS_PERSISTENT: "true"
+        options: >-
+          --name chromadb-perf-service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: uv sync --dev --extra chromadb
+
+      - name: Wait for ChromaDB to be ready
+        run: |
+          echo "🔍 Waiting for ChromaDB service to be ready..."
+          timeout=180
+          elapsed=0
+          interval=5
+
+          while [ $elapsed -lt $timeout ]; do
+            echo "⏳ Waiting... ($elapsed/${timeout}s elapsed)"
+            
+            if curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v2 API is ready"
+              break
+            elif curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB v1 API is ready"
+              break
+            elif curl -f --max-time 10 --connect-timeout 5 -s http://localhost:8000/heartbeat >/dev/null 2>&1; then
+              echo "✅ ChromaDB root API is ready"
+              break
+            fi
+            
+            sleep $interval
+            elapsed=$((elapsed + interval))
+          done
+
+          if [ $elapsed -ge $timeout ]; then
+            echo "❌ ChromaDB failed to start within ${timeout} seconds"
+            exit 1
+          fi
+
+          echo "✅ ChromaDB is ready for performance testing"
+
+      - name: Run performance tests with real ChromaDB
+        env:
+          CHROMA_HOST: localhost
+          CHROMA_PORT: 8000
+          SHARD_MD_USE_MOCK_CHROMADB: "false"
+        run: |
+          echo "🚀 Running performance tests with real ChromaDB"
+          uv run pytest tests/performance/ -v --tb=short -m "performance" \
+            --junit-xml=performance-results.xml
+
+      - name: Upload performance test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-test-results
+          path: |
+            performance-results.xml
+            .pytest_cache/
 
   # Security scanning
   security:

@@ -48,6 +48,7 @@ class TestDocumentProcessor:
         """
         return DocumentProcessor(chunking_config)
 
+    @pytest.mark.unit
     def test_processor_initialization(self, chunking_config: ChunkingConfig) -> None:
         """Test processor initializes correctly."""
         processor = DocumentProcessor(chunking_config)
@@ -57,6 +58,7 @@ class TestDocumentProcessor:
         assert processor.chunker is not None
         assert processor.metadata_extractor is not None
 
+    @pytest.mark.unit
     def test_process_document_success(
         self,
         processor: DocumentProcessor,
@@ -117,6 +119,7 @@ class TestDocumentProcessor:
         mock_metadata_extractor.extract_file_metadata.assert_called_once()
         mock_metadata_extractor.extract_document_metadata.assert_called_once()
 
+    @pytest.mark.unit
     def test_process_document_file_not_found(
         self, processor: DocumentProcessor
     ) -> None:
@@ -131,6 +134,7 @@ class TestDocumentProcessor:
         assert result.error is not None
         assert "not found" in result.error.lower()
 
+    @pytest.mark.unit
     def test_process_document_empty_file(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
@@ -145,6 +149,7 @@ class TestDocumentProcessor:
         assert result.chunks_created == 0
         assert result.error is None
 
+    @pytest.mark.unit
     def test_process_document_whitespace_only_file(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
@@ -159,6 +164,7 @@ class TestDocumentProcessor:
         assert result.chunks_created == 0
         assert result.error is None
 
+    @pytest.mark.unit
     def test_read_file_non_existent(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
@@ -173,6 +179,7 @@ class TestDocumentProcessor:
 
         assert "not found" in str(exc_info.value).lower()
 
+    @pytest.mark.unit
     def test_read_file_directory(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
@@ -185,6 +192,7 @@ class TestDocumentProcessor:
 
         assert "directory" in str(exc_info.value).lower()
 
+    @pytest.mark.unit
     def test_process_document_large_file(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
@@ -206,6 +214,7 @@ class TestDocumentProcessor:
             assert result.success is False
             assert result.error and "too large" in result.error.lower()
 
+    @pytest.mark.unit
     def test_process_document_no_chunks_generated(
         self,
         processor: DocumentProcessor,
@@ -227,6 +236,7 @@ class TestDocumentProcessor:
         assert result.error and "no chunks generated" in result.error.lower()
         assert result.chunks_created == 0
 
+    @pytest.mark.unit
     def test_process_document_parsing_error(
         self,
         processor: DocumentProcessor,
@@ -241,6 +251,7 @@ class TestDocumentProcessor:
         assert result.success is False
         assert result.error and "parsing failed" in result.error.lower()
 
+    @pytest.mark.unit
     def test_process_document_encoding_recovery(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
@@ -262,6 +273,7 @@ class TestDocumentProcessor:
         # The chunks_created could be 0 if the content is too garbled after decoding
         # What matters is that processing succeeded without throwing an exception
 
+    @pytest.mark.unit
     def test_read_file_multiple_encodings(
         self, processor: DocumentProcessor, temp_dir: Path
     ) -> None:
@@ -281,6 +293,7 @@ class TestDocumentProcessor:
         result = processor._read_file(latin1_file)
         assert result is not None
 
+    @pytest.mark.unit
     def test_generate_chunk_id(
         self, processor: DocumentProcessor, sample_markdown_file: Path
     ) -> None:
@@ -293,6 +306,7 @@ class TestDocumentProcessor:
         assert chunk_id_2.endswith("_0001")
         assert len(chunk_id_1.split("_")[0]) == 16  # Hash part
 
+    @pytest.mark.unit
     def test_enhance_chunks(
         self,
         processor: DocumentProcessor,
@@ -321,6 +335,7 @@ class TestDocumentProcessor:
             assert chunk.content == sample_chunks[i].content
             assert "enhanced" in chunk.metadata
 
+    @pytest.mark.unit
     def test_batch_processing_success(
         self,
         processor: DocumentProcessor,
@@ -371,6 +386,7 @@ class TestDocumentProcessor:
         assert result.collection_name == "test-collection"
         assert result.success_rate == 100.0
 
+    @pytest.mark.unit
     def test_batch_processing_partial_failure(
         self,
         processor: DocumentProcessor,
@@ -405,6 +421,7 @@ class TestDocumentProcessor:
         assert result.failed_files == 2
         assert result.success_rate == 0.0
 
+    @pytest.mark.unit
     def test_batch_processing_empty_list(self, processor: DocumentProcessor) -> None:
         """Test batch processing with empty file list."""
         result = processor.process_batch([], "test-collection")
@@ -414,6 +431,7 @@ class TestDocumentProcessor:
         assert result.failed_files == 0
         assert result.total_chunks == 0
 
+    @pytest.mark.unit
     def test_sequential_processing_workflow(
         self,
         processor: DocumentProcessor,
@@ -466,6 +484,7 @@ class TestDocumentProcessor:
             result.total_processing_time < end_time - start_time + 1
         )  # Allow some tolerance
 
+    @pytest.mark.unit
     def test_processing_time_measurement(
         self,
         processor: DocumentProcessor,

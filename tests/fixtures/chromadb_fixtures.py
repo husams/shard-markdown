@@ -370,9 +370,10 @@ class ChromaDBTestFixture:
         try:
             self.client.delete_collection(name)
             logger.debug(f"Deleted existing collection: {name}")
-        except Exception:
+        except Exception as e:
             # Collection doesn't exist, which is fine
-            logger.debug(f"Collection {name} doesn't exist, will create new")
+            # Log the specific exception for debugging
+            logger.debug(f"Collection {name} doesn't exist, will create new: {e}")
 
         # Create new collection using ChromaDBClient
         collection = self.client.get_or_create_collection(
@@ -404,7 +405,9 @@ class ChromaDBTestFixture:
             logger.debug(f"Retrieved existing test collection: {name}")
             self._test_collections.add(name)
             return collection
-        except Exception:
+        except Exception as e:
+            # Log the specific exception for debugging
+            logger.debug(f"Failed to get collection {name}, creating new: {e}")
             return self.create_test_collection(name, metadata)
 
     def ensure_collection_ready(self, collection: Any) -> bool:
@@ -525,13 +528,13 @@ def wait_for_chromadb(
                     client.heartbeat()
                     logger.info(f"ChromaDB is ready at {host}:{port}")
                     return True
-                except Exception:  # noqa: S110
+                except Exception as e:
                     # Not ready yet, will retry
-                    pass
+                    logger.debug(f"ChromaDB client connection failed: {e}")
 
-        except Exception:  # noqa: S110
+        except Exception as e:
             # Connection failed, will retry
-            pass
+            logger.debug(f"ChromaDB socket connection failed: {e}")
 
         time.sleep(1)
 

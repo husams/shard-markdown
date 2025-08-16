@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Coverage Processing Script
-Processes coverage.json and stores in ChromaDB
+"""Coverage Processing Script.
+
+Processes coverage.json and stores in ChromaDB.
 """
 
 import hashlib
@@ -17,13 +18,14 @@ from typing import Any
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.shard_markdown.chromadb.client import ChromaDBClient
-from src.shard_markdown.config.loader import load_config
+from shard_markdown.chromadb.client import ChromaDBClient
+from shard_markdown.config.loader import load_config
 
 
 @dataclass
 class CoverageFile:
-    """Represents coverage data for a single file"""
+    """Represents coverage data for a single file."""
+
     path: str
     executed_lines: list[int]
     missing_lines: list[int]
@@ -32,65 +34,81 @@ class CoverageFile:
     num_statements: int
     covered_lines: int
 
+
 @dataclass
 class CoverageChunk:
-    """A chunk of coverage data ready for storage"""
+    """A chunk of coverage data ready for storage."""
+
     id: str
     content: str
     metadata: dict[str, Any]
 
+
 class CoverageStreamProcessor:
-    """Processes coverage.json efficiently using streaming"""
+    """Processes coverage.json efficiently using streaming."""
 
     def __init__(self, file_path: Path):
+        """Initialize with coverage file path."""
         self.file_path = file_path
-        self.data = None
+        self.data: dict[str, Any] | None = None
 
-    def load_and_parse(self):
-        """Load coverage.json using standard json (since ijson not available)"""
+    def load_and_parse(self) -> None:
+        """Load coverage.json using standard json (since ijson not available)."""
         print(f"Loading coverage file: {self.file_path}")
         with open(self.file_path) as f:
             self.data = json.load(f)
-        print(f"Loaded coverage data with {len(self.data.get('files', {}))} files")
+        files_count = len(self.data.get("files", {}) if self.data else {})
+        print(f"Loaded coverage data with {files_count} files")
 
     def get_metadata(self) -> dict[str, Any]:
-        """Extract metadata section"""
+        """Extract metadata section."""
         if not self.data:
             self.load_and_parse()
-        return self.data.get('meta', {})
+        if self.data is None:
+            return {}
+        meta = self.data.get("meta", {})
+        return meta if isinstance(meta, dict) else {}
 
     def get_totals(self) -> dict[str, Any]:
-        """Extract totals section"""
+        """Extract totals section."""
         if not self.data:
             self.load_and_parse()
-        return self.data.get('totals', {})
+        if self.data is None:
+            return {}
+        totals = self.data.get("totals", {})
+        return totals if isinstance(totals, dict) else {}
 
     def iterate_files(self) -> Iterator[CoverageFile]:
-        """Yield coverage data for each file"""
+        """Yield coverage data for each file."""
         if not self.data:
             self.load_and_parse()
 
-        for file_path, file_data in self.data.get('files', {}).items():
+        if self.data is None:
+            return
+
+        for file_path, file_data in self.data.get("files", {}).items():
             # Extract summary data from nested structure
-            summary = file_data.get('summary', {})
+            summary = file_data.get("summary", {})
             yield CoverageFile(
                 path=file_path,
-                executed_lines=file_data.get('executed_lines', []),
-                missing_lines=file_data.get('missing_lines', []),
-                excluded_lines=file_data.get('excluded_lines', []),
-                coverage_percent=summary.get('percent_covered', 0.0),
-                num_statements=summary.get('num_statements', 0),
-                covered_lines=summary.get('covered_lines', 0)
+                executed_lines=file_data.get("executed_lines", []),
+                missing_lines=file_data.get("missing_lines", []),
+                excluded_lines=file_data.get("excluded_lines", []),
+                coverage_percent=summary.get("percent_covered", 0.0),
+                num_statements=summary.get("num_statements", 0),
+                covered_lines=summary.get("covered_lines", 0),
             )
 
+
 class CoverageChunker:
-    """Intelligent chunking for coverage data"""
+    """Intelligent chunking for coverage data."""
 
     def __init__(self, granularity: str = "module"):
+        """Initialize chunker with granularity setting."""
         self.granularity = granularity
 
     def chunk_by_module(self, files: list[CoverageFile]) -> list[CoverageChunk]:
-        """Group files by module and create chunks"""
+        """Group files by module and create chunks."""
         modules = defaultdict(list)
 
         # Group files by module
@@ -105,10 +123,14 @@ class CoverageChunker:
             # Calculate module-level metrics
             total_lines = sum(f.num_statements for f in module_files)
             covered_lines = sum(f.covered_lines for f in module_files)
-            coverage_percent = (covered_lines / total_lines * 100) if total_lines > 0 else 0
+            coverage_percent = (
+                (covered_lines / total_lines * 100) if total_lines > 0 else 0
+            )
 
             # Find best and worst covered files in module
-            sorted_files = sorted(module_files, key=lambda f: f.coverage_percent, reverse=True)
+            sorted_files = sorted(
+                module_files, key=lambda f: f.coverage_percent, reverse=True
+            )
 
             content = {
                 "type": "module_coverage",
@@ -118,26 +140,31 @@ class CoverageChunker:
                     "lines": {
                         "total": total_lines,
                         "covered": covered_lines,
-                        "missing": total_lines - covered_lines
+                        "missing": total_lines - covered_lines,
                     },
                     "file_count": len(module_files),
                     "best_covered": {
                         "file": sorted_files[0].path if sorted_files else None,
-                        "coverage": round(sorted_files[0].coverage_percent, 2) if sorted_files else 0
+                        "coverage": round(sorted_files[0].coverage_percent, 2)
+                        if sorted_files
+                        else 0,
                     },
                     "worst_covered": {
                         "file": sorted_files[-1].path if sorted_files else None,
-                        "coverage": round(sorted_files[-1].coverage_percent, 2) if sorted_files else 0
+                        "coverage": round(sorted_files[-1].coverage_percent, 2)
+                        if sorted_files
+                        else 0,
                     },
                     "files": [
                         {
                             "path": f.path,
                             "coverage": round(f.coverage_percent, 2),
                             "lines": f.num_statements,
-                            "missing": len(f.missing_lines)
-                        } for f in sorted_files[:10]  # Top 10 files
-                    ]
-                }
+                            "missing": len(f.missing_lines),
+                        }
+                        for f in sorted_files[:10]  # Top 10 files
+                    ],
+                },
             }
 
             metadata = {
@@ -147,20 +174,22 @@ class CoverageChunker:
                 "coverage_percent": round(coverage_percent, 2),
                 "total_lines": total_lines,
                 "covered_lines": covered_lines,
-                "chunk_index": chunk_idx
+                "chunk_index": chunk_idx,
             }
 
-            chunks.append(CoverageChunk(
-                id=f"coverage_module_{chunk_idx}_{module.replace('/', '_')}",
-                content=json.dumps(content, indent=2),
-                metadata=metadata
-            ))
+            chunks.append(
+                CoverageChunk(
+                    id=f"coverage_module_{chunk_idx}_{module.replace('/', '_')}",
+                    content=json.dumps(content, indent=2),
+                    metadata=metadata,
+                )
+            )
             chunk_idx += 1
 
         return chunks
 
     def chunk_by_file(self, files: list[CoverageFile]) -> list[CoverageChunk]:
-        """Create one chunk per file"""
+        """Create one chunk per file."""
         chunks = []
 
         for idx, coverage_file in enumerate(files):
@@ -173,11 +202,13 @@ class CoverageChunker:
                         "total": coverage_file.num_statements,
                         "covered": coverage_file.covered_lines,
                         "missing": len(coverage_file.missing_lines),
-                        "excluded": len(coverage_file.excluded_lines)
+                        "excluded": len(coverage_file.excluded_lines),
                     },
-                    "missing_lines": coverage_file.missing_lines[:50],  # First 50 missing lines
-                    "has_more_missing": len(coverage_file.missing_lines) > 50
-                }
+                    "missing_lines": coverage_file.missing_lines[
+                        :50
+                    ],  # First 50 missing lines
+                    "has_more_missing": len(coverage_file.missing_lines) > 50,
+                },
             }
 
             module = self._extract_module(coverage_file.path)
@@ -190,63 +221,72 @@ class CoverageChunker:
                 "total_lines": coverage_file.num_statements,
                 "covered_lines": coverage_file.covered_lines,
                 "missing_lines": len(coverage_file.missing_lines),
-                "is_test_file": 'test' in coverage_file.path.lower(),
-                "chunk_index": idx
+                "is_test_file": "test" in coverage_file.path.lower(),
+                "chunk_index": idx,
             }
 
-            chunks.append(CoverageChunk(
-                id=f"coverage_file_{idx}_{coverage_file.path.replace('/', '_')}",
-                content=json.dumps(content, indent=2),
-                metadata=metadata
-            ))
+            chunks.append(
+                CoverageChunk(
+                    id=f"coverage_file_{idx}_{coverage_file.path.replace('/', '_')}",
+                    content=json.dumps(content, indent=2),
+                    metadata=metadata,
+                )
+            )
 
         return chunks
 
     def _extract_module(self, path: str) -> str:
-        """Extract module name from path"""
-        parts = path.split('/')
+        """Extract module name from path."""
+        parts = path.split("/")
 
         # Handle different path structures
-        if 'src' in parts:
-            idx = parts.index('src')
+        if "src" in parts:
+            idx = parts.index("src")
             if idx + 1 < len(parts):
                 # Return everything after src up to the file
-                return '/'.join(parts[idx+1:-1]) or parts[idx+1]
-        elif 'tests' in parts:
-            idx = parts.index('tests')
+                return "/".join(parts[idx + 1 : -1]) or parts[idx + 1]
+        elif "tests" in parts:
+            idx = parts.index("tests")
             if idx + 1 < len(parts):
-                return '/'.join(parts[idx:len(parts)-1])
+                return "/".join(parts[idx : len(parts) - 1])
 
         # Default: directory containing the file
         if len(parts) > 1:
-            return '/'.join(parts[:-1])
+            return "/".join(parts[:-1])
         return "root"
 
-class CoverageSummaryGenerator:
-    """Generates coverage summary reports"""
 
-    def generate_summary(self, metadata: dict, totals: dict,
-                        files: list[CoverageFile],
-                        module_chunks: list[CoverageChunk]) -> dict[str, Any]:
-        """Generate comprehensive summary"""
+class CoverageSummaryGenerator:
+    """Generates coverage summary reports."""
+
+    def generate_summary(
+        self,
+        metadata: dict,
+        totals: dict,
+        files: list[CoverageFile],
+        module_chunks: list[CoverageChunk],
+    ) -> dict[str, Any]:
+        """Generate comprehensive summary."""
         # Sort files by coverage
         sorted_files = sorted(files, key=lambda f: f.coverage_percent, reverse=True)
 
         # Get module coverage from chunks
         module_coverage = {}
         for chunk in module_chunks:
-            if chunk.metadata.get('chunk_type') == 'module_coverage':
-                module = chunk.metadata.get('module')
-                coverage = chunk.metadata.get('coverage_percent')
+            if chunk.metadata.get("chunk_type") == "module_coverage":
+                module = chunk.metadata.get("module")
+                coverage = chunk.metadata.get("coverage_percent")
                 if module and coverage is not None:
                     module_coverage[module] = coverage
 
         # Sort modules by coverage
-        sorted_modules = sorted(module_coverage.items(), key=lambda x: x[1], reverse=True)
+        sorted_modules = sorted(
+            module_coverage.items(), key=lambda x: x[1], reverse=True
+        )
 
         # Handle both nested and direct totals structure
-        if 'summary' in totals:
-            totals_data = totals['summary']
+        if "summary" in totals:
+            totals_data = totals["summary"]
         else:
             totals_data = totals
 
@@ -254,11 +294,11 @@ class CoverageSummaryGenerator:
             "timestamp": datetime.now().isoformat(),
             "overall": {
                 "total_files": len(files),
-                "total_lines": totals_data.get('num_statements', 0),
-                "covered_lines": totals_data.get('covered_lines', 0),
-                "missing_lines": totals_data.get('missing_lines', 0),
-                "excluded_lines": totals_data.get('excluded_lines', 0),
-                "coverage_percent": round(totals_data.get('percent_covered', 0), 2)
+                "total_lines": totals_data.get("num_statements", 0),
+                "covered_lines": totals_data.get("covered_lines", 0),
+                "missing_lines": totals_data.get("missing_lines", 0),
+                "excluded_lines": totals_data.get("excluded_lines", 0),
+                "coverage_percent": round(totals_data.get("percent_covered", 0), 2),
             },
             "top_covered_files": [
                 {"path": f.path, "coverage": round(f.coverage_percent, 2)}
@@ -266,14 +306,15 @@ class CoverageSummaryGenerator:
             ],
             "least_covered_files": [
                 {"path": f.path, "coverage": round(f.coverage_percent, 2)}
-                for f in sorted_files[-10:] if f.coverage_percent < 100
+                for f in sorted_files[-10:]
+                if f.coverage_percent < 100
             ],
             "module_coverage": dict(sorted_modules),
-            "coverage_distribution": self._calculate_distribution(files)
+            "coverage_distribution": self._calculate_distribution(files),
         }
 
     def _calculate_distribution(self, files: list[CoverageFile]) -> dict[str, int]:
-        """Calculate coverage distribution"""
+        """Calculate coverage distribution."""
         distribution = {
             "100%": 0,
             "90-99%": 0,
@@ -281,7 +322,7 @@ class CoverageSummaryGenerator:
             "70-79%": 0,
             "60-69%": 0,
             "50-59%": 0,
-            "<50%": 0
+            "<50%": 0,
         }
 
         for f in files:
@@ -303,7 +344,7 @@ class CoverageSummaryGenerator:
         return distribution
 
     def format_report(self, summary: dict[str, Any]) -> str:
-        """Format summary as readable report"""
+        """Format summary as readable report."""
         lines = []
         lines.append("=" * 70)
         lines.append("CODE COVERAGE SUMMARY REPORT")
@@ -312,7 +353,7 @@ class CoverageSummaryGenerator:
         lines.append("")
 
         # Overall metrics
-        overall = summary['overall']
+        overall = summary["overall"]
         lines.append("OVERALL METRICS")
         lines.append("-" * 50)
         lines.append(f"Total Files:        {overall['total_files']}")
@@ -325,8 +366,9 @@ class CoverageSummaryGenerator:
         # Coverage distribution
         lines.append("COVERAGE DISTRIBUTION")
         lines.append("-" * 50)
-        dist = summary['coverage_distribution']
-        for range_key in ["100%", "90-99%", "80-89%", "70-79%", "60-69%", "50-59%", "<50%"]:
+        dist = summary["coverage_distribution"]
+        ranges = ["100%", "90-99%", "80-89%", "70-79%", "60-69%", "50-59%", "<50%"]
+        for range_key in ranges:
             count = dist[range_key]
             lines.append(f"{range_key:10} : {count:4} files")
         lines.append("")
@@ -334,7 +376,7 @@ class CoverageSummaryGenerator:
         # Module coverage
         lines.append("TOP MODULE COVERAGE")
         lines.append("-" * 50)
-        for module, coverage in list(summary['module_coverage'].items())[:10]:
+        for module, coverage in list(summary["module_coverage"].items())[:10]:
             if len(module) > 40:
                 module = "..." + module[-37:]
             lines.append(f"{module:40} {coverage:6.2f}%")
@@ -343,8 +385,8 @@ class CoverageSummaryGenerator:
         # Top covered files
         lines.append("BEST COVERED FILES")
         lines.append("-" * 50)
-        for file_info in summary['top_covered_files'][:5]:
-            path = file_info['path']
+        for file_info in summary["top_covered_files"][:5]:
+            path = file_info["path"]
             if len(path) > 40:
                 path = "..." + path[-37:]
             lines.append(f"{path:40} {file_info['coverage']:6.2f}%")
@@ -353,16 +395,17 @@ class CoverageSummaryGenerator:
         # Files needing attention
         lines.append("FILES NEEDING ATTENTION (Lowest Coverage)")
         lines.append("-" * 50)
-        for file_info in summary['least_covered_files'][:10]:
-            path = file_info['path']
+        for file_info in summary["least_covered_files"][:10]:
+            path = file_info["path"]
             if len(path) > 40:
                 path = "..." + path[-37:]
             lines.append(f"{path:40} {file_info['coverage']:6.2f}%")
 
         return "\n".join(lines)
 
-def main():
-    """Main processing function"""
+
+def main() -> None:
+    """Main processing function."""
     try:
         # Check if coverage.json exists
         coverage_file = Path("coverage.json")
@@ -379,8 +422,8 @@ def main():
 
         print(f"\nCoverage Report Version: {metadata.get('version', 'Unknown')}")
         # Check if totals has the summary field (like files do)
-        if 'summary' in totals:
-            summary = totals['summary']
+        if "summary" in totals:
+            summary = totals["summary"]
             print(f"Overall Coverage: {summary.get('percent_covered', 0):.2f}%")
             print(f"Total Statements: {summary.get('num_statements', 0):,}")
         else:
@@ -407,8 +450,8 @@ def main():
         print("\nConnecting to ChromaDB...")
         config = load_config()
         # Override host to localhost if needed
-        if hasattr(config.chromadb, 'host') and config.chromadb.host == 'test':
-            config.chromadb.host = 'localhost'
+        if hasattr(config.chromadb, "host") and config.chromadb.host == "test":
+            config.chromadb.host = "localhost"
         client = ChromaDBClient(config.chromadb)
 
         try:
@@ -419,16 +462,19 @@ def main():
             try:
                 collection = client.get_collection("coverage")
                 print("Found existing coverage collection")
-            except:
+            except Exception as e:
                 # Collection doesn't exist, create it
+                print(f"Creating new coverage collection (previous error: {e})")
                 collection = client.get_or_create_collection(
                     name="coverage",
                     metadata={
                         "description": "Code coverage analysis data",
                         "created_at": datetime.now().isoformat(),
-                        "coverage_version": metadata.get('version', 'Unknown'),
-                        "total_coverage": totals.get('percent_covered', 0) if isinstance(totals.get('percent_covered', 0), (int, float)) else 0
-                    }
+                        "coverage_version": metadata.get("version", "Unknown"),
+                        "total_coverage": totals.get("percent_covered", 0)
+                        if isinstance(totals.get("percent_covered", 0), int | float)
+                        else 0,
+                    },
                 )
                 print("Created new coverage collection")
 
@@ -442,8 +488,8 @@ def main():
             metadatas = []
 
             for chunk in all_chunks:
-                # Generate stable ID
-                chunk_hash = hashlib.md5(chunk.content.encode()).hexdigest()[:8]
+                # Generate stable ID using SHA-256 for better security
+                chunk_hash = hashlib.sha256(chunk.content.encode()).hexdigest()[:16]
                 ids.append(f"{chunk.id}_{chunk_hash}")
                 documents.append(chunk.content)
                 metadatas.append(chunk.metadata)
@@ -453,14 +499,12 @@ def main():
             total_stored = 0
 
             for i in range(0, len(ids), batch_size):
-                batch_ids = ids[i:i+batch_size]
-                batch_docs = documents[i:i+batch_size]
-                batch_meta = metadatas[i:i+batch_size]
+                batch_ids = ids[i : i + batch_size]
+                batch_docs = documents[i : i + batch_size]
+                batch_meta = metadatas[i : i + batch_size]
 
                 collection.add(
-                    ids=batch_ids,
-                    documents=batch_docs,
-                    metadatas=batch_meta
+                    ids=batch_ids, documents=batch_docs, metadatas=batch_meta
                 )
                 total_stored += len(batch_ids)
                 print(f"Stored {total_stored}/{len(ids)} chunks...")
@@ -483,20 +527,20 @@ def main():
                 content=json.dumps(summary, indent=2),
                 metadata={
                     "chunk_type": "summary",
-                    "timestamp": summary['timestamp'],
-                    "overall_coverage": summary['overall']['coverage_percent']
-                }
+                    "timestamp": summary["timestamp"],
+                    "overall_coverage": summary["overall"]["coverage_percent"],
+                },
             )
 
             collection.add(
                 ids=[f"{summary_chunk.id}_{datetime.now().strftime('%Y%m%d')}"],
                 documents=[summary_chunk.content],
-                metadatas=[summary_chunk.metadata]
+                metadatas=[summary_chunk.metadata],
             )
             print("✓ Stored summary in ChromaDB")
 
-        except:
-            pass
+        except Exception as e:
+            print(f"Warning: Could not store summary in ChromaDB: {e}")
 
         # Display summary
         report = generator.format_report(summary)
@@ -504,15 +548,17 @@ def main():
 
         # Save summary to file
         summary_file = Path("coverage_summary.json")
-        with open(summary_file, 'w') as f:
+        with open(summary_file, "w") as f:
             json.dump(summary, f, indent=2)
         print(f"\n✓ Summary saved to {summary_file}")
 
     except Exception as e:
         print(f"Error processing coverage: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()

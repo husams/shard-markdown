@@ -14,12 +14,13 @@ def _create_fresh_mock_client() -> MockChromaDBClient:
     import os
     import time
 
-    unique_id = f"{os.getpid()}_{int(time.time() * 1000000)}"
+    f"{os.getpid()}_{int(time.time() * 1000000)}"
 
     client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
     client.connect()
     # Clear any existing collections from shared storage
-    client.collections.clear()
+    if hasattr(client, "collections"):
+        client.collections.clear()
     return client
 
 
@@ -54,7 +55,11 @@ class TestCollectionManager:
 
         assert result.name == "test_collection"
         assert result.metadata["description"] == "Test description"
-        assert "test_collection" in collection_manager.client.collections
+        # Verify collection exists by trying to retrieve it
+        retrieved_collection = collection_manager.client.get_collection(
+            "test_collection"
+        )
+        assert retrieved_collection.name == "test_collection"
 
     def test_create_collection_with_metadata(
         self, collection_manager: CollectionManager
@@ -178,7 +183,9 @@ class TestCollectionManager:
         result = collection_manager.delete_collection("test_collection")
 
         assert result is True
-        assert "test_collection" not in collection_manager.client.collections
+        # Verify collection was deleted by checking it raises exception
+        with pytest.raises(ValueError, match="does not exist"):
+            collection_manager.client.get_collection("test_collection")
 
     def test_delete_collection_not_exists(
         self, collection_manager: CollectionManager
@@ -219,7 +226,6 @@ class TestCollectionManager:
 
         assert result is True
         # Collection should still exist but be empty
-        assert "test_collection" in collection_manager.client.collections
         new_collection = collection_manager.client.get_collection("test_collection")
         assert new_collection.count() == 0
         assert new_collection.metadata == original_collection.metadata
