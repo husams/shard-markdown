@@ -17,7 +17,7 @@ repos:
       - id: mypy
         language_version: python3.12
         additional_dependencies: [types-PyYAML, types-python-dateutil]
-        args: [--ignore-missing-imports]
+        args: [--ignore-missing-imports, --no-warn-unused-ignores]
         exclude: ^docs/
 
   # General pre-commit hooks

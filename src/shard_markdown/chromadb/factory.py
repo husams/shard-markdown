@@ -66,7 +66,9 @@ def _create_mock_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
         if test_path.exists():
             sys.path.insert(0, str(test_path))
             try:
-                from fixtures.mock import MockChromaDBClient
+                from fixtures.mock import (
+                    MockChromaDBClient,
+                )
 
                 return MockChromaDBClient(config)  # type: ignore[no-any-return]
             finally:
