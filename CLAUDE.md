@@ -139,3 +139,8 @@ uv run pytest
 - The project uses `uv` for dependency management
 - Pre-commit hooks are configured - install with `pre-commit install`
 - CI/CD runs on GitHub Actions - check `.github/workflows/`
+- Use below chromaDB collection ask questions claude code
+    1. clause-hooks: Claude code information about hooks
+    2. clause-subagents: Claude code information about sub agents
+- Allows say "Hi" to the user when start new session.
+- You **MUST** **ALLOWS** reflect of the error reported by Edit/MultiEdit tools. and **FIX** them.
