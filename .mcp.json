@@ -1,22 +1,5 @@
 {
   "mcpServers": {
-    "serena": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena",
-        "start-mcp-server",
-        "--enable-web-dashboard",
-        "false",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "/Users/husam/workspace/tools/shard-markdown"
-      ],
-      "env": {}
-    },
     "chroma": {
       "type": "stdio",
       "command": "uvx",
