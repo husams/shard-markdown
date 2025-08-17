@@ -46,6 +46,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage.json
 *.cover
 *.py,cover
 .hypothesis/
@@ -70,6 +71,11 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/build.log
+
+# Build and deployment artifacts
+build.log
+*.build.log
 
 # PyBuilder
 target/
@@ -153,8 +159,13 @@ sample_*.md
 chroma_data/
 .chroma/
 .data/
+*.sqlite3
 mock_chromadb_storage.json
 
-# Claude files
+# Development planning and temporary files
+.plan/
 .plans/
 .serena/
+
+# Claude files
+.claude/
