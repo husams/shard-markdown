@@ -29,7 +29,7 @@ def handle_chromadb_errors(e: Exception, verbose: int) -> None:
         if verbose > 0:
             console.print(f"[dim]Error code: {e.error_code}[/dim]")
     elif isinstance(e, ConnectionError | RuntimeError | ValueError):
-        console.print("[red]Unexpected error:[/red] %s", str(e))
+        console.print(f"[red]Unexpected error:[/red] {str(e)}")
         if verbose > 1:
             # Only print exception if we're in an exception context
             exc_type, exc_value, traceback = sys.exc_info()
