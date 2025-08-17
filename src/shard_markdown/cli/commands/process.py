@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any
 
 import click
-from rich.console import Console
 from rich.progress import (
     BarColumn,
     Progress,
@@ -25,10 +24,10 @@ from ...utils.validation import (
     validate_collection_name,
     validate_input_paths,
 )
+from ..utils import console
 
 
 logger = get_logger(__name__)
-console = Console()
 
 
 @click.command()

@@ -85,7 +85,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test listing collections in table format."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(cli, ["collections", "list"])
@@ -102,7 +102,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test listing collections in JSON format."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(cli, ["collections", "list", "--format", "json"])
@@ -132,7 +132,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test listing collections in YAML format."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(cli, ["collections", "list", "--format", "yaml"])
@@ -146,7 +146,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test listing collections with metadata shown."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(cli, ["collections", "list", "--show-metadata"])
@@ -160,7 +160,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test listing collections with name filter."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(cli, ["collections", "list", "--filter", "test"])
@@ -184,7 +184,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test listing when no collections exist."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=mock_chromadb_client,
         ):
             result = runner.invoke(cli, ["collections", "list"])
@@ -200,7 +200,7 @@ class TestCollectionsCommand:
         with (
             patch.object(failed_client, "connect", return_value=False),
             patch(
-                "shard_markdown.cli.commands.collections.create_chromadb_client",
+                "shard_markdown.cli.utils.create_chromadb_client",
                 return_value=failed_client,
             ),
         ):
@@ -214,7 +214,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test successful collection creation."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=mock_chromadb_client,
         ):
             result = runner.invoke(
@@ -231,7 +231,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test collection creation with description."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=mock_chromadb_client,
         ):
             result = runner.invoke(
@@ -258,7 +258,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test creating collection that already exists."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             # Without --force, this should fail
@@ -281,7 +281,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test successful collection deletion."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(
@@ -298,7 +298,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test deleting collection that doesn't exist."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=mock_chromadb_client,
         ):
             result = runner.invoke(
@@ -314,7 +314,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test delete collection command without confirmation."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(
@@ -332,7 +332,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test getting collection info."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=populated_mock_client,
         ):
             result = runner.invoke(cli, ["collections", "info", "test-collection1"])
@@ -347,7 +347,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test getting info for non-existent collection."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=mock_chromadb_client,
         ):
             result = runner.invoke(cli, ["collections", "info", "nonexistent"])
@@ -360,7 +360,7 @@ class TestCollectionsCommand:
     ) -> None:
         """Test complete collections workflow to increase mock coverage."""
         with patch(
-            "shard_markdown.cli.commands.collections.create_chromadb_client",
+            "shard_markdown.cli.utils.get_connected_chromadb_client",
             return_value=mock_chromadb_client,
         ):
             # Create collection
