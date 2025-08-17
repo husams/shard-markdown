@@ -14,12 +14,31 @@ from .version_detector import APIVersionInfo, ChromaDBVersionDetector
 
 # Import ChromaDB exceptions for better error handling
 try:
-    from chromadb.errors import UniqueConstraintError
+    from chromadb.errors import (
+        InvalidArgumentError,
+        NotFoundError,
+        UniqueConstraintError,
+    )
 
     CHROMADB_AVAILABLE = True
 except ImportError:
     # Fallback if chromadb is not installed or older version
     CHROMADB_AVAILABLE = False
+
+    class InvalidArgumentError(ValueError):  # type: ignore[no-redef]
+        """Fallback InvalidArgumentError exception."""
+
+        pass
+
+    class NotFoundError(Exception):  # type: ignore[no-redef]
+        """Fallback NotFoundError exception."""
+
+        pass
+
+    class UniqueConstraintError(Exception):  # type: ignore[no-redef]
+        """Fallback UniqueConstraintError exception."""
+
+        pass
 
 
 # Import httpx exceptions for HTTP error handling
