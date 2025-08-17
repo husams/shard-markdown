@@ -1,6 +1,5 @@
 """ChromaDB client wrapper with connection management and version detection."""
 
-import socket
 import time
 from typing import Any, cast
 
@@ -9,6 +8,7 @@ from ..core.metadata import MetadataExtractor
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.errors import ChromaDBError, NetworkError
 from ..utils.logging import get_logger
+from .utils import check_socket_connectivity
 from .version_detector import APIVersionInfo, ChromaDBVersionDetector
 
 
@@ -666,43 +666,22 @@ class ChromaDBClient:
         Raises:
             NetworkError: If connectivity test fails
         """
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(self.config.timeout)
-            result = sock.connect_ex((self.config.host, self.config.port))
-            sock.close()
+        # Use consolidated socket connectivity testing utility
+        result = check_socket_connectivity(
+            self.config.host, self.config.port, self.config.timeout
+        )
 
-            if result != 0:
-                raise NetworkError(
-                    f"Cannot connect to ChromaDB server: "
-                    f"{self.config.host}:{self.config.port}",
-                    error_code=1601,
-                    context={
-                        "host": self.config.host,
-                        "port": self.config.port,
-                        "timeout": self.config.timeout,
-                    },
-                )
-
-        except socket.gaierror as e:
+        if not result:
             raise NetworkError(
-                f"DNS resolution failed for ChromaDB host: {self.config.host}",
-                error_code=1602,
-                context={"host": self.config.host},
-                cause=e,
-            ) from e
-        except TimeoutError as e:
-            raise NetworkError(
-                f"Connection timeout to ChromaDB: "
+                f"Cannot connect to ChromaDB server: "
                 f"{self.config.host}:{self.config.port}",
-                error_code=1603,
+                error_code=1601,
                 context={
                     "host": self.config.host,
                     "port": self.config.port,
                     "timeout": self.config.timeout,
                 },
-                cause=e,
-            ) from e
+            )
 
     def _get_auth_headers(self) -> dict[str, str]:
         """Get authentication headers if token is configured.

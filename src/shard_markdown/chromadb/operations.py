@@ -4,7 +4,9 @@ from typing import Any, cast
 
 from ..utils.errors import ChromaDBError
 from ..utils.logging import get_logger
+from .decorators import require_connection
 from .protocol import ChromaDBClientProtocol
+from .utils import prepare_include_list
 
 
 logger = get_logger(__name__)
@@ -21,6 +23,7 @@ class ChromaDBOperations:
         """
         self.client = client
 
+    @require_connection
     def query_collection(
         self,
         collection_name: str,
@@ -44,23 +47,15 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If query fails
         """
-        if not self.client._connection_validated or self.client.client is None:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "query_collection"},
-            )
-
         try:
             collection = self.client.client.get_collection(collection_name)
 
-            # Prepare include list - use Any for chromadb compatibility
-            include: Any = [
-                "documents",
-                "distances",
-            ]
-            if include_metadata:
-                include.append("metadatas")
+            # Prepare include list using consolidated utility
+            include: Any = prepare_include_list(
+                include_metadata=include_metadata,
+                include_distances=True,
+                base_items=["documents"],
+            )
 
             # Perform query
             results = collection.query(
@@ -101,6 +96,7 @@ class ChromaDBOperations:
                 cause=e,
             ) from e
 
+    @require_connection
     def get_document(
         self,
         collection_name: str,
@@ -120,20 +116,13 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If retrieval fails
         """
-        if not self.client._connection_validated or self.client.client is None:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "get_document"},
-            )
-
         try:
             collection = self.client.client.get_collection(collection_name)
 
-            # Prepare include list - use Any for chromadb compatibility
-            include: Any = ["documents"]
-            if include_metadata:
-                include.append("metadatas")
+            # Prepare include list using consolidated utility
+            include: Any = prepare_include_list(
+                include_metadata=include_metadata, base_items=["documents"]
+            )
 
             # Get document
             results = collection.get(ids=[document_id], include=include)
@@ -172,6 +161,7 @@ class ChromaDBOperations:
                 cause=e,
             ) from e
 
+    @require_connection
     def list_documents(
         self,
         collection_name: str,
@@ -193,20 +183,13 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If listing fails
         """
-        if not self.client._connection_validated or self.client.client is None:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "list_documents"},
-            )
-
         try:
             collection = self.client.client.get_collection(collection_name)
 
-            # Prepare include list - use Any for chromadb compatibility
-            include: Any = ["documents"]
-            if include_metadata:
-                include.append("metadatas")
+            # Prepare include list using consolidated utility
+            include: Any = prepare_include_list(
+                include_metadata=include_metadata, base_items=["documents"]
+            )
 
             # Get documents
             results = collection.get(limit=limit, offset=offset, include=include)
@@ -268,6 +251,7 @@ class ChromaDBOperations:
                 cause=e,
             ) from e
 
+    @require_connection
     def delete_documents(
         self, collection_name: str, document_ids: list[str]
     ) -> dict[str, Any]:
@@ -283,13 +267,6 @@ class ChromaDBOperations:
         Raises:
             ChromaDBError: If deletion fails
         """
-        if not self.client._connection_validated or self.client.client is None:
-            raise ChromaDBError(
-                "ChromaDB connection not established",
-                error_code=1400,
-                context={"operation": "delete_documents"},
-            )
-
         try:
             collection = self.client.client.get_collection(collection_name)
 

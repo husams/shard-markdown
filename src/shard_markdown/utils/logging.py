@@ -9,6 +9,8 @@ from typing import Any
 from rich.console import Console
 from rich.logging import RichHandler
 
+from .filesystem import ensure_directory_exists
+
 
 def setup_logging(
     level: int = logging.INFO,
@@ -48,7 +50,7 @@ def setup_logging(
 
     # Setup file handler if path provided
     if file_path:
-        file_path.parent.mkdir(parents=True, exist_ok=True)
+        ensure_directory_exists(file_path.parent)
 
         file_handler = logging.handlers.RotatingFileHandler(
             filename=file_path, maxBytes=max_file_size, backupCount=backup_count
