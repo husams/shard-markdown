@@ -5,17 +5,16 @@ from typing import Any
 
 import click
 import yaml
-from rich.console import Console
 from rich.table import Table
 
 from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
 from ...config.utils import set_nested_value
 from ...utils.logging import get_logger
+from ..utils import console
 
 
 _logger = get_logger(__name__)
-console = Console()
 
 
 @click.group()

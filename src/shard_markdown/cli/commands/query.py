@@ -4,37 +4,14 @@ import json
 from typing import Any
 
 import click
-from rich.console import Console
 from rich.table import Table
 
-from ...chromadb.factory import create_chromadb_client
 from ...utils.errors import ShardMarkdownError
 from ...utils.logging import get_logger
+from ..utils import console, get_connected_chromadb_client, handle_chromadb_errors
 
 
 _logger = get_logger(__name__)
-console = Console()
-
-
-def _handle_chromadb_errors(e: Exception, verbose: int) -> None:
-    """Handle ChromaDB errors with consistent formatting."""
-    if isinstance(e, ShardMarkdownError):
-        console.print(f"[red]Error:[/red] {e.message}")
-        if verbose > 0:
-            console.print(f"[dim]Error code: {e.error_code}[/dim]")
-    elif isinstance(e, ConnectionError | RuntimeError | ValueError):
-        console.print("[red]Unexpected error:[/red] %s", str(e))
-        if verbose > 1:
-            console.print_exception()
-    raise click.Abort() from e
-
-
-def _get_connected_chromadb_client(config: Any) -> Any:
-    """Get connected ChromaDB client or raise exception."""
-    chroma_client = create_chromadb_client(config.chromadb)
-    if not chroma_client.connect():
-        raise click.ClickException("Failed to connect to ChromaDB")
-    return chroma_client
 
 
 @click.group()
@@ -100,7 +77,7 @@ def search(  # noqa: C901
 
     try:
         # Initialize ChromaDB client
-        chroma_client = _get_connected_chromadb_client(config)
+        chroma_client = get_connected_chromadb_client(config)
 
         # Get collection
         try:
@@ -141,7 +118,7 @@ def search(  # noqa: C901
         console.print(f"[green]Found {count} document(s)[/green]")
 
     except (ShardMarkdownError, ConnectionError, RuntimeError, ValueError) as e:
-        _handle_chromadb_errors(e, verbose)
+        handle_chromadb_errors(e, verbose)
 
 
 @query.command()
@@ -174,7 +151,7 @@ def get(
 
     try:
         # Initialize ChromaDB client
-        chroma_client = _get_connected_chromadb_client(config)
+        chroma_client = get_connected_chromadb_client(config)
 
         # Get collection
         try:
@@ -218,7 +195,7 @@ def get(
         console.print("[green]✓ Document retrieved successfully[/green]")
 
     except (ShardMarkdownError, ConnectionError, RuntimeError, ValueError) as e:
-        _handle_chromadb_errors(e, verbose)
+        handle_chromadb_errors(e, verbose)
 
 
 def _display_search_results_table(
