@@ -207,5 +207,5 @@ dev = [
     "pre-commit>=4.3.0",
     "safety>=3.6.0",
     "bandit[toml]>=1.8.6",
-    "psutil>=7.0.0",
+    "psutil>=6.1.0,<6.2.0",
 ]
