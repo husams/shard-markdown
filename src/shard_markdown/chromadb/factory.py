@@ -6,6 +6,7 @@ from ..config.settings import ChromaDBConfig
 from ..utils.logging import get_logger
 from .async_protocol import AsyncChromaDBClientProtocol
 from .protocol import ChromaDBClientProtocol
+from .utils import check_socket_connectivity
 
 
 logger = get_logger(__name__)
@@ -208,24 +209,20 @@ def _test_chromadb_connectivity(config: ChromaDBConfig) -> bool:
         True if ChromaDB server is accessible, False otherwise
     """
     try:
-        import socket
+        # Use consolidated socket connectivity testing utility
+        result = check_socket_connectivity(config.host, config.port, timeout=2.0)
 
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(2)  # Short timeout for quick test
-        result = sock.connect_ex((config.host, config.port))
-        sock.close()
-
-        if result == 0:
+        if result:
             logger.debug(
                 f"ChromaDB server is accessible at {config.host}:{config.port}"
             )
-            return True
         else:
             logger.debug(
                 f"ChromaDB server not accessible at {config.host}:{config.port}"
             )
-            return False
 
-    except (OSError, ImportError) as e:
+        return result
+
+    except Exception as e:
         logger.debug("Failed to test ChromaDB connectivity: %s", e)
         return False

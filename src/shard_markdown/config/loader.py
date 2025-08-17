@@ -7,6 +7,7 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 
+from ..utils import ensure_directory_exists
 from .defaults import DEFAULT_CONFIG_LOCATIONS, DEFAULT_CONFIG_YAML, ENV_VAR_MAPPINGS
 from .settings import AppConfig
 from .utils import set_nested_value
@@ -62,7 +63,7 @@ def save_config(config: AppConfig, config_path: Path) -> None:
         config_path: Path where to save configuration
     """
     # Create directory if it doesn't exist
-    config_path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_directory_exists(config_path.parent)
 
     # Convert to dictionary with mode='json' to properly serialize enums
     config_dict = config.model_dump(mode="json")
@@ -86,7 +87,7 @@ def create_default_config(config_path: Path, force: bool = False) -> None:
         raise FileExistsError(f"Configuration file already exists: {config_path}")
 
     # Create directory if it doesn't exist
-    config_path.parent.mkdir(parents=True, exist_ok=True)
+    ensure_directory_exists(config_path.parent)
 
     # Write default configuration
     with open(config_path, "w") as f:
