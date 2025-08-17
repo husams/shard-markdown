@@ -441,3 +441,79 @@ jobs:
        result = await async_function()
        assert result
    ```
+
+## Manual Testing Checklist
+
+### Pre-Testing Setup
+
+#### Environment Preparation
+- [ ] Virtual environment activated
+- [ ] Latest dependencies installed (`uv pip install -e ".[dev]"`)
+- [ ] ChromaDB running (if testing real integration)
+- [ ] Test data directory prepared
+- [ ] Previous test artifacts cleaned up
+
+#### Test Data Preparation
+```bash
+# Create test directory structure
+mkdir -p manual_tests/{simple,complex,large,edge_cases}
+
+# Simple test documents
+echo "# Simple Document
+This is a basic test document.
+## Section 1
+Content here." > manual_tests/simple/basic.md
+```
+
+### Core CLI Testing
+
+#### Process Command Tests
+- [ ] Process single markdown file
+- [ ] Process directory of files
+- [ ] Process with custom chunk size
+- [ ] Process with overlap settings
+- [ ] Process with different chunking strategies
+- [ ] Handle missing input files gracefully
+- [ ] Handle permission errors
+
+#### Collection Management Tests
+- [ ] List available collections
+- [ ] Create new collection
+- [ ] Query existing collection
+- [ ] Delete collection
+- [ ] Handle connection errors
+
+#### Configuration Tests
+- [ ] Show current configuration
+- [ ] Override with environment variables
+- [ ] Use custom config files
+- [ ] Validate configuration errors
+
+### Testing Strategy Framework
+
+#### Testing Philosophy
+- **Test-Driven Development (TDD)**: Core functionality developed with tests first
+- **Behavior-Driven Testing**: Tests describe user scenarios and expected outcomes
+- **Layered Testing**: Unit, integration, and end-to-end tests provide complete coverage
+- **Performance Testing**: Ensures tool performs well under various conditions
+- **Cross-Platform Testing**: Validates functionality across operating systems
+
+#### Testing Stack Dependencies
+```toml
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"           # Coverage reporting
+pytest-mock = "^3.11.0"         # Mocking utilities
+pytest-asyncio = "^0.21.0"      # Async testing support
+pytest-benchmark = "^4.0.0"     # Performance benchmarking
+pytest-xdist = "^3.3.0"         # Parallel test execution
+factory-boy = "^3.3.0"          # Test data generation
+faker = "^19.6.0"               # Fake data generation
+```
+
+#### Test Organization Best Practices
+- **Unit Tests**: Fast, isolated tests for individual components
+- **Integration Tests**: Test component interactions
+- **End-to-End Tests**: Full workflow validation
+- **Performance Tests**: Load and benchmark testing
+- **Smoke Tests**: Quick validation of basic functionality
