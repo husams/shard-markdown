@@ -5,6 +5,12 @@ API Reference
 This section provides the complete API reference for the shard-markdown
 library.
 
+.. note::
+   
+   To build documentation with full API reference, ensure all project dependencies
+   are installed in the build environment. The API documentation is generated 
+   automatically from source code docstrings.
+
 Core Modules
 ============
 
