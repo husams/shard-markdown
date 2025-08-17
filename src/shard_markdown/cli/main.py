@@ -4,18 +4,16 @@ import sys
 from pathlib import Path
 
 import click
-from rich.console import Console
 from rich.traceback import install
 
 from ..config import load_config
 from ..utils.logging import setup_logging
 from .commands import collections, config, process, query
+from .utils import console
 
 
 # Install rich tracebacks for better error display
 install(show_locals=True)
-
-console = Console()
 
 
 @click.group()
