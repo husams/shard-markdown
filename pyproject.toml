@@ -104,6 +104,7 @@ ignore = [
 "test_*.py" = ["D100", "D101", "D102", "D103", "S101"]  # Relax requirements for tests
 "tests/**/*.py" = ["D100", "D101", "D102", "D103", "S101"]
 "tests/fixtures/chromadb_fixtures.py" = ["S607"]  # Allow subprocess with partial path for docker commands
+".claude/**/*.py" = ["S404", "S603"]  # Allow subprocess usage in Claude Code infrastructure
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -182,6 +183,19 @@ exclude_lines = [
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
 ]
+
+[tool.bandit]
+exclude_dirs = [
+    ".claude",
+    "tests",
+    "docs",
+    ".git",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+]
+skips = ["B404", "B603"]  # Skip subprocess warnings for infrastructure code
 
 
 [dependency-groups]

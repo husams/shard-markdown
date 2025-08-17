@@ -24,7 +24,7 @@ It automatically formats, lints, and type-checks Python files using ruff and myp
 #    - 1: Errors occurred - signals failure to calling process
 #
 # 4. PROCESSING PIPELINE:
-#    - Format (beautify) → Lint (fix issues) → Security check (bandit) → Type check (enforce safety)
+#    - Format (beautify) → Lint (fix issues) → Security check → Type check (enforce)
 #    - Only type check failures block edits completely with JSON response
 #    - Format/lint/security failures cause exit code 1 but don't block via JSON
 #
@@ -37,7 +37,7 @@ It automatically formats, lints, and type-checks Python files using ruff and myp
 import json
 import logging
 import os
-import subprocess  # noqa: S404
+import subprocess  # nosec B404
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -101,7 +101,7 @@ def _run_command(command: list[str], logger: logging.Logger) -> tuple[bool, str]
     try:
         # Run command with captured output, don't raise on non-zero exit
         # Security note: command list is constructed from trusted sources only
-        result = subprocess.run(  # noqa: S603
+        result = subprocess.run(  # nosec B603
             command,
             capture_output=True,  # Capture both stdout and stderr
             text=True,  # Return strings, not bytes
