@@ -2,11 +2,7 @@
 
 import socket
 import time
-from typing import TYPE_CHECKING, Any, cast
-
-
-if TYPE_CHECKING:
-    pass
+from typing import Any, cast
 
 from ..config.settings import ChromaDBConfig
 from ..core.metadata import MetadataExtractor
@@ -19,8 +15,8 @@ from .version_detector import APIVersionInfo, ChromaDBVersionDetector
 # Import ChromaDB exceptions for better error handling
 try:
     from chromadb.errors import (
-        ChromaError,
         InvalidArgumentError,
+        NotFoundError,
         UniqueConstraintError,
     )
 
@@ -29,17 +25,17 @@ except ImportError:
     # Fallback if chromadb is not installed or older version
     CHROMADB_AVAILABLE = False
 
-    class ChromaError(Exception):  # type: ignore[no-redef]
-        """Fallback ChromaError exception."""
-
-        pass
-
     class InvalidArgumentError(ValueError):  # type: ignore[no-redef]
         """Fallback InvalidArgumentError exception."""
 
         pass
 
-    class UniqueConstraintError(ValueError):  # type: ignore[no-redef]
+    class NotFoundError(Exception):  # type: ignore[no-redef]
+        """Fallback NotFoundError exception."""
+
+        pass
+
+    class UniqueConstraintError(Exception):  # type: ignore[no-redef]
         """Fallback UniqueConstraintError exception."""
 
         pass
