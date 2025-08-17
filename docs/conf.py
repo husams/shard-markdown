@@ -62,28 +62,6 @@ exclude_patterns = [
     "_build",
     "Thumbs.db",
     ".DS_Store",
-    # Exclude problematic markdown files that cause build issues
-    "*-testing-*.md",
-    "*-flake8-*.md",
-    "*-verification-*.md",
-    "manual-testing-checklist.md",
-    "flake8-*.md",
-    "final-*.md",
-    "formatting-*.md",
-    "test-*.md",
-    "ci-cd-setup.md",
-    "development-phases.md",
-    "implementation-guide.md",
-    "milestones.md",
-    "performance-metrics.md",
-    "progress-tracking.md",
-    "quality-recommendations.md",
-    "resource-allocation.md",
-    "risk-assessment.md",
-    "task-breakdown.md",
-    "time-estimates.md",
-    "testing-*.md",
-    "dependency-map.md",
 ]
 
 # The suffix(es) of source filenames.
@@ -131,7 +109,7 @@ intersphinx_mapping = {
     "click": ("https://click.palletsprojects.com/en/stable/", None),
 }
 
-# MyST settings
+# MyST settings  
 myst_enable_extensions = [
     "amsmath",
     "colon_fence",
@@ -139,7 +117,6 @@ myst_enable_extensions = [
     "dollarmath",
     "html_admonition",
     "html_image",
-    "linkify",
     "replacements",
     "smartquotes",
     "substitution",

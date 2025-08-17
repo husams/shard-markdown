@@ -10,15 +10,27 @@ extraction, and seamless integration with vector databases.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User Guide:
 
    overview
    installation
    quickstart
    cli-reference
-   api-reference
    configuration
    examples
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference:
+
+   api-reference
+   architecture
+   technical-specification
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Development:
+
    contributing
    changelog
 
@@ -74,11 +86,7 @@ Create a configuration file:
 API Reference
 =============
 
-.. toctree::
-   :maxdepth: 2
-   :caption: API Documentation:
-
-   api/modules
+For detailed API documentation, see the :doc:`api-reference` section.
 
 Indices and tables
 ==================

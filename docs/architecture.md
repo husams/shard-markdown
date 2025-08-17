@@ -521,3 +521,73 @@ def sample_markdown_documents():
         Path("tests/fixtures/sample_documents/with_frontmatter.md")
     ]
 ```
+
+## 8. Architecture Decision Records (ADR)
+
+### ADR-001: Mock ChromaDB Client for Development
+
+**Status**: Accepted
+
+Implement a mock ChromaDB client that provides the same interface as the real client but uses local JSON file storage for persistence.
+
+**Rationale**: 
+- Immediate usability without external dependencies
+- Simplified testing and development workflow
+- Offline development capability
+- Easy demonstration and evaluation
+
+### ADR-002: Click Framework for CLI
+
+**Status**: Accepted
+
+Use Click framework for CLI implementation due to its mature feature set, excellent documentation, and integration with Rich for formatted output.
+
+### ADR-003: Pydantic for Configuration Management
+
+**Status**: Accepted
+
+Use Pydantic models for configuration definition and validation to provide type-safe configuration handling with automatic validation and environment variable integration.
+
+### ADR-004: Rich for CLI Output Formatting
+
+**Status**: Accepted
+
+Use Rich library for all CLI output formatting to provide professional appearance with colored output, progress bars, and formatted tables.
+
+### ADR-005: Modular Chunking Strategy Architecture
+
+**Status**: Accepted
+
+Implement pluggable chunking strategy architecture with base classes and concrete implementations to support different use cases (structure-aware, fixed-size, semantic).
+
+### ADR-006: Factory Pattern for Client Creation
+
+**Status**: Accepted
+
+Implement factory pattern with automatic detection and manual override to enable transparent fallback to mock when ChromaDB unavailable.
+
+### ADR-007: Source Layout Package Structure
+
+**Status**: Accepted
+
+Use src/ layout for package structure following modern Python packaging best practices.
+
+## 9. Key Design Patterns
+
+### Strategy Pattern (Chunking)
+The chunking system uses the Strategy pattern to allow different chunking algorithms:
+- `BaseChunker` abstract base class
+- `FixedChunker` for size-based chunking
+- `StructureChunker` for header-aware chunking
+- `ChunkingEngine` context class
+
+### Factory Pattern (ChromaDB Client)
+Client creation uses Factory pattern for transparent switching between real and mock implementations based on environment availability.
+
+### Command Pattern (CLI Commands)
+CLI commands implement the Command pattern with:
+- Abstract `Command` base class
+- Concrete implementations for each command type
+- Consistent execution interface
+
+This architecture documentation provides a comprehensive view of the Shard Markdown system's design, showing how components interact, data flows through the system, and key architectural patterns are implemented. The modular design ensures maintainability, testability, and extensibility while providing robust error handling and performance optimization.
