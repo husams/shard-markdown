@@ -24,9 +24,9 @@ It automatically formats, lints, and type-checks Python files using ruff and myp
 #    - 1: Errors occurred - signals failure to calling process
 #
 # 4. PROCESSING PIPELINE:
-#    - Format (beautify) → Lint (fix issues) → Type check (enforce safety)
+#    - Format (beautify) → Lint (fix issues) → Security check (bandit) → Type check (enforce safety)
 #    - Only type check failures block edits completely with JSON response
-#    - Format/lint failures cause exit code 1 but don't block via JSON
+#    - Format/lint/security failures cause exit code 1 but don't block via JSON
 #
 # 5. DEBUGGING CAPABILITIES:
 #    - All operations logged to ~/.claude_logs/precommit_hook_YYYYMMDD.log
@@ -185,6 +185,41 @@ def _lint_python_file(file_path: str, logger: logging.Logger) -> bool:
     return success
 
 
+def _check_bandit(file_path: str, logger: logging.Logger) -> tuple[bool, str]:
+    """Security check Python file using bandit security linter.
+
+    Args:
+        file_path: Path to the Python file to security check
+        logger: Logger instance for status tracking
+
+    Returns:
+        Tuple of (success: bool, output: str)
+        - success: True if no security issues found, False otherwise
+        - output: Combined bandit output (messages, findings, etc.)
+
+    Note:
+        - Uses 'uv run bandit' command with quiet mode
+        - Non-blocking: Security warnings don't reject edits
+        - Success messages go to stdout, warnings to stderr
+        - Returns both status and output for information
+    """
+    logger.info(f"Security checking Python file: {file_path}")
+    success, output = _run_command(["uv", "run", "bandit", "-q", file_path], logger)
+
+    if success:
+        print(f"✓ Bandit passed: {file_path}")
+        logger.info(f"Bandit security check passed: {file_path}")
+    else:
+        # Security warnings are informational - send to stderr but don't block
+        print(f"⚠ Bandit found security issues in: {file_path}", file=sys.stderr)
+        logger.warning(f"Bandit security check found issues in: {file_path}")
+        if output.strip():
+            print(f"Security warnings: {output.strip()}", file=sys.stderr)
+            logger.warning(f"Bandit output: {output.strip()}")
+
+    return success, output.strip()
+
+
 def _check_mypy(file_path: str, logger: logging.Logger) -> tuple[bool, str]:
     """Type check Python file using mypy static type checker.
 
@@ -230,7 +265,7 @@ def main() -> None:
     This function:
     1. Sets up logging and parses hook input data
     2. Identifies the target Python file from various sources
-    3. Runs format, lint, and type check operations in sequence
+    3. Runs format, lint, security check, and type check operations in sequence
     4. Blocks edits if type checking fails, allows with warnings otherwise
     """
     # INITIALIZATION: Setup logging infrastructure first
@@ -335,7 +370,10 @@ def main() -> None:
     # STEP 2: Lint and auto-fix issues (non-blocking - improve code quality)
     lint_success = _lint_python_file(file_path, logger)
 
-    # STEP 3: Type check with mypy (BLOCKING - enforce type safety)
+    # STEP 3: Security check with bandit (non-blocking - security awareness)
+    bandit_success, bandit_output = _check_bandit(file_path, logger)
+
+    # STEP 4: Type check with mypy (BLOCKING - enforce type safety)
     mypy_success, mypy_output = _check_mypy(file_path, logger)
 
     # CRITICAL DECISION POINT: Type safety enforcement
@@ -366,14 +404,14 @@ def main() -> None:
         sys.exit(1)  # Exit with error code to signal failure
 
     # SUCCESS EVALUATION: Determine final hook result
-    # All three checks completed - evaluate overall success
-    if format_success and lint_success and mypy_success:
+    # All four checks completed - evaluate overall success
+    if format_success and lint_success and bandit_success and mypy_success:
         # Perfect outcome: all quality checks passed
         logger.info("Hook completed successfully - all checks passed")
         sys.exit(0)  # Success: edit proceeds with clean code
     else:
-        # Partial success: type safety maintained but style issues remain
-        # Format/lint failures are warnings only since mypy passed
+        # Partial success: type safety maintained but style/security issues remain
+        # Format/lint/bandit failures are warnings only since mypy passed
         logger.warning("Hook completed with some warnings (but mypy passed)")
         sys.exit(1)  # Warning: signals issues but allows edit to proceed
 
