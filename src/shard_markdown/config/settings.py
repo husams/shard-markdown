@@ -17,6 +17,7 @@ from ..utils import ensure_directory_exists
 # Default configuration file locations (simplified from 5 to 3)
 DEFAULT_CONFIG_LOCATIONS = [
     Path.home() / ".shard-md" / "config.yaml",  # Global config
+    Path.cwd() / ".shard-md" / "config.yaml",  # Local config
     Path.cwd() / "shard-md.yaml",  # Project config
 ]
 
@@ -361,18 +362,24 @@ def _load_config_file(config_path: Path) -> dict[str, Any]:
         raise ValueError(f"Error reading configuration file {config_path}: {e}") from e
 
 
-def _apply_env_overrides(config_data: dict[str, Any]) -> dict[str, Any]:
+def _apply_env_overrides(config_data: Any) -> dict[str, Any]:
     """Apply environment variable overrides to configuration.
 
     Environment variable values are passed directly to Pydantic models,
     which handle type conversion based on field definitions.
 
     Args:
-        config_data: Base configuration data
+        config_data: Base configuration data (should be dict, but may be
+                    other types in edge cases on some platforms)
 
     Returns:
         Configuration with environment overrides applied
     """
+    # Ensure config_data is always a dictionary to handle edge cases
+    # where _load_config_file might return unexpected types on some platforms
+    if not isinstance(config_data, dict):
+        config_data = {}
+
     result = config_data.copy()
 
     for env_var, config_path in ENV_VAR_MAPPINGS.items():
@@ -381,4 +388,5 @@ def _apply_env_overrides(config_data: dict[str, Any]) -> dict[str, Any]:
             # Pass string values directly to Pydantic for proper type conversion
             set_nested_value(result, config_path, env_value)
 
-    return result
+    # result is guaranteed to be a dict[str, Any] at this point
+    return result  # type: ignore[no-any-return]
