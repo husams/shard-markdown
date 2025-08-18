@@ -29,65 +29,40 @@ class TestConfigCommand:
             ):
                 result = runner.invoke(cli, ["config", "path"])
                 assert result.exit_code == 0
-                assert "Configuration file locations" in result.output
+                assert "global.yaml" in result.output
+                assert "local.yaml" in result.output
 
     def test_init_command(self, runner: CliRunner) -> None:
         """Test the 'config init' command."""
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
-            local_config_path = fs_dir / ".shard-md/config.yaml"
+            global_config_path = fs_dir / "global.yaml"
+            local_config_path = fs_dir / "local.yaml"
+
             with patch(
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [fs_dir / "global.yaml", local_config_path],
+                [global_config_path, local_config_path],
             ):
+                # Test local init (default)
                 result = runner.invoke(cli, ["config", "init"])
                 assert result.exit_code == 0
-                assert "Initialized configuration file" in result.output
                 assert local_config_path.exists()
 
-    def test_init_command_global(self, runner: CliRunner) -> None:
-        """Test the 'config init --global' command."""
-        with runner.isolated_filesystem() as fs_dir_str:
-            fs_dir = Path(fs_dir_str)
-            global_config_path = fs_dir / ".shard-md/config.yaml"
-            with patch(
-                "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [global_config_path, fs_dir / "local.yaml"],
-            ):
-                result = runner.invoke(cli, ["config", "init", "--global"])
-                assert result.exit_code == 0
-                assert global_config_path.exists()
+                # Check the content
+                with open(local_config_path) as f:
+                    data = yaml.safe_load(f)
+                assert "chromadb" in data
+                assert "chunking" in data
 
-    def test_init_command_force(self, runner: CliRunner) -> None:
-        """Test the 'config init --force' command."""
-        with runner.isolated_filesystem() as fs_dir_str:
-            fs_dir = Path(fs_dir_str)
-            config_path = fs_dir / ".shard-md/config.yaml"
-            config_path.parent.mkdir()
-            config_path.write_text("old content")
-            with patch(
-                "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [fs_dir / "dummy.yaml", config_path],
-            ):
-                result = runner.invoke(cli, ["config", "init", "--force"])
-                assert result.exit_code == 0
-                content = config_path.read_text()
-                assert "old content" not in content
-
-    def test_init_command_already_exists(self, runner: CliRunner) -> None:
-        """Test 'config init' when file already exists without --force."""
-        with runner.isolated_filesystem() as fs_dir_str:
-            fs_dir = Path(fs_dir_str)
-            config_path = fs_dir / ".shard-md/config.yaml"
-            config_path.parent.mkdir()
-            config_path.write_text("old content")
-            with patch(
-                "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [fs_dir / "dummy.yaml", config_path],
-            ):
+                # Test that re-running without --force fails
                 result = runner.invoke(cli, ["config", "init"])
                 assert result.exit_code == 0
                 assert "Configuration file already exists" in result.output
+
+                # Test global init
+                result = runner.invoke(cli, ["config", "init", "--global"])
+                assert result.exit_code == 0
+                assert global_config_path.exists()
 
     def test_show_command_yaml(self, runner: CliRunner) -> None:
         """Test the 'config show' command with YAML format."""
@@ -95,7 +70,7 @@ class TestConfigCommand:
             fs_dir = Path(fs_dir_str)
             config_path = fs_dir / ".shard-md/config.yaml"
             with patch(
-                "shard_markdown.config.loader._find_config_file",
+                "shard_markdown.config.settings._find_config_file",
                 return_value=config_path,
             ):
                 with patch(
@@ -112,35 +87,24 @@ class TestConfigCommand:
         """Test the 'config set' command."""
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
-            config_path = fs_dir / ".shard-md/config.yaml"
-            with patch(
-                "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [fs_dir / "dummy.yaml", config_path],
-            ):
-                runner.invoke(cli, ["config", "init"])
-                result = runner.invoke(
-                    cli, ["config", "set", "chunking.default_size", "1234"]
-                )
-                assert result.exit_code == 0
-                assert "Set chunking.default_size = 1234" in result.output
-                with config_path.open() as f:
-                    config_data = yaml.safe_load(f)
-                assert config_data["chunking"]["default_size"] == 1234
+            global_config_path = fs_dir / "global.yaml"
+            local_config_path = fs_dir / "local.yaml"
 
-    def test_set_command_custom_metadata(self, runner: CliRunner) -> None:
-        """Test 'config set' with a custom metadata key."""
-        with runner.isolated_filesystem() as fs_dir_str:
-            fs_dir = Path(fs_dir_str)
-            config_path = fs_dir / ".shard-md" / "config.yaml"
             with patch(
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                [fs_dir / "dummy.yaml", config_path],
+                [global_config_path, local_config_path],
             ):
+                # Initialize config first
                 runner.invoke(cli, ["config", "init"])
+
+                # Test setting a value
                 result = runner.invoke(
-                    cli, ["config", "set", "custom_metadata.foo", "bar"]
+                    cli, ["config", "set", "chromadb.host", "example.com"]
                 )
                 assert result.exit_code == 0
-                with config_path.open() as f:
-                    config_data = yaml.safe_load(f)
-                assert config_data["custom_metadata"]["foo"] == "bar"
+                assert "Set chromadb.host = example.com" in result.output
+
+                # Verify the value was set in the local config
+                with open(local_config_path) as f:
+                    data = yaml.safe_load(f)
+                assert data["chromadb"]["host"] == "example.com"

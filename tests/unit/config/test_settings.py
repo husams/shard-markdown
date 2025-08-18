@@ -1,5 +1,7 @@
 """Unit tests for configuration settings."""
 
+from typing import cast
+
 import pytest
 from pydantic import ValidationError
 
@@ -146,7 +148,7 @@ class TestChunkingConfig:
 
         # Invalid method should fail
         with pytest.raises(ValidationError):
-            ChunkingConfig(method="invalid_method")
+            ChunkingConfig(method=cast(ChunkingMethod, "invalid_method"))
 
 
 class TestProcessingConfig:

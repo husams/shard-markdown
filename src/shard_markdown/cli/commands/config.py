@@ -7,9 +7,12 @@ import click
 import yaml
 from rich.table import Table
 
-from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
-from ...config.loader import create_default_config, save_config
-from ...config.utils import set_nested_value
+from ...config.settings import (
+    DEFAULT_CONFIG_LOCATIONS,
+    create_default_config,
+    save_config,
+    set_nested_value,
+)
 from ...utils.logging import get_logger
 from ..utils import console
 
