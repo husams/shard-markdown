@@ -19,7 +19,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from shard_markdown.chromadb.client import ChromaDBClient
-from shard_markdown.config.loader import load_config
+from shard_markdown.config import Settings, load_config
 
 
 @dataclass
@@ -404,6 +404,23 @@ class CoverageSummaryGenerator:
         return "\n".join(lines)
 
 
+def _create_chromadb_config_from_settings(settings: Settings) -> Any:
+    """Create ChromaDB config object from simplified settings.
+
+    This is a temporary helper function to bridge the gap between
+    the new flat configuration and the existing ChromaDBClient API.
+    """
+    from shard_markdown.config.settings import ChromaDBConfig
+
+    return ChromaDBConfig(
+        host=settings.chroma_host,
+        port=settings.chroma_port,
+        ssl=settings.chroma_ssl,
+        auth_token=settings.chroma_auth_token,
+        timeout=settings.chroma_timeout,
+    )
+
+
 def main() -> None:
     """Main processing function."""
     try:
@@ -449,10 +466,14 @@ def main() -> None:
         # Store in ChromaDB
         print("\nConnecting to ChromaDB...")
         config = load_config()
-        # Override host to localhost if needed
-        if hasattr(config.chromadb, "host") and config.chromadb.host == "test":
-            config.chromadb.host = "localhost"
-        client = ChromaDBClient(config.chromadb)
+
+        # Override host to localhost if needed (using simplified flat structure)
+        if config.chroma_host == "test":
+            config.chroma_host = "localhost"
+
+        # Create ChromaDB config object for client
+        chromadb_config = _create_chromadb_config_from_settings(config)
+        client = ChromaDBClient(chromadb_config)
 
         try:
             client.connect()

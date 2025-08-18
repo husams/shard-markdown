@@ -1,4 +1,8 @@
-"""Tests for configuration loader backward compatibility layer."""
+"""Tests for configuration loader backward compatibility.
+
+Tests that the functions previously in loader.py still work correctly
+and provide backward compatibility for the old nested configuration format.
+"""
 
 import os
 import tempfile
@@ -8,16 +12,17 @@ from unittest.mock import patch
 import pytest
 import yaml
 
-from shard_markdown.config.loader import (
+from shard_markdown.config import (
+    AppConfig,
+    Settings,
     create_default_config,
     load_config,
     save_config,
 )
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
 
 
 class TestLoaderBackwardCompatibility:
-    """Test backward compatibility of loader module functions."""
+    """Test backward compatibility of configuration loading functions."""
 
     def test_load_config_no_args(self) -> None:
         """Test load_config works without arguments."""
@@ -29,21 +34,24 @@ class TestLoaderBackwardCompatibility:
             with patch.dict(os.environ, {}, clear=True):
                 config = load_config()
 
-                # Should return valid AppConfig with defaults
-                assert isinstance(config, AppConfig)
-                assert config.chromadb.host == "localhost"
-                assert config.chromadb.port == 8000
-                assert config.chunking.default_size == 1000
+                # Should return valid Settings with defaults
+                assert isinstance(config, Settings)
+                assert config.chroma_host == "localhost"
+                assert config.chroma_port == 8000
+                assert config.chunk_size == 1000
 
     def test_load_config_with_path(self) -> None:
         """Test load_config works with explicit path."""
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.yaml"
 
-            # Create a test config file
+            # Create a test config file using flat structure
             config_data = {
-                "chromadb": {"host": "test-host", "port": 9000, "ssl": True},
-                "chunking": {"default_size": 1500, "default_overlap": 300},
+                "chroma_host": "test-host",
+                "chroma_port": 9000,
+                "chroma_ssl": True,
+                "chunk_size": 1500,
+                "chunk_overlap": 300,
             }
 
             with open(config_path, "w") as f:
@@ -54,11 +62,38 @@ class TestLoaderBackwardCompatibility:
                 config = load_config(config_path)
 
                 # Should load custom values
-                assert config.chromadb.host == "test-host"
-                assert config.chromadb.port == 9000
-                assert config.chromadb.ssl is True
-                assert config.chunking.default_size == 1500
-                assert config.chunking.default_overlap == 300
+                assert config.chroma_host == "test-host"
+                assert config.chroma_port == 9000
+                assert config.chroma_ssl is True
+                assert config.chunk_size == 1500
+                assert config.chunk_overlap == 300
+
+    def test_load_config_nested_backward_compatibility(self) -> None:
+        """Test load_config handles old nested configuration format."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "nested_config.yaml"
+
+            # Create a test config file using OLD nested structure
+            config_data = {
+                "chromadb": {"host": "nested-host", "port": 9000, "ssl": True},
+                "chunking": {"default_size": 1500, "default_overlap": 300},
+                "logging": {"level": "DEBUG"},
+            }
+
+            with open(config_path, "w") as f:
+                yaml.dump(config_data, f)
+
+            # Clear all environment variables to ensure clean state
+            with patch.dict(os.environ, {}, clear=True):
+                config = load_config(config_path)
+
+                # Should load and migrate nested values to flat structure
+                assert config.chroma_host == "nested-host"
+                assert config.chroma_port == 9000
+                assert config.chroma_ssl is True
+                assert config.chunk_size == 1500
+                assert config.chunk_overlap == 300
+                assert config.log_level == "DEBUG"
 
     def test_load_config_nonexistent_path(self) -> None:
         """Test load_config raises error for nonexistent explicit path."""
@@ -72,8 +107,8 @@ class TestLoaderBackwardCompatibility:
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "saved_config.yaml"
 
-            # Create a config to save
-            config = AppConfig(chromadb=ChromaDBConfig(host="saved-host", port=7000))
+            # Create a config to save using new flat structure
+            config = Settings(chroma_host="saved-host", chroma_port=7000)
 
             # Save the config
             save_config(config, config_path)
@@ -84,8 +119,8 @@ class TestLoaderBackwardCompatibility:
             with open(config_path) as f:
                 saved_data = yaml.safe_load(f)
 
-            assert saved_data["chromadb"]["host"] == "saved-host"
-            assert saved_data["chromadb"]["port"] == 7000
+            assert saved_data["chroma_host"] == "saved-host"
+            assert saved_data["chroma_port"] == 7000
 
     def test_save_config_creates_directory(self) -> None:
         """Test save_config creates parent directories if needed."""
@@ -95,7 +130,7 @@ class TestLoaderBackwardCompatibility:
             # Parent directories don't exist yet
             assert not config_path.parent.exists()
 
-            config = AppConfig()
+            config = Settings()
             save_config(config, config_path)
 
             # Should have created directories and file
@@ -118,15 +153,15 @@ class TestLoaderBackwardCompatibility:
                 content = f.read()
                 data = yaml.safe_load(content)
 
-            assert "chromadb" in data
-            assert "chunking" in data
-            assert "processing" in data
-            assert "logging" in data
+            # Check for flat structure keys
+            assert "chroma_host" in data
+            assert "chunk_size" in data
+            assert "log_level" in data
 
             # Check some default values
-            assert data["chromadb"]["host"] == "localhost"
-            assert data["chromadb"]["port"] == 8000
-            assert data["chunking"]["default_size"] == 1000
+            assert data["chroma_host"] == "localhost"
+            assert data["chroma_port"] == 8000
+            assert data["chunk_size"] == 1000
 
     def test_create_default_config_existing_file_no_force(self) -> None:
         """Test create_default_config raises error when file exists and force=False."""
@@ -158,8 +193,8 @@ class TestLoaderBackwardCompatibility:
 
             # File should now contain default config
             content = config_path.read_text()
-            assert "chromadb:" in content
-            assert "localhost" in content
+            assert "chroma_host: localhost" in content
+            assert "chroma_port: 8000" in content
             assert "existing content" not in content
 
     def test_create_default_config_creates_directory(self) -> None:
@@ -176,36 +211,30 @@ class TestLoaderBackwardCompatibility:
             assert config_path.exists()
             assert config_path.parent.exists()
 
-    def test_loader_functions_are_reexports(self) -> None:
-        """Test that loader functions are properly re-exported from settings."""
-        # Import directly from settings to compare
-        from shard_markdown.config.settings import (
-            create_default_config as settings_create,
-        )
-        from shard_markdown.config.settings import (
-            load_config as settings_load,
-        )
-        from shard_markdown.config.settings import (
-            save_config as settings_save,
-        )
+    def test_backward_compatibility_classes(self) -> None:
+        """Test that backward compatibility classes work correctly."""
+        # AppConfig provides the old nested structure
+        app_config = AppConfig()
 
-        # Functions should be the same objects (re-exports)
-        assert load_config is settings_load
-        assert save_config is settings_save
-        assert create_default_config is settings_create
+        # Should have nested structure for backward compatibility
+        assert hasattr(app_config, "chromadb")
+        assert hasattr(app_config, "chunking")
+        assert hasattr(app_config, "logging")
 
-    def test_loader_module_all_exports(self) -> None:
-        """Test that loader module exports expected functions in __all__."""
-        import shard_markdown.config.loader as loader_module
+        # ChromaDB config should have old attribute names
+        assert app_config.chromadb.host == "localhost"
+        assert app_config.chromadb.port == 8000
 
-        # Check __all__ contains expected functions
-        expected_exports = {"create_default_config", "load_config", "save_config"}
-        assert set(loader_module.__all__) == expected_exports
+        # Chunking config should have old attribute names
+        assert app_config.chunking.default_size == 1000
+        assert app_config.chunking.default_overlap == 200
 
-        # Check all exported functions are accessible
-        for func_name in expected_exports:
-            assert hasattr(loader_module, func_name)
-            assert callable(getattr(loader_module, func_name))
+        # New Settings class should have flat structure
+        settings = Settings()
+        assert settings.chroma_host == "localhost"
+        assert settings.chroma_port == 8000
+        assert settings.chunk_size == 1000
+        assert settings.chunk_overlap == 200
 
 
 class TestLoaderEnvironmentIntegration:
@@ -228,19 +257,21 @@ class TestLoaderEnvironmentIntegration:
                 config = load_config()
 
                 # Environment variables should override defaults
-                assert config.chromadb.host == "env-host"
-                assert config.chromadb.port == 9999
-                assert config.chromadb.ssl is True
-                assert config.chunking.default_size == 2000
+                assert config.chroma_host == "env-host"
+                assert config.chroma_port == 9999
+                assert config.chroma_ssl is True
+                assert config.chunk_size == 2000
 
     def test_load_config_file_and_env_precedence(self) -> None:
         """Test that environment variables override config file values."""
         with tempfile.TemporaryDirectory() as tmpdir:
             config_path = Path(tmpdir) / "test_config.yaml"
 
-            # Create config file with some values
+            # Create config file with some values (flat structure)
             config_data = {
-                "chromadb": {"host": "file-host", "port": 8080, "ssl": False}
+                "chroma_host": "file-host",
+                "chroma_port": 8080,
+                "chroma_ssl": False,
             }
 
             with open(config_path, "w") as f:
@@ -257,11 +288,40 @@ class TestLoaderEnvironmentIntegration:
                 config = load_config(config_path)
 
                 # Env vars should override file values
-                assert config.chromadb.host == "env-override-host"
-                assert config.chromadb.ssl is True
+                assert config.chroma_host == "env-override-host"
+                assert config.chroma_ssl is True
 
                 # File value should be used when env var not set
-                assert config.chromadb.port == 8080
+                assert config.chroma_port == 8080
+
+    def test_load_config_nested_file_and_env_precedence(self) -> None:
+        """Test that environment variables override nested config file values."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            config_path = Path(tmpdir) / "test_config.yaml"
+
+            # Create config file with nested structure (backward compatibility)
+            config_data = {
+                "chromadb": {"host": "nested-file-host", "port": 8080, "ssl": False}
+            }
+
+            with open(config_path, "w") as f:
+                yaml.dump(config_data, f)
+
+            # Set environment variables that should override file values
+            env_vars = {
+                "CHROMA_HOST": "env-override-host",
+                "CHROMA_SSL": "true",
+            }
+
+            with patch.dict(os.environ, env_vars, clear=True):
+                config = load_config(config_path)
+
+                # Env vars should override migrated nested file values
+                assert config.chroma_host == "env-override-host"
+                assert config.chroma_ssl is True
+
+                # Migrated file value should be used when env var not set
+                assert config.chroma_port == 8080
 
     def test_load_config_real_file_discovery(self) -> None:
         """Test load_config discovers actual config files in default locations."""
@@ -271,7 +331,7 @@ class TestLoaderEnvironmentIntegration:
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a config file in what would be a default location
             config_path = Path(tmpdir) / "shard-md.yaml"
-            config_data = {"chromadb": {"host": "discovered-host", "port": 7777}}
+            config_data = {"chroma_host": "discovered-host", "chroma_port": 7777}
 
             with open(config_path, "w") as f:
                 yaml.dump(config_data, f)
@@ -284,5 +344,5 @@ class TestLoaderEnvironmentIntegration:
                     config = load_config()
 
                     # Should have discovered and loaded our config file
-                    assert config.chromadb.host == "discovered-host"
-                    assert config.chromadb.port == 7777
+                    assert config.chroma_host == "discovered-host"
+                    assert config.chroma_port == 7777

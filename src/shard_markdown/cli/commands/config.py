@@ -141,11 +141,11 @@ def set(
         # Pass string value directly to Pydantic for proper type conversion
         set_nested_value(config_dict, key, value)
 
-        # Validate the new configuration
-        from ...config.settings import AppConfig
+        # Validate the new configuration using simplified Settings
+        from ...config.settings import Settings
 
         try:
-            updated_config = AppConfig(**config_dict)
+            updated_config = Settings(**config_dict)
         except (ValueError, TypeError) as e:
             console.print(f"[red]Invalid configuration value:[/red] {str(e)}")
             return
@@ -198,20 +198,23 @@ def init(ctx: click.Context, is_global: bool, force: bool, template: str) -> Non
         # Check if file already exists
         if config_path.exists() and not force:
             console.print(
-                f"[yellow]Configuration file already exists: {config_path}[/yellow]"
+                f"[yellow]Configuration file already exists:[/yellow] {config_path}"
             )
-            console.print("Use --force to overwrite, or edit the existing file.")
+            console.print("Use --force to overwrite")
             return
 
         # Create default configuration
         create_default_config(config_path, force=force)
 
-        console.print(
-            f"[green][OK] Initialized configuration file: {config_path}[/green]"
-        )
-        console.print(
-            "You can now edit the file or use 'shard-md config set' to modify values."
-        )
+        console.print("[green][OK] Configuration initialized[/green]")
+        console.print(f"[dim]Created: {config_path}[/dim]")
+
+        # Show where other config files might be located
+        if verbose:
+            console.print("\n[dim]Configuration file search order:[/dim]")
+            for i, location in enumerate(DEFAULT_CONFIG_LOCATIONS, 1):
+                exists = "✓" if location.exists() else "✗"
+                console.print(f"[dim]  {i}. {exists} {location}[/dim]")
 
     except (OSError, ValueError, RuntimeError) as e:
         console.print(f"[red]Error initializing configuration:[/red] {str(e)}")
@@ -220,67 +223,29 @@ def init(ctx: click.Context, is_global: bool, force: bool, template: str) -> Non
         raise click.Abort() from e
 
 
-@config.command()
-@click.pass_context
-def path(ctx: click.Context) -> None:
-    """Show configuration file locations.
-
-    This shows the order of configuration file locations that shard-md checks.
-    """
-    console.print(
-        "[blue]Configuration file locations (in order of precedence):[/blue]\n"
-    )
-
-    for i, location in enumerate(DEFAULT_CONFIG_LOCATIONS, 1):
-        exists = "YES" if location.exists() else "NO"
-        status = (
-            "[green]exists[/green]" if location.exists() else "[dim]not found[/dim]"
-        )
-        console.print(f"  {i}. {exists} {location} ({status})")
-
-    console.print("\n[dim]The first existing file will be used.[/dim]")
-    console.print(
-        "[dim]Use 'shard-md config init' to create a new configuration file.[/dim]"
-    )
-
-
 def _display_config_table(config_dict: dict[str, Any]) -> None:
-    """Display configuration in table format."""
+    """Display configuration as a table."""
+    table = Table(title="Configuration Settings")
+    table.add_column("Setting", style="cyan", no_wrap=True)
+    table.add_column("Value", style="yellow")
+    table.add_column("Type", style="dim")
 
-    def flatten_dict(
-        d: dict[str, Any], parent_key: str = "", sep: str = "."
-    ) -> dict[str, Any]:
-        """Flatten nested dictionary with dot notation keys."""
-        items: list[tuple[str, Any]] = []
-        for k, v in d.items():
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
-            if isinstance(v, dict):
-                items.extend(flatten_dict(v, new_key, sep=sep).items())
+    def add_rows(data: dict[str, Any], prefix: str = "") -> None:
+        for key, value in data.items():
+            setting_name = f"{prefix}.{key}" if prefix else key
+
+            if isinstance(value, dict):
+                add_rows(value, setting_name)
             else:
-                items.append((new_key, v))
-        return dict(items)
+                value_str = str(value)
+                if len(value_str) > 50:
+                    value_str = value_str[:47] + "..."
 
-    flat_config = flatten_dict(config_dict)
+                table.add_row(
+                    setting_name,
+                    value_str,
+                    type(value).__name__,
+                )
 
-    # Group by section
-    sections: dict[str, list[tuple[str, Any]]] = {}
-    for key, value in flat_config.items():
-        section = key.split(".")[0]
-        if section not in sections:
-            sections[section] = []
-        sections[section].append((key, value))
-
-    # Display each section
-    for section_name, items in sections.items():
-        table = Table(title=f"Configuration: {section_name}")
-        table.add_column("Setting", style="cyan")
-        table.add_column("Value", style="white")
-
-        items_list: list[tuple[str, Any]] = items
-        for key, value in items_list:
-            # Remove section prefix from key for display
-            display_key = ".".join(key.split(".")[1:]) if "." in key else key
-            table.add_row(display_key, str(value))
-
-        console.print(table)
-        console.print()
+    add_rows(config_dict)
+    console.print(table)
