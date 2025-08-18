@@ -127,20 +127,6 @@ class BatchResult(BaseModel):
         return 0.0
 
 
-class ChunkingConfig(BaseModel):
-    """Configuration for document chunking."""
-
-    chunk_size: int = Field(
-        default=1000, description="Maximum chunk size in characters"
-    )
-    overlap: int = Field(default=200, description="Overlap between chunks")
-    method: str = Field(default="structure", description="Chunking method")
-    respect_boundaries: bool = Field(
-        default=True, description="Respect structure boundaries"
-    )
-    max_tokens: int | None = Field(default=None, description="Maximum tokens per chunk")
-
-
 class InsertResult(BaseModel):
     """Result of inserting chunks into ChromaDB."""
 

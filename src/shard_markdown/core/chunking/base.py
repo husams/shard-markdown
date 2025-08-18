@@ -2,7 +2,8 @@
 
 from abc import ABC, abstractmethod
 
-from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
+from ...config import ChunkingConfig
+from ..models import DocumentChunk, MarkdownAST
 
 
 class BaseChunker(ABC):
@@ -44,8 +45,8 @@ class BaseChunker(ABC):
         """
         chunk_metadata = {
             "chunk_method": self.config.method,
-            "chunk_size_config": self.config.chunk_size,
-            "overlap_config": self.config.overlap,
+            "chunk_size_config": self.config.default_size,
+            "overlap_config": self.config.default_overlap,
             **(metadata or {}),
         }
 
@@ -65,11 +66,11 @@ class BaseChunker(ABC):
         Returns:
             Overlap content for next chunk
         """
-        if len(content) <= self.config.overlap:
+        if len(content) <= self.config.default_overlap:
             return content
 
         # Try to find sentence boundary for natural overlap
-        overlap_start = len(content) - self.config.overlap
+        overlap_start = len(content) - self.config.default_overlap
 
         # Look for sentence endings
         for i in range(overlap_start, len(content)):
@@ -79,4 +80,4 @@ class BaseChunker(ABC):
                     return content[next_char_idx:].lstrip()
 
         # Fallback to character-based overlap
-        return content[-self.config.overlap :]
+        return content[-self.config.default_overlap :]

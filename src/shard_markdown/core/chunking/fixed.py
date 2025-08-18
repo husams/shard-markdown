@@ -1,4 +1,4 @@
-"""Fixed-size chunking with character or token limits."""
+"""Fixed-size chunking with character limits."""
 
 from ...utils.logging import get_logger
 from ..models import DocumentChunk, MarkdownAST
@@ -34,13 +34,13 @@ class FixedSizeChunker(BaseChunker):
 
         while start < len(full_text):
             # Calculate end position
-            end = min(start + self.config.chunk_size, len(full_text))
+            end = min(start + self.config.default_size, len(full_text))
 
             # Try to find a good break point (word boundary)
-            if end < len(full_text) and self.config.respect_boundaries:
+            if end < len(full_text):
                 # Look backwards for word boundary
                 for i in range(
-                    end, max(start + self.config.chunk_size // 2, start), -1
+                    end, max(start + self.config.default_size // 2, start), -1
                 ):
                     if full_text[i] in " \n\t.!?":
                         end = i + 1
@@ -56,10 +56,10 @@ class FixedSizeChunker(BaseChunker):
                 chunks.append(chunk)
 
             # Move start position with overlap
-            if start + self.config.chunk_size >= len(full_text):
+            if start + self.config.default_size >= len(full_text):
                 break
 
-            start = end - self.config.overlap
+            start = end - self.config.default_overlap
 
             # Ensure we make progress
             if chunks and start <= chunks[-1].start_position:
@@ -98,17 +98,3 @@ class FixedSizeChunker(BaseChunker):
                 text_parts.append(element.text)
 
         return "\n\n".join(text_parts)
-
-    def get_chunker_info(self) -> dict:
-        """Get information about the fixed-size chunker configuration.
-
-        Returns:
-            Dictionary containing chunker configuration details
-        """
-        logger.debug("Retrieving fixed-size chunker configuration info")
-        return {
-            "chunker_type": "fixed_size",
-            "chunk_size": self.config.chunk_size,
-            "overlap": self.config.overlap,
-            "respect_boundaries": self.config.respect_boundaries,
-        }

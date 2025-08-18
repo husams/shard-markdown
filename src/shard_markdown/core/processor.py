@@ -5,11 +5,12 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ..config import ChunkingConfig
 from ..utils.errors import FileSystemError, ProcessingError
 from ..utils.logging import get_logger
 from .chunking.engine import ChunkingEngine
 from .metadata import MetadataExtractor
-from .models import BatchResult, ChunkingConfig, DocumentChunk, ProcessingResult
+from .models import BatchResult, ProcessingResult
 from .parser import MarkdownParser
 
 
@@ -19,7 +20,7 @@ logger = get_logger(__name__)
 class DocumentProcessor:
     """Main document processing coordinator."""
 
-    def __init__(self, chunking_config: ChunkingConfig) -> None:
+    def __init__(self, chunking_config: ChunkingConfig):
         """Initialize processor with configuration.
 
         Args:
@@ -30,351 +31,165 @@ class DocumentProcessor:
         self.chunker = ChunkingEngine(chunking_config)
         self.metadata_extractor = MetadataExtractor()
 
-    def process_document(
-        self, file_path: Path, collection_name: str | None = None
+    def process_file(
+        self, file_path: Path, custom_metadata: dict[str, Any] | None = None
     ) -> ProcessingResult:
-        """Process single document through full pipeline.
+        """Process a single markdown file.
 
         Args:
             file_path: Path to markdown file
-            collection_name: Target collection name
+            custom_metadata: Additional metadata to include
 
         Returns:
-            ProcessingResult with details
+            Processing result
+
+        Raises:
+            FileSystemError: If file cannot be read
+            ProcessingError: If processing fails
         """
         start_time = time.time()
 
         try:
-            logger.info("Processing document: %s", file_path)
+            # Validate file
+            if not file_path.exists():
+                raise FileSystemError(
+                    f"File not found: {file_path}",
+                    error_code=1201,
+                    context={"file_path": str(file_path)},
+                )
 
-            # Read and validate file
-            content = self._read_file(file_path)
+            if not file_path.is_file():
+                raise FileSystemError(
+                    f"Path is not a file: {file_path}",
+                    error_code=1202,
+                    context={"file_path": str(file_path)},
+                )
 
-            # Handle empty content gracefully
-            if not content:
-                logger.info("No content to process for %s", file_path)
+            # Read and parse file
+            try:
+                content = file_path.read_text(encoding="utf-8")
+            except UnicodeDecodeError as e:
+                raise FileSystemError(
+                    f"Cannot decode file as UTF-8: {file_path}",
+                    error_code=1203,
+                    context={"file_path": str(file_path)},
+                    cause=e,
+                ) from e
+
+            if not content.strip():
+                logger.warning("File is empty: %s", file_path)
                 return ProcessingResult(
                     file_path=file_path,
-                    success=True,  # Consider empty files as successfully processed
+                    success=True,
                     chunks_created=0,
-                    processing_time=max(0.001, time.time() - start_time),
-                    collection_name=collection_name,
+                    processing_time=time.time() - start_time,
                 )
 
             # Parse markdown
             ast = self.parser.parse(content)
 
-            # Extract metadata
+            # Extract and merge metadata
             file_metadata = self.metadata_extractor.extract_file_metadata(file_path)
-            doc_metadata = self.metadata_extractor.extract_document_metadata(ast)
+            if custom_metadata:
+                file_metadata.update(custom_metadata)
+
+            # Add metadata to AST
+            ast.metadata.update(file_metadata)
 
             # Chunk document
             chunks = self.chunker.chunk_document(ast)
 
-            if not chunks:
-                logger.warning("No chunks generated for %s", file_path)
-                return ProcessingResult(
-                    file_path=file_path,
-                    success=False,
-                    error="No chunks generated from document",
-                    processing_time=max(0.001, time.time() - start_time),
-                )
+            # Add file-level metadata to chunks
+            for chunk in chunks:
+                chunk.metadata.update(file_metadata)
+                # Add content hash for deduplication
+                chunk.metadata["content_hash"] = hashlib.sha256(
+                    chunk.content.encode("utf-8")
+                ).hexdigest()
 
-            # Enhance chunks with metadata
-            enhanced_chunks = self._enhance_chunks(
-                chunks, file_metadata, doc_metadata, file_path
-            )
-
-            processing_time = max(
-                0.001, time.time() - start_time
-            )  # Ensure minimum time for Windows
+            processing_time = time.time() - start_time
 
             logger.info(
-                f"Successfully processed {file_path}: "
-                f"{len(enhanced_chunks)} chunks in {processing_time:.2f}s"
+                "Successfully processed %s: %s chunks in %.2fs",
+                file_path.name,
+                len(chunks),
+                processing_time,
             )
 
             return ProcessingResult(
                 file_path=file_path,
                 success=True,
-                chunks_created=len(enhanced_chunks),
-                processing_time=processing_time,
-                collection_name=collection_name,
-            )
-
-        except (
-            OSError,
-            ValueError,
-            RuntimeError,
-            ProcessingError,
-            FileSystemError,
-            Exception,  # Catch all other exceptions
-        ) as e:
-            processing_time = max(
-                0.001, time.time() - start_time
-            )  # Ensure minimum time for Windows
-            error_msg = str(e)
-
-            logger.error("Failed to process %s: %s", file_path, error_msg)
-
-            return ProcessingResult(
-                file_path=file_path,
-                success=False,
-                error=error_msg,
+                chunks_created=len(chunks),
                 processing_time=processing_time,
             )
 
-    def process_batch(
-        self, file_paths: list[Path], collection_name: str
+        except (FileSystemError, ProcessingError):
+            # Re-raise known errors
+            raise
+
+        except Exception as e:
+            # Wrap unexpected errors
+            error_msg = f"Unexpected error processing {file_path}: {str(e)}"
+            logger.exception(error_msg)
+
+            raise ProcessingError(
+                error_msg,
+                error_code=1299,
+                context={"file_path": str(file_path)},
+                cause=e,
+            ) from e
+
+    def process_files(
+        self,
+        file_paths: list[Path],
+        collection_name: str,
+        custom_metadata: dict[str, Any] | None = None,
     ) -> BatchResult:
-        """Process multiple documents sequentially.
+        """Process multiple markdown files.
 
         Args:
             file_paths: List of file paths to process
             collection_name: Target collection name
+            custom_metadata: Additional metadata to include
 
         Returns:
-            BatchResult with aggregated statistics
+            Batch processing result
         """
         start_time = time.time()
-        logger.info("Processing %d files", len(file_paths))
-
-        # Process files sequentially and collect results
-        results = self._execute_sequential_processing(file_paths, collection_name)
-
-        # Build batch result with statistics
-        batch_stats = self._calculate_batch_statistics(
-            results, file_paths, collection_name, start_time
-        )
-        logger.info(
-            "Sequential processing complete: %d/%d files, %d chunks, %.2fs",
-            batch_stats.successful_files,
-            batch_stats.total_files,
-            batch_stats.total_chunks,
-            batch_stats.total_processing_time,
-        )
-
-        return batch_stats
-
-    def _execute_sequential_processing(
-        self, file_paths: list[Path], collection_name: str
-    ) -> list[ProcessingResult]:
-        """Execute sequential processing of files."""
         results = []
 
-        for path in file_paths:
+        for file_path in file_paths:
             try:
-                result = self.process_document(path, collection_name)
+                result = self.process_file(file_path, custom_metadata)
+                result.collection_name = collection_name
                 results.append(result)
-            except (OSError, ValueError, RuntimeError) as e:
-                logger.error("Error processing %s: %s", path, e)
-                results.append(
-                    ProcessingResult(
-                        file_path=path, success=False, error=f"Error: {str(e)}"
-                    )
+
+            except (FileSystemError, ProcessingError) as e:
+                # Create failed result
+                failed_result = ProcessingResult(
+                    file_path=file_path,
+                    success=False,
+                    chunks_created=0,
+                    processing_time=0,
+                    collection_name=collection_name,
+                    error=str(e),
                 )
+                results.append(failed_result)
 
-        return results
+                logger.error("Failed to process %s: %s", file_path, str(e))
 
-    def _calculate_batch_statistics(
-        self,
-        results: list[ProcessingResult],
-        file_paths: list[Path],
-        collection_name: str,
-        start_time: float,
-    ) -> BatchResult:
-        """Calculate batch processing statistics."""
-        processing_stats: dict[str, Any] = {
-            "successful": [r for r in results if r.success],
-            "failed": [r for r in results if not r.success],
-            "total_time": max(
-                0.001, time.time() - start_time
-            ),  # Ensure minimum time for Windows precision
-        }
-        total_chunks = sum(r.chunks_created for r in processing_stats["successful"])
+        # Calculate summary statistics
+        total_processing_time = time.time() - start_time
+        successful_files = sum(1 for r in results if r.success)
+        failed_files = len(results) - successful_files
+        total_chunks = sum(r.chunks_created for r in results)
 
         return BatchResult(
             results=results,
             total_files=len(file_paths),
-            successful_files=len(processing_stats["successful"]),
-            failed_files=len(processing_stats["failed"]),
+            successful_files=successful_files,
+            failed_files=failed_files,
             total_chunks=total_chunks,
-            total_processing_time=processing_stats["total_time"],
+            total_processing_time=total_processing_time,
             collection_name=collection_name,
         )
-
-    def _read_file(self, file_path: Path) -> str:
-        """Read file content with encoding detection.
-
-        Args:
-            file_path: Path to file
-
-        Returns:
-            File content as string (empty string for non-existent or empty files)
-
-        Raises:
-            FileSystemError: If path is a directory or file is too large
-            ProcessingError: For other critical errors
-        """
-        # Check if path exists
-        if not file_path.exists():
-            logger.warning(f"File not found: {file_path}")
-            raise FileSystemError(
-                f"File not found: {file_path}",
-                error_code=1201,
-                context={"file_path": str(file_path)},
-            )
-
-        # Check if it's a directory
-        if file_path.is_dir():
-            raise ProcessingError(
-                f"Path is a directory, not a file: {file_path}",
-                error_code=1204,
-                context={"file_path": str(file_path)},
-            )
-
-        # Check file size (limit to 100MB)
-        try:
-            file_size = file_path.stat().st_size
-
-            # Handle empty files gracefully
-            if file_size == 0:
-                logger.info(f"Empty file: {file_path}")
-                return ""
-
-            if file_size > 100 * 1024 * 1024:
-                raise FileSystemError(
-                    f"File too large: {file_path} ({file_size} bytes)",
-                    error_code=1202,
-                    context={"file_path": str(file_path), "file_size": file_size},
-                )
-        except PermissionError as e:
-            logger.warning(f"Permission denied accessing file: {file_path}")
-            raise FileSystemError(
-                f"Permission denied accessing file: {file_path}",
-                error_code=1205,
-                context={"file_path": str(file_path)},
-                cause=e,
-            ) from e
-        except OSError as e:
-            raise FileSystemError(
-                f"Cannot access file: {file_path}",
-                error_code=1201,
-                context={"file_path": str(file_path)},
-                cause=e,
-            ) from e
-
-        # Try multiple encodings
-        encodings = ["utf-8", "utf-8-sig", "latin-1", "cp1252"]
-
-        for encoding in encodings:
-            try:
-                with open(file_path, encoding=encoding) as f:
-                    content = f.read()
-
-                # Handle files with only whitespace gracefully
-                if not content.strip():
-                    logger.info(f"File contains only whitespace: {file_path}")
-                    return ""  # Return empty string instead of raising error
-
-                return content
-
-            except UnicodeDecodeError:
-                if encoding == encodings[-1]:  # Last encoding failed
-                    raise FileSystemError(
-                        f"Cannot decode file with any supported encoding: {file_path}",
-                        error_code=1203,
-                        context={
-                            "file_path": str(file_path),
-                            "encodings_tried": encodings,
-                        },
-                    ) from None
-                continue
-            except PermissionError as e:
-                logger.warning(f"Permission denied reading file: {file_path}")
-                raise FileSystemError(
-                    f"Permission denied reading file: {file_path}",
-                    error_code=1204,
-                    context={"file_path": str(file_path)},
-                    cause=e,
-                ) from e
-            except OSError as e:
-                raise FileSystemError(
-                    f"Error reading file: {file_path}",
-                    error_code=1206,
-                    context={"file_path": str(file_path)},
-                    cause=e,
-                ) from e
-
-        # This should never be reached, but mypy needs it
-        raise FileSystemError(
-            f"Failed to read file: {file_path}",
-            error_code=1299,
-            context={"file_path": str(file_path)},
-        )
-
-    def _enhance_chunks(
-        self,
-        chunks: list[DocumentChunk],
-        file_metadata: dict,
-        doc_metadata: dict,
-        file_path: Path,
-    ) -> list[DocumentChunk]:
-        """Enhance chunks with comprehensive metadata.
-
-        Args:
-            chunks: List of document chunks
-            file_metadata: File-level metadata
-            doc_metadata: Document-level metadata
-            file_path: Source file path
-
-        Returns:
-            List of enhanced chunks
-        """
-        enhanced_chunks = []
-
-        for i, chunk in enumerate(chunks):
-            # Generate unique chunk ID
-            chunk_id = self._generate_chunk_id(file_path, i)
-
-            # Combine all metadata
-            enhanced_metadata = {
-                **file_metadata,
-                **doc_metadata,
-                **chunk.metadata,
-            }
-
-            # Add chunk-specific metadata
-            enhanced_metadata = self.metadata_extractor.enhance_chunk_metadata(
-                enhanced_metadata,
-                i,
-                len(chunks),
-                chunk.metadata.get("structural_context"),
-            )
-
-            # Create enhanced chunk
-            enhanced_chunk = DocumentChunk(
-                id=chunk_id,
-                content=chunk.content,
-                metadata=enhanced_metadata,
-                start_position=chunk.start_position,
-                end_position=chunk.end_position,
-            )
-
-            enhanced_chunks.append(enhanced_chunk)
-
-        return enhanced_chunks
-
-    def _generate_chunk_id(self, file_path: Path, chunk_index: int) -> str:
-        """Generate unique chunk identifier.
-
-        Args:
-            file_path: Source file path
-            chunk_index: Index of chunk in document
-
-        Returns:
-            Unique chunk ID
-        """
-        # Create hash from file path for uniqueness
-        path_hash = hashlib.sha256(str(file_path).encode()).hexdigest()[:16]
-        return f"{path_hash}_{chunk_index:04d}"

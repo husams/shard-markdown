@@ -1,8 +1,9 @@
 """Main chunking engine that selects appropriate strategy."""
 
+from ...config import ChunkingConfig
 from ...utils.errors import ProcessingError
 from ...utils.logging import get_logger
-from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
+from ..models import DocumentChunk, MarkdownAST
 from .fixed import FixedSizeChunker
 from .structure import StructureAwareChunker
 
@@ -103,7 +104,7 @@ class ChunkingEngine:
             )
 
         # Check for oversized chunks (allow some tolerance)
-        max_allowed_size = self.config.chunk_size * 1.5
+        max_allowed_size = self.config.default_size * 1.5
         oversized_chunks = [
             i for i, chunk in enumerate(chunks) if len(chunk.content) > max_allowed_size
         ]
@@ -115,7 +116,7 @@ class ChunkingEngine:
                 context={
                     "oversized_chunk_indices": oversized_chunks,
                     "max_allowed_size": max_allowed_size,
-                    "configured_size": self.config.chunk_size,
+                    "configured_size": self.config.default_size,
                 },
             )
 

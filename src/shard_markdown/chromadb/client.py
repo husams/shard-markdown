@@ -133,7 +133,6 @@ class ChromaDBClient:
                 context={
                     "host": self.config.host,
                     "port": self.config.port,
-                    "ssl": self.config.ssl,
                     "detected_version": self._version_info.version
                     if self._version_info
                     else None,
@@ -609,7 +608,6 @@ class ChromaDBClient:
         settings = {
             "host": self.config.host,
             "port": self.config.port,
-            "ssl": self.config.ssl,
             "headers": self._get_auth_headers(),
         }
 

@@ -36,7 +36,7 @@ class StructureAwareChunker(BaseChunker):
                 # If adding this code block would exceed size, create current
                 # chunk first
                 if (
-                    len(current_chunk) + len(element_text) > self.config.chunk_size
+                    len(current_chunk) + len(element_text) > self.config.default_size
                     and current_chunk.strip()
                 ):
                     chunk = self._create_chunk(
@@ -56,7 +56,7 @@ class StructureAwareChunker(BaseChunker):
 
             # Check if adding this element exceeds chunk size
             elif (
-                len(current_chunk) + len(element_text) > self.config.chunk_size
+                len(current_chunk) + len(element_text) > self.config.default_size
                 and current_chunk.strip()
             ):
                 # Create chunk with current content

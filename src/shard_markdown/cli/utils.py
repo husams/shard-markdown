@@ -1,17 +1,85 @@
 """Shared utilities for CLI commands."""
 
+import logging
+import logging.handlers
 import sys
+from pathlib import Path
 from typing import Any
 
 import click
 from rich.console import Console
+from rich.logging import RichHandler
 
 from ..chromadb.factory import create_chromadb_client
+from ..config import AppConfig, load_config
 from ..utils.errors import ShardMarkdownError
 
 
 # Shared console instance for all CLI commands
 console = Console()
+
+
+def load_app_config(config_path: Path | None = None) -> AppConfig:
+    """Load application configuration.
+
+    Args:
+        config_path: Optional path to config file
+
+    Returns:
+        Loaded AppConfig instance
+    """
+    return load_config(config_path)
+
+
+def setup_logging(
+    config: AppConfig,
+    log_level: str | None = None,
+    log_file: str | None = None,
+    verbose: bool = False,
+) -> None:
+    """Setup logging for CLI commands.
+
+    Args:
+        config: Application configuration
+        log_level: Override log level
+        log_file: Override log file
+        verbose: Enable verbose logging
+    """
+    # Determine log level
+    level = log_level or config.logging.level
+    if verbose:
+        level = "DEBUG"
+
+    # Configure logging
+    handlers: list[logging.Handler] = []
+
+    # Rich console handler for pretty CLI output
+    rich_handler = RichHandler(
+        console=console,
+        show_time=False,
+        show_path=False,
+    )
+    rich_handler.setLevel(getattr(logging, level.upper()))
+    handlers.append(rich_handler)
+
+    # File handler if specified
+    file_path = Path(log_file) if log_file else config.logging.file_path
+    if file_path:
+        file_handler = logging.handlers.RotatingFileHandler(
+            file_path,
+            maxBytes=config.logging.max_file_size,
+            backupCount=config.logging.backup_count,
+        )
+        file_handler.setFormatter(logging.Formatter(config.logging.format))
+        file_handler.setLevel(getattr(logging, level.upper()))
+        handlers.append(file_handler)
+
+    # Configure root logger
+    logging.basicConfig(
+        level=getattr(logging, level.upper()),
+        handlers=handlers,
+        force=True,
+    )
 
 
 def handle_chromadb_errors(e: Exception, verbose: int) -> None:
