@@ -69,15 +69,16 @@ class TestConfigCommand:
         with runner.isolated_filesystem() as fs_dir_str:
             fs_dir = Path(fs_dir_str)
             config_path = fs_dir / ".shard-md/config.yaml"
+            config_path.parent.mkdir(parents=True, exist_ok=True)
+
             with patch(
-                "shard_markdown.config.settings._find_config_file",
-                return_value=config_path,
+                "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
+                [fs_dir / "dummy.yaml", config_path],
             ):
-                with patch(
-                    "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                    [fs_dir / "dummy.yaml", config_path],
-                ):
-                    runner.invoke(cli, ["config", "init"])
+                # Initialize config first
+                runner.invoke(cli, ["config", "init"])
+
+                # Now test show command
                 result = runner.invoke(cli, ["config", "show", "--format", "yaml"])
                 assert result.exit_code == 0
                 data = yaml.safe_load(result.output)

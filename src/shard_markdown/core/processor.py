@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Any
 
 from ..config import ChunkingConfig
-from ..utils.errors import FileSystemError, ProcessingError
 from ..utils.logging import get_logger
 from .chunking.engine import ChunkingEngine
 from .metadata import MetadataExtractor
@@ -32,49 +31,62 @@ class DocumentProcessor:
         self.metadata_extractor = MetadataExtractor()
 
     def process_file(
-        self, file_path: Path, custom_metadata: dict[str, Any] | None = None
+        self,
+        file_path: Path,
+        collection_name: str,
+        custom_metadata: dict[str, Any] | None = None,
+        insert_to_chromadb: bool = False,
     ) -> ProcessingResult:
         """Process a single markdown file.
 
         Args:
             file_path: Path to markdown file
+            collection_name: Target collection name
             custom_metadata: Additional metadata to include
+            insert_to_chromadb: Whether to insert chunks to ChromaDB
 
         Returns:
             Processing result
-
-        Raises:
-            FileSystemError: If file cannot be read
-            ProcessingError: If processing fails
         """
         start_time = time.time()
 
         try:
             # Validate file
             if not file_path.exists():
-                raise FileSystemError(
-                    f"File not found: {file_path}",
-                    error_code=1201,
-                    context={"file_path": str(file_path)},
+                error_msg = f"File not found: {file_path}"
+                return ProcessingResult(
+                    file_path=file_path,
+                    success=False,
+                    chunks_created=0,
+                    processing_time=time.time() - start_time,
+                    collection_name=collection_name,
+                    error=error_msg,
                 )
 
             if not file_path.is_file():
-                raise FileSystemError(
-                    f"Path is not a file: {file_path}",
-                    error_code=1202,
-                    context={"file_path": str(file_path)},
+                error_msg = f"Path is not a file: {file_path}"
+                return ProcessingResult(
+                    file_path=file_path,
+                    success=False,
+                    chunks_created=0,
+                    processing_time=time.time() - start_time,
+                    collection_name=collection_name,
+                    error=error_msg,
                 )
 
             # Read and parse file
             try:
                 content = file_path.read_text(encoding="utf-8")
-            except UnicodeDecodeError as e:
-                raise FileSystemError(
-                    f"Cannot decode file as UTF-8: {file_path}",
-                    error_code=1203,
-                    context={"file_path": str(file_path)},
-                    cause=e,
-                ) from e
+            except UnicodeDecodeError:
+                error_msg = f"Cannot decode file as UTF-8: {file_path}"
+                return ProcessingResult(
+                    file_path=file_path,
+                    success=False,
+                    chunks_created=0,
+                    processing_time=time.time() - start_time,
+                    collection_name=collection_name,
+                    error=error_msg,
+                )
 
             if not content.strip():
                 logger.warning("File is empty: %s", file_path)
@@ -83,6 +95,7 @@ class DocumentProcessor:
                     success=True,
                     chunks_created=0,
                     processing_time=time.time() - start_time,
+                    collection_name=collection_name,
                 )
 
             # Parse markdown
@@ -121,23 +134,44 @@ class DocumentProcessor:
                 success=True,
                 chunks_created=len(chunks),
                 processing_time=processing_time,
+                collection_name=collection_name,
             )
 
-        except (FileSystemError, ProcessingError):
-            # Re-raise known errors
-            raise
-
         except Exception as e:
-            # Wrap unexpected errors
-            error_msg = f"Unexpected error processing {file_path}: {str(e)}"
-            logger.exception(error_msg)
+            # Handle any unexpected errors
+            error_msg = str(e)
+            processing_time = time.time() - start_time
 
-            raise ProcessingError(
-                error_msg,
-                error_code=1299,
-                context={"file_path": str(file_path)},
-                cause=e,
-            ) from e
+            logger.exception("Error processing file %s: %s", file_path, error_msg)
+
+            return ProcessingResult(
+                file_path=file_path,
+                success=False,
+                chunks_created=0,
+                processing_time=processing_time,
+                collection_name=collection_name,
+                error=error_msg,
+            )
+
+    def process_batch(
+        self,
+        file_paths: list[Path],
+        collection_name: str,
+        custom_metadata: dict[str, Any] | None = None,
+        insert_to_chromadb: bool = False,
+    ) -> BatchResult:
+        """Process multiple markdown files in batch.
+
+        Args:
+            file_paths: List of file paths to process
+            collection_name: Target collection name
+            custom_metadata: Additional metadata to include
+            insert_to_chromadb: Whether to insert chunks to ChromaDB
+
+        Returns:
+            Batch processing result
+        """
+        return self.process_files(file_paths, collection_name, custom_metadata)
 
     def process_files(
         self,
@@ -159,24 +193,8 @@ class DocumentProcessor:
         results = []
 
         for file_path in file_paths:
-            try:
-                result = self.process_file(file_path, custom_metadata)
-                result.collection_name = collection_name
-                results.append(result)
-
-            except (FileSystemError, ProcessingError) as e:
-                # Create failed result
-                failed_result = ProcessingResult(
-                    file_path=file_path,
-                    success=False,
-                    chunks_created=0,
-                    processing_time=0,
-                    collection_name=collection_name,
-                    error=str(e),
-                )
-                results.append(failed_result)
-
-                logger.error("Failed to process %s: %s", file_path, str(e))
+            result = self.process_file(file_path, collection_name, custom_metadata)
+            results.append(result)
 
         # Calculate summary statistics
         total_processing_time = time.time() - start_time

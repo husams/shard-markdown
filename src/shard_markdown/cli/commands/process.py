@@ -29,15 +29,14 @@ from ..utils import load_app_config, setup_logging
 logger = get_logger(__name__)
 
 
-@click.group()
-def process() -> None:
-    """Process markdown documents into chunks."""
-    pass
-
-
-@process.command()
+@click.command()
 @click.argument("input_paths", nargs=-1, required=True, type=click.Path(exists=True))
-@click.argument("collection", type=str)
+@click.option(
+    "--collection",
+    type=str,
+    required=True,
+    help="Name of the ChromaDB collection to create/update",
+)
 @click.option(
     "--chunk-size",
     type=int,
@@ -49,7 +48,7 @@ def process() -> None:
     help="Override default chunk overlap",
 )
 @click.option(
-    "--method",
+    "--chunk-method",
     type=click.Choice(["structure", "fixed"]),
     help="Override chunking method",
 )
@@ -95,12 +94,17 @@ def process() -> None:
     is_flag=True,
     help="Show what would be processed without actually processing",
 )
-def files(
+@click.option(
+    "--create-collection",
+    is_flag=True,
+    help="Create collection if it doesn't exist",
+)
+def process(
     input_paths: tuple[str, ...],
     collection: str,
     chunk_size: int | None,
     chunk_overlap: int | None,
-    method: str | None,
+    chunk_method: str | None,
     recursive: bool | None,
     pattern: str | None,
     metadata: tuple[str, ...],
@@ -109,11 +113,11 @@ def files(
     log_file: str | None,
     verbose: bool,
     dry_run: bool,
+    create_collection: bool,
 ) -> None:
-    """Process markdown files into a ChromaDB collection.
+    """Process markdown documents into ChromaDB collection.
 
     INPUT_PATHS: One or more files or directories to process
-    COLLECTION: Name of the ChromaDB collection to create/update
     """
     try:
         # Load configuration
@@ -146,7 +150,7 @@ def files(
         # Create chunking configuration with overrides
         from shard_markdown.config.settings import ChunkingMethod
 
-        method_value = method or config.chunking.method
+        method_value = chunk_method or config.chunking.method
         if isinstance(method_value, str):
             method_value = ChunkingMethod(method_value)
 

@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from shard_markdown.config.settings import ChunkingConfig
 from shard_markdown.core.models import (
     BatchResult,
-    ChunkingConfig,
     DocumentChunk,
     InsertResult,
     MarkdownAST,
@@ -359,35 +359,31 @@ class TestChunkingConfig:
         """Test creating config with defaults."""
         config = ChunkingConfig()
 
-        assert config.chunk_size == 1000
-        assert config.overlap == 200
-        assert config.method == "structure"
-        assert config.respect_boundaries is True
-        assert config.max_tokens is None
+        assert config.default_size == 1000
+        assert config.default_overlap == 200
+        assert config.method.value == "structure"
 
     @pytest.mark.unit
     def test_create_custom_config(self) -> None:
         """Test creating custom config."""
+        from shard_markdown.config.settings import ChunkingMethod
+
         config = ChunkingConfig(
-            chunk_size=1500,
-            overlap=300,
-            method="fixed",
-            respect_boundaries=False,
-            max_tokens=500,
+            default_size=1500,
+            default_overlap=300,
+            method=ChunkingMethod.STRUCTURE,
         )
 
-        assert config.chunk_size == 1500
-        assert config.overlap == 300
-        assert config.method == "fixed"
-        assert config.respect_boundaries is False
-        assert config.max_tokens == 500
+        assert config.default_size == 1500
+        assert config.default_overlap == 300
+        assert config.method == ChunkingMethod.STRUCTURE
 
     @pytest.mark.unit
     def test_config_validation(self) -> None:
         """Test config validation."""
         # Valid config should work
-        config = ChunkingConfig(chunk_size=1000, overlap=200)
-        assert config.chunk_size == 1000
+        config = ChunkingConfig(default_size=1000, default_overlap=200)
+        assert config.default_size == 1000
 
         # Test that negative values might be caught by pydantic
         # (specific validation would need to be implemented in the model)

@@ -27,22 +27,18 @@ class TestCLIConfigIntegration:
         """Test setting IP address via CLI."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
 
-        # Create initial config
+        # Create initial config with simplified structure
         initial_config = {
-            "chromadb": {"host": "localhost", "port": 8000},
+            "chromadb": {
+                "host": "localhost",
+                "port": 8000,
+                "auth_token": None,
+                "timeout": 30,
+            },
             "chunking": {
                 "default_size": 1000,
                 "default_overlap": 200,
                 "method": "structure",
-                "respect_boundaries": True,
-                "max_tokens": None,
-            },
-            "processing": {
-                "batch_size": 10,
-                "recursive": False,
-                "pattern": "*.md",
-                "include_frontmatter": True,
-                "include_path_metadata": True,
             },
             "logging": {
                 "level": "INFO",
@@ -51,8 +47,6 @@ class TestCLIConfigIntegration:
                 "max_file_size": 10485760,
                 "backup_count": 5,
             },
-            "custom_metadata": {},
-            "plugins": [],
         }
         with open(config_file, "w") as f:
             yaml.dump(initial_config, f)
@@ -78,28 +72,18 @@ class TestCLIConfigIntegration:
         """Test setting multiple configuration values."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
 
-        # Create initial config with all required fields
+        # Create initial config with simplified structure (only existing fields)
         initial_config = {
             "chromadb": {
                 "host": "localhost",
                 "port": 8000,
-                "ssl": False,
-                "timeout": 30,
                 "auth_token": None,
+                "timeout": 30,
             },
             "chunking": {
                 "default_size": 1000,
                 "default_overlap": 200,
                 "method": "structure",
-                "respect_boundaries": True,
-                "max_tokens": None,
-            },
-            "processing": {
-                "batch_size": 10,
-                "recursive": False,
-                "pattern": "*.md",
-                "include_frontmatter": True,
-                "include_path_metadata": True,
             },
             "logging": {
                 "level": "INFO",
@@ -108,8 +92,6 @@ class TestCLIConfigIntegration:
                 "max_file_size": 10485760,
                 "backup_count": 5,
             },
-            "custom_metadata": {},
-            "plugins": [],
         }
         with open(config_file, "w") as f:
             yaml.dump(initial_config, f)
@@ -118,11 +100,11 @@ class TestCLIConfigIntegration:
         env = os.environ.copy()
         env.pop("CHROMA_HOST", None)  # Remove CHROMA_HOST if it exists
 
-        # First, set values one by one and verify each is saved
+        # Test values that exist in simplified config
         test_values = [
             ("chromadb.host", "10.0.0.1"),
             ("chromadb.port", "9000"),
-            ("chromadb.ssl", "true"),
+            ("chunking.default_size", "1500"),
         ]
 
         for key, value in test_values:
@@ -152,9 +134,9 @@ class TestCLIConfigIntegration:
                 assert actual_value == 9000, (
                     f"Expected {key} to be 9000, got {actual_value}"
                 )
-            elif key == "chromadb.ssl":
-                assert actual_value is True, (
-                    f"Expected {key} to be True, got {actual_value}"
+            elif key == "chunking.default_size":
+                assert actual_value == 1500, (
+                    f"Expected {key} to be 1500, got {actual_value}"
                 )
             else:
                 assert actual_value == value, (
@@ -176,28 +158,18 @@ class TestCLIConfigIntegration:
         """Test that invalid values are rejected with helpful errors."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
 
-        # Create initial config
+        # Create initial config with simplified structure
         initial_config = {
             "chromadb": {
                 "host": "localhost",
                 "port": 8000,
-                "ssl": False,
-                "timeout": 30,
                 "auth_token": None,
+                "timeout": 30,
             },
             "chunking": {
                 "default_size": 1000,
                 "default_overlap": 200,
                 "method": "structure",
-                "respect_boundaries": True,
-                "max_tokens": None,
-            },
-            "processing": {
-                "batch_size": 10,
-                "recursive": False,
-                "pattern": "*.md",
-                "include_frontmatter": True,
-                "include_path_metadata": True,
             },
             "logging": {
                 "level": "INFO",
@@ -206,8 +178,6 @@ class TestCLIConfigIntegration:
                 "max_file_size": 10485760,
                 "backup_count": 5,
             },
-            "custom_metadata": {},
-            "plugins": [],
         }
         with open(config_file, "w") as f:
             yaml.dump(initial_config, f)
@@ -258,28 +228,18 @@ class TestCLIConfigIntegration:
         """Test various IP address formats via CLI."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
 
-        # Create initial config with complete structure
+        # Create initial config with simplified structure
         initial_config = {
             "chromadb": {
                 "host": "localhost",
                 "port": 8000,
-                "ssl": False,
-                "timeout": 30,
                 "auth_token": None,
+                "timeout": 30,
             },
             "chunking": {
                 "default_size": 1000,
                 "default_overlap": 200,
                 "method": "structure",
-                "respect_boundaries": True,
-                "max_tokens": None,
-            },
-            "processing": {
-                "batch_size": 10,
-                "recursive": False,
-                "pattern": "*.md",
-                "include_frontmatter": True,
-                "include_path_metadata": True,
             },
             "logging": {
                 "level": "INFO",
@@ -288,8 +248,6 @@ class TestCLIConfigIntegration:
                 "max_file_size": 10485760,
                 "backup_count": 5,
             },
-            "custom_metadata": {},
-            "plugins": [],
         }
         with open(config_file, "w") as f:
             yaml.dump(initial_config, f)
@@ -349,28 +307,18 @@ class TestCLIConfigIntegration:
         """Test setting various edge case IP addresses."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
 
-        # Create initial config
+        # Create initial config with simplified structure
         initial_config = {
             "chromadb": {
                 "host": "localhost",
                 "port": 8000,
-                "ssl": False,
-                "timeout": 30,
                 "auth_token": None,
+                "timeout": 30,
             },
             "chunking": {
                 "default_size": 1000,
                 "default_overlap": 200,
                 "method": "structure",
-                "respect_boundaries": True,
-                "max_tokens": None,
-            },
-            "processing": {
-                "batch_size": 10,
-                "recursive": False,
-                "pattern": "*.md",
-                "include_frontmatter": True,
-                "include_path_metadata": True,
             },
             "logging": {
                 "level": "INFO",
@@ -379,8 +327,6 @@ class TestCLIConfigIntegration:
                 "max_file_size": 10485760,
                 "backup_count": 5,
             },
-            "custom_metadata": {},
-            "plugins": [],
         }
         with open(config_file, "w") as f:
             yaml.dump(initial_config, f)
@@ -415,28 +361,18 @@ class TestCLIConfigIntegration:
         """Test that environment variables override config file values."""
         config_file = temp_project_dir / ".shard-md" / "config.yaml"
 
-        # Create initial config
+        # Create initial config with simplified structure
         initial_config = {
             "chromadb": {
                 "host": "localhost",
                 "port": 8000,
-                "ssl": False,
-                "timeout": 30,
                 "auth_token": None,
+                "timeout": 30,
             },
             "chunking": {
                 "default_size": 1000,
                 "default_overlap": 200,
                 "method": "structure",
-                "respect_boundaries": True,
-                "max_tokens": None,
-            },
-            "processing": {
-                "batch_size": 10,
-                "recursive": False,
-                "pattern": "*.md",
-                "include_frontmatter": True,
-                "include_path_metadata": True,
             },
             "logging": {
                 "level": "INFO",
@@ -445,8 +381,6 @@ class TestCLIConfigIntegration:
                 "max_file_size": 10485760,
                 "backup_count": 5,
             },
-            "custom_metadata": {},
-            "plugins": [],
         }
         with open(config_file, "w") as f:
             yaml.dump(initial_config, f)

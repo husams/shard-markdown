@@ -17,6 +17,9 @@ from shard_markdown.core.models import (
     ProcessingResult,
 )
 
+# Import ChromaDB fixtures
+from tests.fixtures.chromadb_fixtures import chromadb_test_fixture  # noqa: F401
+
 
 # Test data
 SAMPLE_MARKDOWN = """# Test Document
@@ -161,12 +164,29 @@ def chunking_config() -> ChunkingConfig:
 
 @pytest.fixture
 def sample_ast() -> MarkdownAST:
-    """Provide a sample markdown AST for testing."""
+    """Provide a sample markdown AST for testing that matches SAMPLE_MARKDOWN."""
     elements = [
+        # Header: # Test Document
         MarkdownElement(type="header", text="Test Document", level=1),
-        MarkdownElement(type="paragraph", text="This is a test paragraph."),
+        # Paragraph: This is a test document for markdown processing.
+        MarkdownElement(
+            type="paragraph", text="This is a test document for markdown processing."
+        ),
+        # Header: ## Section 1
         MarkdownElement(type="header", text="Section 1", level=2),
-        MarkdownElement(type="paragraph", text="Content in section 1."),
+        # Paragraph: Some content in section 1.
+        MarkdownElement(type="paragraph", text="Some content in section 1."),
+        # Header: ## Section 2
+        MarkdownElement(type="header", text="Section 2", level=2),
+        # Paragraph: More content in section 2.
+        MarkdownElement(type="paragraph", text="More content in section 2."),
+        # Code block: python code
+        MarkdownElement(
+            type="code_block",
+            text='def hello():\n    print("Hello World")',
+            language="python",
+        ),
+        # Note: The list is not included as a separate element in this simple fixture
     ]
     return MarkdownAST(elements=elements)
 
@@ -210,6 +230,19 @@ def processing_result() -> ProcessingResult:
         chunks_created=2,
         processing_time=0.5,
     )
+
+
+# Fixtures for E2E tests using the same names as in the E2E test files
+@pytest.fixture
+def sample_markdown_file(sample_md_file: Path) -> Path:
+    """Alias for compatibility with E2E tests."""
+    return sample_md_file
+
+
+@pytest.fixture
+def test_documents(multiple_md_files: list[Path]) -> dict[str, Path]:
+    """Create test documents dict for compatibility with E2E tests."""
+    return {f"doc_{i}": path for i, path in enumerate(multiple_md_files)}
 
 
 @pytest.fixture(autouse=True)
