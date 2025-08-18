@@ -81,8 +81,9 @@ chromadb:
             config_path = Path(tmpdir) / "unicode_error.yaml"
 
             # Write binary data that can't be decoded as UTF-8
+            # Use a sequence that's invalid in both UTF-8 and UTF-16
             with open(config_path, "wb") as f:
-                f.write(b"\xff\xfe\xfd")  # Invalid UTF-8 sequence
+                f.write(b"\x80\x81\x82\x83")  # Invalid UTF-8 continuation bytes
 
             with pytest.raises(ValueError, match="Error reading configuration file"):
                 load_config(config_path)
