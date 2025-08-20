@@ -5,11 +5,12 @@ import time
 from pathlib import Path
 from typing import Any
 
+from ..config.settings import ChunkingParams
 from ..utils.errors import FileSystemError, ProcessingError
 from ..utils.logging import get_logger
 from .chunking.engine import ChunkingEngine
 from .metadata import MetadataExtractor
-from .models import BatchResult, ChunkingConfig, DocumentChunk, ProcessingResult
+from .models import BatchResult, DocumentChunk, ProcessingResult
 from .parser import MarkdownParser
 
 
@@ -19,11 +20,11 @@ logger = get_logger(__name__)
 class DocumentProcessor:
     """Main document processing coordinator."""
 
-    def __init__(self, chunking_config: ChunkingConfig) -> None:
+    def __init__(self, chunking_config: ChunkingParams) -> None:
         """Initialize processor with configuration.
 
         Args:
-            chunking_config: Configuration for chunking
+            chunking_config: Parameters for chunking
         """
         self.chunking_config = chunking_config
         self.parser = MarkdownParser()

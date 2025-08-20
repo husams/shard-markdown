@@ -2,17 +2,18 @@
 
 from abc import ABC, abstractmethod
 
-from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
+from ...config.settings import ChunkingParams
+from ..models import DocumentChunk, MarkdownAST
 
 
 class BaseChunker(ABC):
     """Base class for document chunkers."""
 
-    def __init__(self, config: ChunkingConfig) -> None:
+    def __init__(self, config: ChunkingParams) -> None:
         """Initialize chunker with configuration.
 
         Args:
-            config: Chunking configuration
+            config: Chunking parameters
         """
         self.config = config
 

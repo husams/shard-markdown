@@ -8,7 +8,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from shard_markdown.core.models import BatchResult, ChunkingConfig
+from shard_markdown.config.settings import ChunkingParams
+from shard_markdown.core.models import BatchResult
 from shard_markdown.core.processor import DocumentProcessor
 
 
@@ -36,7 +37,7 @@ class TestDocumentProcessor:
     @pytest.fixture
     def processor(
         self,
-        chunking_config: ChunkingConfig,
+        chunking_config: ChunkingParams,
         mock_parser: Mock,
         mock_chunker: Mock,
         mock_metadata_extractor: Mock,
@@ -49,7 +50,7 @@ class TestDocumentProcessor:
         return DocumentProcessor(chunking_config)
 
     @pytest.mark.unit
-    def test_processor_initialization(self, chunking_config: ChunkingConfig) -> None:
+    def test_processor_initialization(self, chunking_config: ChunkingParams) -> None:
         """Test processor initializes correctly."""
         processor = DocumentProcessor(chunking_config)
 

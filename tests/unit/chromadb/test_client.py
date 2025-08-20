@@ -5,25 +5,25 @@ from unittest.mock import Mock, patch
 import pytest
 
 from shard_markdown.chromadb.client import ChromaDBClient
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config.settings import ChromaDBParams
 from shard_markdown.core.models import DocumentChunk
 from shard_markdown.utils.errors import ChromaDBError, NetworkError
 
 
 @pytest.fixture
-def mock_config() -> ChromaDBConfig:
+def mock_config() -> ChromaDBParams:
     """Create a mock ChromaDB configuration."""
-    return ChromaDBConfig(
+    return ChromaDBParams(
         host="localhost",
         port=8000,
         ssl=False,
-        timeout=5.0,
+        timeout=5,
         auth_token=None,
     )
 
 
 @pytest.fixture
-def client(mock_config: ChromaDBConfig) -> ChromaDBClient:
+def client(mock_config: ChromaDBParams) -> ChromaDBClient:
     """Create a ChromaDB client instance."""
     return ChromaDBClient(mock_config)
 
@@ -31,7 +31,7 @@ def client(mock_config: ChromaDBConfig) -> ChromaDBClient:
 class TestChromaDBClientInit:
     """Test ChromaDB client initialization."""
 
-    def test_init_with_config(self, mock_config: ChromaDBConfig) -> None:
+    def test_init_with_config(self, mock_config: ChromaDBParams) -> None:
         """Test client initialization with configuration."""
         client = ChromaDBClient(mock_config)
 

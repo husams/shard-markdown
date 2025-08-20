@@ -2,7 +2,7 @@
 
 import os
 
-from ..config.settings import ChromaDBConfig
+from ..config.settings import ChromaDBParams
 from ..utils.logging import get_logger
 from .async_protocol import AsyncChromaDBClientProtocol
 from .protocol import ChromaDBClientProtocol
@@ -12,7 +12,7 @@ from .utils import check_socket_connectivity
 logger = get_logger(__name__)
 
 
-def create_chromadb_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
+def create_chromadb_client(config: ChromaDBParams) -> ChromaDBClientProtocol:
     """Create ChromaDB client based on environment.
 
     Args:
@@ -45,7 +45,7 @@ def create_chromadb_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
     return _create_mock_client(config)
 
 
-def _create_mock_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
+def _create_mock_client(config: ChromaDBParams) -> ChromaDBClientProtocol:
     """Create mock client with proper error handling.
 
     Args:
@@ -108,7 +108,7 @@ def _is_chromadb_available() -> bool:
 
 
 def create_async_chromadb_client(
-    config: ChromaDBConfig, max_concurrent_operations: int = 16
+    config: ChromaDBParams, max_concurrent_operations: int = 16
 ) -> AsyncChromaDBClientProtocol:
     """Create async ChromaDB client based on environment.
 
@@ -146,7 +146,7 @@ def create_async_chromadb_client(
 
 
 def _create_async_mock_client(
-    config: ChromaDBConfig, max_concurrent_operations: int = 16
+    config: ChromaDBParams, max_concurrent_operations: int = 16
 ) -> AsyncChromaDBClientProtocol:
     """Create async mock client with proper error handling.
 
@@ -199,7 +199,7 @@ def _create_async_mock_client(
         ) from e
 
 
-def _test_chromadb_connectivity(config: ChromaDBConfig) -> bool:
+def _test_chromadb_connectivity(config: ChromaDBParams) -> bool:
     """Test if ChromaDB server is accessible.
 
     Args:

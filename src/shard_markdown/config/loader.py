@@ -8,19 +8,23 @@ import yaml
 from dotenv import load_dotenv
 
 from ..utils import ensure_directory_exists
-from .defaults import DEFAULT_CONFIG_LOCATIONS, DEFAULT_CONFIG_YAML, ENV_VAR_MAPPINGS
-from .settings import AppConfig
-from .utils import set_nested_value
+from .settings import (
+    DEFAULT_CONFIG_LOCATIONS,
+    DEFAULT_CONFIG_YAML,
+    ENV_VAR_MAPPINGS,
+    Settings,
+    set_nested_value,
+)
 
 
-def load_config(config_path: Path | None = None) -> AppConfig:
+def load_config(config_path: Path | None = None) -> Settings:
     """Load configuration from file, environment variables, and defaults.
 
     Args:
         config_path: Optional explicit path to configuration file
 
     Returns:
-        Loaded and validated AppConfig instance
+        Loaded and validated Settings instance
 
     Raises:
         ValueError: If configuration is invalid
@@ -50,12 +54,12 @@ def load_config(config_path: Path | None = None) -> AppConfig:
 
     # Create and validate configuration
     try:
-        return AppConfig(**config_data)
+        return Settings(**config_data)
     except (TypeError, ValueError, KeyError) as e:
         raise ValueError(f"Invalid configuration: {e}") from e
 
 
-def save_config(config: AppConfig, config_path: Path) -> None:
+def save_config(config: Settings, config_path: Path) -> None:
     """Save configuration to YAML file.
 
     Args:

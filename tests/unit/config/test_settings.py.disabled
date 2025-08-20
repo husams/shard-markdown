@@ -4,11 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from shard_markdown.config.settings import (
-    AppConfig,
-    ChromaDBConfig,
-    ChunkingConfig,
     ChunkingMethod,
-    ProcessingConfig,
 )
 
 

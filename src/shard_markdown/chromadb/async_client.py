@@ -7,7 +7,7 @@ import time
 # ChromaDB imports with error handling
 from typing import TYPE_CHECKING, Any, cast
 
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config.settings import ChromaDBParams
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
@@ -33,12 +33,12 @@ class AsyncChromaDBClient:
     """Async ChromaDB client using native AsyncHttpClient API."""
 
     def __init__(
-        self, config: ChromaDBConfig, max_concurrent_operations: int = 16
+        self, config: ChromaDBParams, max_concurrent_operations: int = 16
     ) -> None:
         """Initialize async ChromaDB client.
 
         Args:
-            config: ChromaDB configuration
+            config: ChromaDB parameters
             max_concurrent_operations: Maximum concurrent operations (default: 16)
         """
         self.config = config

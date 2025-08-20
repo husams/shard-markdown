@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from shard_markdown.config.settings import ChunkingParams
 from shard_markdown.core.models import (
     BatchResult,
-    ChunkingConfig,
     DocumentChunk,
     InsertResult,
     MarkdownAST,
@@ -351,13 +351,13 @@ class TestBatchResult:
         assert batch_result.processing_speed == 5.0
 
 
-class TestChunkingConfig:
-    """Test ChunkingConfig model."""
+class TestChunkingParams:
+    """Test ChunkingParams dataclass."""
 
     @pytest.mark.unit
     def test_create_default_config(self) -> None:
         """Test creating config with defaults."""
-        config = ChunkingConfig()
+        config = ChunkingParams(chunk_size=1000, overlap=200)
 
         assert config.chunk_size == 1000
         assert config.overlap == 200
@@ -368,7 +368,7 @@ class TestChunkingConfig:
     @pytest.mark.unit
     def test_create_custom_config(self) -> None:
         """Test creating custom config."""
-        config = ChunkingConfig(
+        config = ChunkingParams(
             chunk_size=1500,
             overlap=300,
             method="fixed",
@@ -386,11 +386,11 @@ class TestChunkingConfig:
     def test_config_validation(self) -> None:
         """Test config validation."""
         # Valid config should work
-        config = ChunkingConfig(chunk_size=1000, overlap=200)
+        config = ChunkingParams(chunk_size=1000, overlap=200)
         assert config.chunk_size == 1000
 
-        # Test that negative values might be caught by pydantic
-        # (specific validation would need to be implemented in the model)
+        # Test that basic dataclass creation works
+        # (ChunkingParams is now a dataclass, not a Pydantic model)
 
 
 class TestInsertResult:

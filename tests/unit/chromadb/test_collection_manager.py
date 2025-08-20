@@ -3,7 +3,7 @@
 import pytest
 
 from shard_markdown.chromadb.collections import CollectionManager
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config.settings import ChromaDBParams
 from shard_markdown.utils.errors import ChromaDBError
 from tests.fixtures.mock import MockChromaDBClient
 
@@ -16,7 +16,7 @@ def _create_fresh_mock_client() -> MockChromaDBClient:
 
     f"{os.getpid()}_{int(time.time() * 1000000)}"
 
-    client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
+    client = MockChromaDBClient(ChromaDBParams(host="localhost", port=8000))
     client.connect()
     # Clear any existing collections from shared storage
     if hasattr(client, "collections"):

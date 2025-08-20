@@ -5,7 +5,7 @@ import time
 
 import pytest
 
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config.settings import ChromaDBParams
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
@@ -17,9 +17,9 @@ class TestAsyncChromaDBPerformanceIntegration:
     """Performance integration tests for AsyncChromaDBClient with real ChromaDB."""
 
     @pytest.fixture
-    def config(self) -> ChromaDBConfig:
+    def config(self) -> ChromaDBParams:
         """Create test ChromaDB configuration for performance tests."""
-        return ChromaDBConfig(
+        return ChromaDBParams(
             host="localhost",
             port=8000,
             auth_token=None,

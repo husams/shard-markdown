@@ -15,7 +15,7 @@ from rich.table import Table
 
 from ...chromadb.collections import CollectionManager
 from ...chromadb.factory import create_chromadb_client
-from ...core.models import BatchResult, ChunkingConfig, ProcessingResult
+from ...core.models import BatchResult, ProcessingResult
 from ...core.processor import DocumentProcessor
 from ...utils.errors import ShardMarkdownError
 from ...utils.logging import get_logger
@@ -115,9 +115,9 @@ def process(  # noqa: C901
     config = ctx.obj.get("config")
     if config is None:
         # Create a default config for testing
-        from ...config.settings import AppConfig
+        from ...config.settings import Settings
 
-        config = AppConfig()
+        config = Settings()
 
     verbose = ctx.obj.get("verbose", 0)
 
@@ -142,8 +142,10 @@ def process(  # noqa: C901
         )
 
         # Initialize processor
+        from ...config.settings import ChunkingParams
+
         processor = DocumentProcessor(
-            ChunkingConfig(
+            ChunkingParams(
                 chunk_size=chunk_size, overlap=chunk_overlap, method=chunk_method
             )
         )
@@ -186,7 +188,7 @@ def _setup_chromadb_and_collection(
     """Set up ChromaDB client and collection."""
     from ...utils.errors import ChromaDBError, NetworkError
 
-    chroma_client = create_chromadb_client(config.chromadb)
+    chroma_client = create_chromadb_client(config.get_chromadb_params())
     try:
         if not chroma_client.connect():
             raise click.ClickException("Failed to connect to ChromaDB")

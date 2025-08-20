@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config.settings import ChromaDBParams
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
@@ -15,9 +15,9 @@ class TestAsyncChromaDBIntegration:
     """Integration tests for AsyncChromaDBClient with real ChromaDB."""
 
     @pytest.fixture
-    def config(self) -> ChromaDBConfig:
+    def config(self) -> ChromaDBParams:
         """Create test ChromaDB configuration for integration tests."""
-        return ChromaDBConfig(
+        return ChromaDBParams(
             host="localhost",
             port=8000,
             auth_token=None,
@@ -203,7 +203,7 @@ class TestAsyncChromaDBIntegration:
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
         # Use invalid port to force connection failure
-        bad_config = ChromaDBConfig(
+        bad_config = ChromaDBParams(
             host="localhost",
             port=9999,  # Invalid port
             auth_token=None,

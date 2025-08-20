@@ -3,7 +3,7 @@
 import time
 from typing import Any, cast
 
-from ..config.settings import ChromaDBConfig
+from ..config.settings import ChromaDBParams
 from ..core.metadata import MetadataExtractor
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.errors import ChromaDBError, NetworkError
@@ -62,11 +62,11 @@ logger = get_logger(__name__)
 class ChromaDBClient:
     """ChromaDB client wrapper with connection management and version detection."""
 
-    def __init__(self, config: ChromaDBConfig) -> None:
+    def __init__(self, config: ChromaDBParams) -> None:
         """Initialize client with configuration.
 
         Args:
-            config: ChromaDB configuration
+            config: ChromaDB parameters
         """
         self.config = config
         self.client: Any | None = None  # ClientAPI when connected

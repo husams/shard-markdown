@@ -7,7 +7,7 @@ import time
 import psutil
 import pytest
 
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config.settings import ChromaDBParams
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
@@ -17,9 +17,9 @@ class TestAsyncChromaDBPerformance:
     """Performance benchmarks for AsyncChromaDBClient."""
 
     @pytest.fixture
-    def config(self) -> ChromaDBConfig:
+    def config(self) -> ChromaDBParams:
         """Create test ChromaDB configuration for performance tests."""
-        return ChromaDBConfig(
+        return ChromaDBParams(
             host="localhost",
             port=8000,
             auth_token=None,
@@ -65,7 +65,7 @@ class TestAsyncChromaDBPerformance:
         ],
     )
     async def test_bulk_insert_performance_targets(
-        self, config: ChromaDBConfig, chunk_count: int, target_time: float
+        self, config: ChromaDBParams, chunk_count: int, target_time: float
     ) -> None:
         """Test bulk insert performance against specific targets."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
@@ -103,7 +103,7 @@ class TestAsyncChromaDBPerformance:
             )
             print(f"  Processing time: {result.processing_time:.2f}s")
 
-    async def test_concurrent_performance_scaling(self, config: ChromaDBConfig) -> None:
+    async def test_concurrent_performance_scaling(self, config: ChromaDBParams) -> None:
         """Test performance scaling with concurrent operations."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
@@ -157,7 +157,7 @@ class TestAsyncChromaDBPerformance:
             print(f"  Efficiency: {overall_rate / (chunks_per_task / 3.0) * 100:.1f}%")
 
     async def test_memory_efficiency_large_datasets(
-        self, config: ChromaDBConfig
+        self, config: ChromaDBParams
     ) -> None:
         """Test memory efficiency with large datasets."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
@@ -230,7 +230,7 @@ class TestAsyncChromaDBPerformance:
         )
 
     async def test_async_vs_sync_performance_benchmark(
-        self, config: ChromaDBConfig
+        self, config: ChromaDBParams
     ) -> None:
         """Comprehensive benchmark comparing async vs sync performance."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
@@ -313,7 +313,7 @@ class TestAsyncChromaDBPerformance:
         print(f"  Target achieved: {max_speedup >= 3.0}")
 
     async def test_throughput_under_sustained_load(
-        self, config: ChromaDBConfig
+        self, config: ChromaDBParams
     ) -> None:
         """Test throughput consistency under sustained load."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient

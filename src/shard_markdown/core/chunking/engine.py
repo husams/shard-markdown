@@ -1,8 +1,9 @@
 """Main chunking engine that selects appropriate strategy."""
 
+from ...config.settings import ChunkingParams
 from ...utils.errors import ProcessingError
 from ...utils.logging import get_logger
-from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
+from ..models import DocumentChunk, MarkdownAST
 from .fixed import FixedSizeChunker
 from .structure import StructureAwareChunker
 
@@ -13,11 +14,11 @@ logger = get_logger(__name__)
 class ChunkingEngine:
     """Main chunking engine with strategy selection."""
 
-    def __init__(self, config: ChunkingConfig):
+    def __init__(self, config: ChunkingParams):
         """Initialize chunking engine with configuration.
 
         Args:
-            config: Chunking configuration
+            config: Chunking parameters
         """
         self.config = config
         self.strategies = {

@@ -9,8 +9,7 @@ from unittest.mock import patch
 import yaml
 
 from shard_markdown.config.loader import load_config, save_config
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.config.utils import set_nested_value
+from shard_markdown.config.settings import AppConfig, ChromaDBConfig, set_nested_value
 
 
 class TestConfigValueHandling:

@@ -7,9 +7,9 @@ import click
 import yaml
 from rich.table import Table
 
-from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
+from ...config import DEFAULT_CONFIG_LOCATIONS
 from ...config.loader import create_default_config, save_config
-from ...config.utils import set_nested_value
+from ...config.settings import set_nested_value
 from ...utils.logging import get_logger
 from ..utils import console
 
@@ -139,10 +139,10 @@ def set(
         set_nested_value(config_dict, key, value)
 
         # Validate the new configuration
-        from ...config.settings import AppConfig
+        from ...config.settings import Settings
 
         try:
-            updated_config = AppConfig(**config_dict)
+            updated_config = Settings(**config_dict)
         except (ValueError, TypeError) as e:
             console.print(f"[red]Invalid configuration value:[/red] {str(e)}")
             return

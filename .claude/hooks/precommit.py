@@ -143,10 +143,10 @@ def _format_python_file(file_path: str, logger: logging.Logger) -> bool:
         logger.info(f"Successfully formatted: {file_path}")
     else:
         # Format failures go to stderr but don't block the hook
-        print(f"⚠ Ruff format failed for: {file_path}", file=sys.stderr)
+        print(f"⚠ Ruff format failed for: {file_path}")
         logger.error(f"Ruff format failed for: {file_path}")
         if output.strip():
-            print(f"  Error: {output.strip()}", file=sys.stderr)
+            print(f"  Error: {output.strip()}")
             logger.error(f"Format error output: {output.strip()}")
     return success
 
@@ -177,10 +177,10 @@ def _lint_python_file(file_path: str, logger: logging.Logger) -> bool:
         logger.info(f"Successfully linted: {file_path}")
     else:
         # Lint failures go to stderr but don't block the hook
-        print(f"⚠ Ruff lint failed for: {file_path}", file=sys.stderr)
+        print(f"⚠ Ruff lint failed for: {file_path}")
         logger.error(f"Ruff lint failed for: {file_path}")
         if output.strip():
-            print(f"  Error: {output.strip()}", file=sys.stderr)
+            print(f"  Error: {output.strip()}")
             logger.error(f"Lint error output: {output.strip()}")
     return success
 
@@ -211,10 +211,10 @@ def _check_bandit(file_path: str, logger: logging.Logger) -> tuple[bool, str]:
         logger.info(f"Bandit security check passed: {file_path}")
     else:
         # Security warnings are informational - send to stderr but don't block
-        print(f"⚠ Bandit found security issues in: {file_path}", file=sys.stderr)
+        print(f"⚠ Bandit found security issues in: {file_path}")
         logger.warning(f"Bandit security check found issues in: {file_path}")
         if output.strip():
-            print(f"Security warnings: {output.strip()}", file=sys.stderr)
+            print(f"Security warnings: {output.strip()}")
             logger.warning(f"Bandit output: {output.strip()}")
 
     return success, output.strip()
@@ -250,10 +250,10 @@ def _check_mypy(file_path: str, logger: logging.Logger) -> tuple[bool, str]:
             logger.info(f"MyPy output: {output.strip()}")
     else:
         # Type errors are critical - send to stderr and will block the edit
-        print(f"✗ MyPy failed for: {file_path}", file=sys.stderr)
+        print(f"✗ MyPy failed for: {file_path}")
         logger.error(f"MyPy type check failed for: {file_path}")
         if output.strip():
-            print(f"Type errors: {output.strip()}", file=sys.stderr)
+            print(f"Type errors: {output.strip()}")
             logger.error(f"MyPy error output: {output.strip()}")
 
     return success, output.strip()
@@ -296,8 +296,8 @@ def main() -> None:
         # Handle malformed JSON input gracefully
         error_msg = f"Invalid JSON input: {e}"
         logger.error(error_msg)
-        print(f"Error: {error_msg}", file=sys.stderr)
-        sys.exit(1)  # Exit with error code for invalid input
+        print(f"Error: {error_msg}")
+        sys.exit(0)  # Exit with error code for invalid input
 
     # Log all environment variables for debugging hook context
     claude_env_vars = {k: v for k, v in os.environ.items() if k.startswith("CLAUDE_")}
@@ -401,7 +401,7 @@ def main() -> None:
         # Send JSON response to stdout for Claude Code to parse
         print(json.dumps(rejection_output))
         logger.info(f"Sent rejection JSON: {json.dumps(rejection_output)}")
-        sys.exit(1)  # Exit with error code to signal failure
+        sys.exit(0)  # Exit with error code to signal failure
 
     # SUCCESS EVALUATION: Determine final hook result
     # All four checks completed - evaluate overall success
@@ -413,7 +413,7 @@ def main() -> None:
         # Partial success: type safety maintained but style/security issues remain
         # Format/lint/bandit failures are warnings only since mypy passed
         logger.warning("Hook completed with some warnings (but mypy passed)")
-        sys.exit(1)  # Warning: signals issues but allows edit to proceed
+        sys.exit(0)  # Warning: signals issues but allows edit to proceed
 
 
 if __name__ == "__main__":

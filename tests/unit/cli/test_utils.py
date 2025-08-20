@@ -11,7 +11,7 @@ from shard_markdown.cli.utils import (
     get_connected_chromadb_client,
     handle_chromadb_errors,
 )
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config.settings import ChromaDBParams
 from shard_markdown.utils.errors import ShardMarkdownError
 
 
@@ -81,7 +81,7 @@ class TestGetConnectedChromaDBClient:
         """Test successful client connection."""
         # Mock config
         mock_config = Mock()
-        mock_config.chromadb = ChromaDBConfig(host="localhost", port=8000)
+        mock_config.chromadb = ChromaDBParams(host="localhost", port=8000)
 
         # Mock client
         mock_client = Mock()
@@ -100,7 +100,7 @@ class TestGetConnectedChromaDBClient:
         """Test failed client connection."""
         # Mock config
         mock_config = Mock()
-        mock_config.chromadb = ChromaDBConfig(host="localhost", port=8000)
+        mock_config.chromadb = ChromaDBParams(host="localhost", port=8000)
 
         # Mock client that fails to connect
         mock_client = Mock()
@@ -119,7 +119,7 @@ class TestGetConnectedChromaDBClient:
         """Test handling exceptions during connection."""
         # Mock config
         mock_config = Mock()
-        mock_config.chromadb = ChromaDBConfig(host="localhost", port=8000)
+        mock_config.chromadb = ChromaDBParams(host="localhost", port=8000)
 
         # Mock client that raises exception
         mock_client = Mock()

@@ -10,9 +10,7 @@ from unittest.mock import Mock
 import pytest
 from click.testing import CliRunner
 
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.config.settings import ChunkingConfig as SettingsChunkingConfig
-from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
+from shard_markdown.config.settings import ChunkingParams, Settings
 from shard_markdown.core.models import (
     DocumentChunk,
     MarkdownAST,
@@ -256,9 +254,9 @@ Thanks for reading!
 
 
 @pytest.fixture
-def chunking_config() -> ModelsChunkingConfig:
+def chunking_config() -> ChunkingParams:
     """Create default chunking configuration for core models."""
-    return ModelsChunkingConfig(
+    return ChunkingParams(
         chunk_size=1000,
         overlap=200,
         method="structure",
@@ -267,18 +265,15 @@ def chunking_config() -> ModelsChunkingConfig:
 
 
 @pytest.fixture
-def app_config() -> AppConfig:
+def app_config() -> Settings:
     """Create test application configuration."""
-    return AppConfig(
-        chromadb=ChromaDBConfig(
-            host="localhost",
-            port=8000,
-        ),
-        chunking=SettingsChunkingConfig(
-            default_size=1000,
-            default_overlap=200,
-            method="structure",
-        ),
+    return Settings(
+        chroma_host="localhost",
+        chroma_port=8000,
+        chunk_size=1000,
+        overlap=200,
+        log_level="INFO",
+        output_format="table",
     )
 
 
