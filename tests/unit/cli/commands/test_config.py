@@ -27,7 +27,7 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "global.yaml", fs_dir / "local.yaml"],
             ):
-                result = runner.invoke(cli, ["config", "path"])
+                result = runner.invoke(cli, ["config", "--path"])
                 assert result.exit_code == 0
                 assert "Configuration file locations" in result.output
 
@@ -40,7 +40,7 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "global.yaml", local_config_path],
             ):
-                result = runner.invoke(cli, ["config", "init"])
+                result = runner.invoke(cli, ["config", "--init"])
                 assert result.exit_code == 0
                 assert "Initialized configuration file" in result.output
                 assert local_config_path.exists()
@@ -54,7 +54,7 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [global_config_path, fs_dir / "local.yaml"],
             ):
-                result = runner.invoke(cli, ["config", "init", "--global"])
+                result = runner.invoke(cli, ["config", "--init", "--global"])
                 assert result.exit_code == 0
                 assert global_config_path.exists()
 
@@ -69,7 +69,7 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "dummy.yaml", config_path],
             ):
-                result = runner.invoke(cli, ["config", "init", "--force"])
+                result = runner.invoke(cli, ["config", "--init", "--force"])
                 assert result.exit_code == 0
                 content = config_path.read_text()
                 assert "old content" not in content
@@ -85,7 +85,7 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "dummy.yaml", config_path],
             ):
-                result = runner.invoke(cli, ["config", "init"])
+                result = runner.invoke(cli, ["config", "--init"])
                 assert result.exit_code == 0
                 assert "Configuration file already exists" in result.output
 
@@ -98,8 +98,8 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "dummy.yaml", config_path],
             ):
-                runner.invoke(cli, ["config", "init"])
-            result = runner.invoke(cli, ["config", "show", "--format", "yaml"])
+                runner.invoke(cli, ["config", "--init"])
+            result = runner.invoke(cli, ["config", "--show", "--format", "yaml"])
             assert result.exit_code == 0
             data = yaml.safe_load(result.output)
             # Check for flat configuration keys
@@ -115,8 +115,8 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "dummy.yaml", config_path],
             ):
-                runner.invoke(cli, ["config", "init"])
-                result = runner.invoke(cli, ["config", "set", "chunk_size", "1234"])
+                runner.invoke(cli, ["config", "--init"])
+                result = runner.invoke(cli, ["config", "--set", "chunk_size", "1234"])
                 assert result.exit_code == 0
                 assert "Set chunk_size = 1234" in result.output
                 with config_path.open() as f:
@@ -132,9 +132,9 @@ class TestConfigCommand:
                 "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
                 [fs_dir / "dummy.yaml", config_path],
             ):
-                runner.invoke(cli, ["config", "init"])
+                runner.invoke(cli, ["config", "--init"])
                 result = runner.invoke(
-                    cli, ["config", "set", "custom_metadata.foo", "bar"]
+                    cli, ["config", "--set", "custom_metadata.foo", "bar"]
                 )
                 assert result.exit_code == 0
                 with config_path.open() as f:

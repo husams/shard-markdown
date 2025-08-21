@@ -8,7 +8,7 @@ from rich.traceback import install
 
 from ..config import load_config
 from ..utils.logging import setup_logging
-from .commands import collections, config, process, query
+from .commands import config, data, process
 from .utils import console
 
 
@@ -46,10 +46,10 @@ def cli(
       shard-md process --collection tech-docs --chunk-size 1500 *.md
 
       # List available collections
-      shard-md collections list
+      shard-md data list
 
-      # Query a collection
-      shard-md query search --collection my-docs "search term"
+      # Search in a collection
+      shard-md data search --collection my-docs "search term"
     """
     # Ensure context object exists
     ctx.ensure_object(dict)
@@ -96,9 +96,31 @@ def version(ctx: click.Context) -> None:
 
 # Register command groups
 cli.add_command(process.process)
-cli.add_command(collections.collections)
-cli.add_command(query.query)
 cli.add_command(config.config)
+cli.add_command(data.data)
+
+
+# Backward compatibility aliases (deprecated)
+@cli.command(hidden=True)
+@click.pass_context
+def collections(ctx: click.Context) -> None:
+    """Deprecated: Use 'data' command instead."""
+    console.print(
+        "[yellow]Warning: 'collections' is deprecated. Use 'data' instead.[/yellow]",
+        err=True,
+    )
+    ctx.invoke(data.data)
+
+
+@cli.command(hidden=True)
+@click.pass_context
+def query(ctx: click.Context) -> None:
+    """Deprecated: Use 'data' command instead."""
+    console.print(
+        "[yellow]Warning: 'query' is deprecated. Use 'data' instead.[/yellow]",
+        err=True,
+    )
+    ctx.invoke(data.data)
 
 
 def main() -> None:

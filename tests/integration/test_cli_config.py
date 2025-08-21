@@ -90,7 +90,7 @@ class TestCLIConfigIntegration:
 
         # Set IP address via CLI using --local flag
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chroma_host", "192.168.1.100"],  # noqa: S603, S607
+            ["shard-md", "config", "--local", "--set", "chroma_host", "192.168.1.100"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -128,7 +128,7 @@ class TestCLIConfigIntegration:
 
         for key, value in test_values:
             result = subprocess.run(  # noqa: S603
-                ["shard-md", "config", "set", "--local", key, value],  # noqa: S607
+                ["shard-md", "config", "--local", "--set", key, value],  # noqa: S607
                 cwd=temp_project_dir,
                 capture_output=True,
                 text=True,
@@ -184,7 +184,7 @@ class TestCLIConfigIntegration:
 
         # Try to set invalid port
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chroma_port", "70000"],  # noqa: S603, S607
+            ["shard-md", "config", "--local", "--set", "chroma_port", "70000"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -233,7 +233,7 @@ class TestCLIConfigIntegration:
 
         # Set IP address
         result = subprocess.run(  # noqa: S603
-            ["shard-md", "config", "set", "--local", "chroma_host", ip_address],  # noqa: S607
+            ["shard-md", "config", "--local", "--set", "chroma_host", ip_address],  # noqa: S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -252,7 +252,7 @@ class TestCLIConfigIntegration:
         """Test the full workflow of initializing and setting config values."""
         # Initialize local config
         result = subprocess.run(
-            ["shard-md", "config", "init"],  # noqa: S603, S607
+            ["shard-md", "config", "--init"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -266,7 +266,7 @@ class TestCLIConfigIntegration:
 
         # Set IP address after init
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chroma_host", "203.0.113.1"],  # noqa: S603, S607
+            ["shard-md", "config", "--local", "--set", "chroma_host", "203.0.113.1"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -304,7 +304,7 @@ class TestCLIConfigIntegration:
 
         for ip in test_ips:
             result = subprocess.run(  # noqa: S603
-                ["shard-md", "config", "set", "--local", "chroma_host", ip],  # noqa: S607
+                ["shard-md", "config", "--local", "--set", "chroma_host", ip],  # noqa: S607
                 cwd=temp_project_dir,
                 capture_output=True,
                 text=True,
@@ -335,7 +335,7 @@ class TestCLIConfigIntegration:
 
         # Set a different host in config
         result = subprocess.run(
-            ["shard-md", "config", "set", "--local", "chroma_host", "192.168.1.1"],  # noqa: S603, S607
+            ["shard-md", "config", "--local", "--set", "chroma_host", "192.168.1.1"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,
@@ -352,7 +352,7 @@ class TestCLIConfigIntegration:
 
         # But when we show the config, it should reflect the env var override
         result = subprocess.run(
-            ["shard-md", "config", "show"],  # noqa: S603, S607
+            ["shard-md", "config", "--show"],  # noqa: S603, S607
             cwd=temp_project_dir,
             capture_output=True,
             text=True,

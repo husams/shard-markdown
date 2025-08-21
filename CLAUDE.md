@@ -1,5 +1,8 @@
 # Shard Markdown Development Instructions
 
+## knowledge base
+@guides/knowledge-based.md
+
 ## Project Overview
 
 Shard Markdown is a CLI tool for intelligent markdown document chunking and ChromaDB integration. This document provides essential instructions for AI agents working on this codebase.

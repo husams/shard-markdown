@@ -100,9 +100,9 @@ class TestCollectionsCommand:
 
     def test_collections_group_help(self, runner: CliRunner) -> None:
         """Test the collections command group help."""
-        result = runner.invoke(cli, ["collections", "--help"])
+        result = runner.invoke(cli, ["data", "--help"])
         assert result.exit_code == 0
-        assert "Manage ChromaDB collections" in result.output
+        assert "Manage and query ChromaDB data" in result.output
 
     def test_list_collections_table_format(
         self, runner: CliRunner, populated_mock_client: MockChromaDBClient
@@ -112,10 +112,10 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=populated_mock_client,
         ):
-            result = runner.invoke(cli, ["collections", "list"])
+            result = runner.invoke(cli, ["data", "list"])
 
             assert result.exit_code == 0
-            assert "ChromaDB Collections" in result.output
+            assert "Collections" in result.output
             assert "test-collection1" in result.output
             assert "test-collection2" in result.output
             assert "another-collection" in result.output
@@ -129,7 +129,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=populated_mock_client,
         ):
-            result = runner.invoke(cli, ["collections", "list", "--format", "json"])
+            result = runner.invoke(cli, ["data", "list", "--format", "json"])
 
             assert result.exit_code == 0
             # Extract JSON part (everything before the "Found X collection(s)" line)
@@ -159,7 +159,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=populated_mock_client,
         ):
-            result = runner.invoke(cli, ["collections", "list", "--format", "yaml"])
+            result = runner.invoke(cli, ["data", "list", "--format", "yaml"])
 
             assert result.exit_code == 0
             # YAML should contain collection names
@@ -173,7 +173,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=populated_mock_client,
         ):
-            result = runner.invoke(cli, ["collections", "list", "--show-metadata"])
+            result = runner.invoke(cli, ["data", "list", "--show-metadata"])
 
             assert result.exit_code == 0
             assert "Metadata" in result.output
@@ -187,7 +187,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=populated_mock_client,
         ):
-            result = runner.invoke(cli, ["collections", "list", "--filter", "test"])
+            result = runner.invoke(cli, ["data", "list", "--filter", "test"])
 
             assert result.exit_code == 0
             assert "test-collection1" in result.output
@@ -211,7 +211,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=mock_chromadb_client,
         ):
-            result = runner.invoke(cli, ["collections", "list"])
+            result = runner.invoke(cli, ["data", "list"])
 
             assert result.exit_code == 0
             assert "No collections found" in result.output
@@ -230,7 +230,7 @@ class TestCollectionsCommand:
                 return_value=failed_client,
             ),
         ):
-            result = runner.invoke(cli, ["collections", "list"])
+            result = runner.invoke(cli, ["data", "list"])
 
             assert result.exit_code == 1
             assert "Failed to connect to ChromaDB" in result.output
@@ -243,9 +243,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=mock_chromadb_client,
         ):
-            result = runner.invoke(
-                cli, ["collections", "create", "new-test-collection"]
-            )
+            result = runner.invoke(cli, ["data", "create", "new-test-collection"])
 
             assert result.exit_code == 0
             assert "Created collection 'new-test-collection'" in result.output
@@ -263,7 +261,7 @@ class TestCollectionsCommand:
             result = runner.invoke(
                 cli,
                 [
-                    "collections",
+                    "data",
                     "create",
                     "test-with-desc",
                     "--description",
@@ -288,7 +286,7 @@ class TestCollectionsCommand:
             return_value=populated_mock_client,
         ):
             # Without --force, this should fail
-            result = runner.invoke(cli, ["collections", "create", "test-collection1"])
+            result = runner.invoke(cli, ["data", "create", "test-collection1"])
 
             assert result.exit_code == 1
             assert "already exists" in result.output
@@ -296,7 +294,7 @@ class TestCollectionsCommand:
             # With --force, provide automatic "yes" response to confirm deletion
             result = runner.invoke(
                 cli,
-                ["collections", "create", "test-collection1", "--force"],
+                ["data", "create", "test-collection1", "--force"],
                 input="y\n",
             )
             # The --force implementation may still have issues, so let's be flexible
@@ -311,7 +309,7 @@ class TestCollectionsCommand:
             return_value=populated_mock_client,
         ):
             result = runner.invoke(
-                cli, ["collections", "delete", "test-collection1", "--force"]
+                cli, ["data", "delete", "test-collection1", "--force"]
             )
 
             assert result.exit_code == 0
@@ -327,9 +325,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=mock_chromadb_client,
         ):
-            result = runner.invoke(
-                cli, ["collections", "delete", "nonexistent", "--force"]
-            )
+            result = runner.invoke(cli, ["data", "delete", "nonexistent", "--force"])
 
             assert result.exit_code == 1
             assert "does not exist" in result.output
@@ -346,7 +342,7 @@ class TestCollectionsCommand:
         ):
             result = runner.invoke(
                 cli,
-                ["collections", "create", "meta-test", "--metadata", metadata_json],
+                ["data", "create", "meta-test", "--metadata", metadata_json],
             )
 
             assert result.exit_code == 0
@@ -367,7 +363,7 @@ class TestCollectionsCommand:
         ):
             result = runner.invoke(
                 cli,
-                ["collections", "create", "bad-meta", "--metadata", "invalid-json"],
+                ["data", "create", "bad-meta", "--metadata", "invalid-json"],
             )
 
             assert result.exit_code == 2  # Click parameter error
@@ -381,7 +377,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=populated_mock_client,
         ):
-            result = runner.invoke(cli, ["collections", "info", "test-collection1"])
+            result = runner.invoke(cli, ["data", "info", "test-collection1"])
 
             assert result.exit_code == 0
             assert "test-collection1" in result.output
@@ -395,7 +391,7 @@ class TestCollectionsCommand:
             "shard_markdown.chromadb.factory._create_mock_client",
             return_value=mock_chromadb_client,
         ):
-            result = runner.invoke(cli, ["collections", "info", "nonexistent"])
+            result = runner.invoke(cli, ["data", "info", "nonexistent"])
 
             assert result.exit_code == 1
             assert "does not exist" in result.output
@@ -409,7 +405,7 @@ class TestCollectionsCommand:
             return_value=populated_mock_client,
         ):
             result = runner.invoke(
-                cli, ["collections", "info", "test-collection1", "--format", "json"]
+                cli, ["data", "info", "test-collection1", "--format", "json"]
             )
 
             assert result.exit_code == 0
@@ -433,26 +429,24 @@ class TestCollectionsCommand:
         ):
             # Create
             result = runner.invoke(
-                cli, ["collections", "create", "workflow-test", "--description", "Test"]
+                cli, ["data", "create", "workflow-test", "--description", "Test"]
             )
             assert result.exit_code == 0
 
             # List
-            result = runner.invoke(cli, ["collections", "list"])
+            result = runner.invoke(cli, ["data", "list"])
             assert result.exit_code == 0
             assert "workflow-test" in result.output
 
             # Info
-            result = runner.invoke(cli, ["collections", "info", "workflow-test"])
+            result = runner.invoke(cli, ["data", "info", "workflow-test"])
             assert result.exit_code == 0
 
             # Delete
-            result = runner.invoke(
-                cli, ["collections", "delete", "workflow-test", "--force"]
-            )
+            result = runner.invoke(cli, ["data", "delete", "workflow-test", "--force"])
             assert result.exit_code == 0
 
             # Verify deleted
-            result = runner.invoke(cli, ["collections", "list"])
+            result = runner.invoke(cli, ["data", "list"])
             assert result.exit_code == 0
             assert "workflow-test" not in result.output

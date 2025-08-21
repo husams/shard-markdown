@@ -1,0 +1,6 @@
+       3 src/shard_markdown/cli/commands/__init__.py
+     287 src/shard_markdown/cli/commands/collections.py
+     300 src/shard_markdown/cli/commands/config.py
+     453 src/shard_markdown/cli/commands/process.py
+     324 src/shard_markdown/cli/commands/query.py
+    1367 total

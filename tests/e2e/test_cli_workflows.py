@@ -112,7 +112,7 @@ class TestBasicCLIWorkflows:
         query_result = cli_runner.invoke(
             cli,
             [
-                "query",
+                "data",
                 "search",
                 "--collection",
                 "e2e-test-collection",
@@ -196,14 +196,14 @@ class TestBasicCLIWorkflows:
     ) -> None:
         """Test collection management workflow."""
         # List collections
-        list_result = cli_runner.invoke(cli, ["collections", "list"], env=chromadb_env)
+        list_result = cli_runner.invoke(cli, ["data", "list"], env=chromadb_env)
         print(f"Collections list output: {list_result.output}")
 
         # Create a collection
         create_result = cli_runner.invoke(
             cli,
             [
-                "collections",
+                "data",
                 "create",
                 "workflow-test-collection",  # Name is a positional argument
                 "--description",
@@ -216,7 +216,7 @@ class TestBasicCLIWorkflows:
         # Get collection info
         info_result = cli_runner.invoke(
             cli,
-            ["collections", "info", "workflow-test-collection"],  # Name is positional
+            ["data", "info", "workflow-test-collection"],  # Name is positional
             env=chromadb_env,
         )
         print(f"Collection info output: {info_result.output}")
@@ -269,9 +269,14 @@ class TestBasicCLIWorkflows:
         assert process_help.exit_code == 0
         assert "collection" in process_help.output.lower()
 
+        # Test new data command
+        data_help = cli_runner.invoke(cli, ["data", "--help"])
+        assert data_help.exit_code == 0
+        assert "manage" in data_help.output.lower()
+
+        # Test deprecated commands still work
         collections_help = cli_runner.invoke(cli, ["collections", "--help"])
         assert collections_help.exit_code == 0
-        assert "list" in collections_help.output
 
         query_help = cli_runner.invoke(cli, ["query", "--help"])
         assert query_help.exit_code == 0

@@ -54,9 +54,7 @@ class TestQueryCommand:
             "metadatas": [[{"source": "test.md"}]],
         }
 
-        result = runner.invoke(
-            cli, ["query", "search", "test", "-c", "test_collection"]
-        )
+        result = runner.invoke(cli, ["data", "search", "test", "-c", "test_collection"])
 
         assert result.exit_code == 0
         assert "Searching for: 'test'" in result.output
@@ -78,7 +76,7 @@ class TestQueryCommand:
 
         result = runner.invoke(
             cli,
-            ["query", "search", "test", "-c", "test_collection", "--format", "json"],
+            ["data", "search", "test", "-c", "test_collection", "--format", "json"],
         )
 
         assert result.exit_code == 0
@@ -114,7 +112,7 @@ class TestQueryCommand:
 
         result = runner.invoke(
             cli,
-            ["query", "search", "test", "-c", "test_collection", "--format", "yaml"],
+            ["data", "search", "test", "-c", "test_collection", "--format", "yaml"],
         )
 
         assert result.exit_code == 0
@@ -133,9 +131,7 @@ class TestQueryCommand:
             "distances": [[]],
         }
 
-        result = runner.invoke(
-            cli, ["query", "search", "test", "-c", "test_collection"]
-        )
+        result = runner.invoke(cli, ["data", "search", "test", "-c", "test_collection"])
 
         assert result.exit_code == 0
         assert "No documents found" in result.output
@@ -153,10 +149,12 @@ class TestQueryCommand:
             "metadatas": [{"source": "test.md"}],
         }
 
-        result = runner.invoke(cli, ["query", "get", "doc1", "-c", "test_collection"])
+        result = runner.invoke(
+            cli, ["data", "similar", "doc1", "-c", "test_collection"]
+        )
 
         assert result.exit_code == 0
-        assert "Retrieving document 'doc1'" in result.output
+        assert "Finding documents similar to 'doc1'" in result.output
         assert "Document: doc1" in result.output
 
     def test_get_document_not_found(
@@ -169,7 +167,7 @@ class TestQueryCommand:
         mock_collection.get.return_value = {"ids": [], "documents": [], "metadatas": []}
 
         result = runner.invoke(
-            cli, ["query", "get", "nonexistent", "-c", "test_collection"]
+            cli, ["data", "similar", "nonexistent", "-c", "test_collection"]
         )
 
         assert result.exit_code == 0
@@ -185,7 +183,7 @@ class TestQueryCommand:
         )
 
         result = runner.invoke(
-            cli, ["query", "search", "test", "-c", "nonexistent_collection"]
+            cli, ["data", "search", "test", "-c", "nonexistent_collection"]
         )
 
         assert result.exit_code == 1
@@ -201,7 +199,7 @@ class TestQueryCommand:
         )
 
         result = runner.invoke(
-            cli, ["query", "get", "doc1", "-c", "nonexistent_collection"]
+            cli, ["data", "similar", "doc1", "-c", "nonexistent_collection"]
         )
 
         assert result.exit_code == 1
@@ -216,9 +214,7 @@ class TestQueryCommand:
         mock_chromadb_client.get_collection.return_value = mock_collection
         mock_collection.query.side_effect = RuntimeError("Query failed")
 
-        result = runner.invoke(
-            cli, ["query", "search", "test", "-c", "test_collection"]
-        )
+        result = runner.invoke(cli, ["data", "search", "test", "-c", "test_collection"])
 
         assert result.exit_code == 1
         assert "Search failed" in result.output
@@ -232,7 +228,9 @@ class TestQueryCommand:
         mock_chromadb_client.get_collection.return_value = mock_collection
         mock_collection.get.side_effect = RuntimeError("Get operation failed")
 
-        result = runner.invoke(cli, ["query", "get", "doc1", "-c", "test_collection"])
+        result = runner.invoke(
+            cli, ["data", "similar", "doc1", "-c", "test_collection"]
+        )
 
         assert result.exit_code == 1
         assert "Failed to retrieve document" in result.output
@@ -254,7 +252,7 @@ class TestQueryCommand:
         result = runner.invoke(
             cli,
             [
-                "query",
+                "data",
                 "search",
                 "test",
                 "-c",
@@ -282,7 +280,7 @@ class TestQueryCommand:
         }
 
         result = runner.invoke(
-            cli, ["query", "search", "test", "-c", "test_collection", "--limit", "5"]
+            cli, ["data", "search", "test", "-c", "test_collection", "--limit", "5"]
         )
 
         assert result.exit_code == 0
@@ -305,7 +303,8 @@ class TestQueryCommand:
         }
 
         result = runner.invoke(
-            cli, ["query", "get", "doc1", "-c", "test_collection", "--format", "json"]
+            cli,
+            ["data", "similar", "doc1", "-c", "test_collection", "--format", "json"],
         )
 
         assert result.exit_code == 0
@@ -319,9 +318,7 @@ class TestQueryCommand:
         failed_client.connect.return_value = False
         mock_create_client.return_value = failed_client
 
-        result = runner.invoke(
-            cli, ["query", "search", "test", "-c", "test_collection"]
-        )
+        result = runner.invoke(cli, ["data", "search", "test", "-c", "test_collection"])
 
         assert result.exit_code == 1
         assert "Failed to connect to ChromaDB" in result.output

@@ -1,0 +1,73 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.10, pytest-8.4.1, pluggy-1.6.0
+benchmark: 5.1.0 (defaults: timer=time.perf_counter disable_gc=False min_rounds=5 min_time=0.000005 max_time=1.0 calibration_precision=10 warmup=False warmup_iterations=100000)
+rootdir: /Users/husam/workspace/tools/shard-markdown
+configfile: pyproject.toml
+plugins: anyio-4.9.0, asyncio-1.1.0, xdist-3.8.0, cov-6.2.1, mock-3.14.1, langsmith-0.4.13, benchmark-5.1.0
+asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 98 items
+
+tests/unit/cli/commands/test_collections.py F........F.........          [ 19%]
+tests/unit/cli/commands/test_config.py ........                          [ 27%]
+tests/unit/cli/commands/test_query.py ....FF.F.FF.F.                     [ 41%]
+tests/unit/cli/test_main.py ...............F.......                      [ 65%]
+tests/unit/cli/test_process_command.py ........................          [ 89%]
+tests/unit/cli/test_utils.py ..........                                  [100%]
+
+=================================== FAILURES ===================================
+______________ TestCollectionsCommand.test_collections_group_help ______________
+tests/unit/cli/commands/test_collections.py:105: in test_collections_group_help
+    assert "Manage ChromaDB collections" in result.output
+E   AssertionError: assert 'Manage ChromaDB collections' in 'Usage: cli data [OPTIONS] COMMAND [ARGS]...\n\n  Manage and query ChromaDB data.\n\n  This command group provides uni...  Search for documents using similarity search.\n  similar  Find similar documents or get a specific document by ID.\n'
+E    +  where 'Usage: cli data [OPTIONS] COMMAND [ARGS]...\n\n  Manage and query ChromaDB data.\n\n  This command group provides uni...  Search for documents using similarity search.\n  similar  Find similar documents or get a specific document by ID.\n' = <Result okay>.output
+________ TestCollectionsCommand.test_create_collection_with_description ________
+tests/unit/cli/commands/test_collections.py:274: in test_create_collection_with_description
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+___________________ TestQueryCommand.test_get_success_table ____________________
+tests/unit/cli/commands/test_query.py:158: in test_get_success_table
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+_________________ TestQueryCommand.test_get_document_not_found _________________
+tests/unit/cli/commands/test_query.py:175: in test_get_document_not_found
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+________________ TestQueryCommand.test_get_collection_not_found ________________
+tests/unit/cli/commands/test_query.py:207: in test_get_collection_not_found
+    assert result.exit_code == 1
+E   assert 2 == 1
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+_________________ TestQueryCommand.test_get_operation_failure __________________
+tests/unit/cli/commands/test_query.py:237: in test_get_operation_failure
+    assert result.exit_code == 1
+E   assert 2 == 1
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+____________ TestQueryCommand.test_search_with_similarity_threshold ____________
+tests/unit/cli/commands/test_query.py:267: in test_search_with_similarity_threshold
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+__________________ TestQueryCommand.test_get_with_json_format __________________
+tests/unit/cli/commands/test_query.py:311: in test_get_with_json_format
+    assert result.exit_code == 0
+E   assert 2 == 0
+E    +  where 2 = <Result SystemExit(2)>.exit_code
+____________________ TestCLIHelp.test_cli_examples_in_help _____________________
+tests/unit/cli/test_main.py:226: in test_cli_examples_in_help
+    assert "shard-md query search" in result.output
+E   AssertionError: assert 'shard-md query search' in 'Usage: cli [OPTIONS] COMMAND [ARGS]...\n\n  Shard Markdown - Intelligent document chunking for ChromaDB.\n\n  This to...\n  process  Process markdown files and directories into ChromaDB collections.\n  version  Show version information.\n'
+E    +  where 'Usage: cli [OPTIONS] COMMAND [ARGS]...\n\n  Shard Markdown - Intelligent document chunking for ChromaDB.\n\n  This to...\n  process  Process markdown files and directories into ChromaDB collections.\n  version  Show version information.\n' = <Result okay>.output
+=========================== short test summary info ============================
+FAILED tests/unit/cli/commands/test_collections.py::TestCollectionsCommand::test_collections_group_help
+FAILED tests/unit/cli/commands/test_collections.py::TestCollectionsCommand::test_create_collection_with_description
+FAILED tests/unit/cli/commands/test_query.py::TestQueryCommand::test_get_success_table
+FAILED tests/unit/cli/commands/test_query.py::TestQueryCommand::test_get_document_not_found
+FAILED tests/unit/cli/commands/test_query.py::TestQueryCommand::test_get_collection_not_found
+FAILED tests/unit/cli/commands/test_query.py::TestQueryCommand::test_get_operation_failure
+FAILED tests/unit/cli/commands/test_query.py::TestQueryCommand::test_search_with_similarity_threshold
+FAILED tests/unit/cli/commands/test_query.py::TestQueryCommand::test_get_with_json_format
+FAILED tests/unit/cli/test_main.py::TestCLIHelp::test_cli_examples_in_help - ...
+========================= 9 failed, 89 passed in 0.36s =========================

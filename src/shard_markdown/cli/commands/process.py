@@ -89,21 +89,24 @@ def process(  # noqa: C901
     dry_run: bool,
     collection_metadata: str | None,
 ) -> None:
-    """Process markdown files into ChromaDB collections.
+    """Process markdown files and directories into ChromaDB collections.
 
-    This command processes one or more markdown files, intelligently chunks
-    them based on document structure, and stores the results in a ChromaDB
-    collection.
+    This command automatically detects whether inputs are files or directories,
+    processes markdown files intelligently by chunking them based on document
+    structure, and stores the results in a ChromaDB collection.
 
     Examples:
-      # Process a single file
+      # Process a single file (auto-detected)
       shard-md process --collection my-docs document.md
 
       # Process multiple files with custom chunking
       shard-md process -c tech-docs --chunk-size 1500 --chunk-overlap 300 *.md
 
-      # Process directory recursively
-      shard-md process -c all-docs --recursive ./docs/
+      # Process directory (auto-detected, use --recursive for subdirs)
+      shard-md process -c all-docs ./docs/
+
+      # Process mixed files and directories
+      shard-md process -c mixed README.md docs/ notes.md
 
       # Create new collection and clear it first
       shard-md process -c new-docs --create-collection --clear-collection *.md
