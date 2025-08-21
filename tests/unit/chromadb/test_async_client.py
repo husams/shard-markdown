@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
@@ -12,12 +12,12 @@ class TestAsyncChromaDBClient:
     """Test AsyncChromaDBClient implementation."""
 
     @pytest.fixture
-    def config(self) -> ChromaDBConfig:
+    def config(self) -> Settings:
         """Create test ChromaDB configuration."""
-        return ChromaDBConfig(
-            host="localhost",
-            port=8000,
-            auth_token=None,
+        return Settings(
+            chroma_host="localhost",
+            chroma_port=8000,
+            chroma_auth_token=None,
         )
 
     @pytest.fixture

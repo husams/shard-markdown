@@ -34,13 +34,13 @@ class FixedSizeChunker(BaseChunker):
 
         while start < len(full_text):
             # Calculate end position
-            end = min(start + self.config.chunk_size, len(full_text))
+            end = min(start + self.settings.chunk_size, len(full_text))
 
             # Try to find a good break point (word boundary)
-            if end < len(full_text) and self.config.respect_boundaries:
+            if end < len(full_text) and self.settings.chunk_respect_boundaries:
                 # Look backwards for word boundary
                 for i in range(
-                    end, max(start + self.config.chunk_size // 2, start), -1
+                    end, max(start + self.settings.chunk_size // 2, start), -1
                 ):
                     if full_text[i] in " \n\t.!?":
                         end = i + 1
@@ -56,10 +56,10 @@ class FixedSizeChunker(BaseChunker):
                 chunks.append(chunk)
 
             # Move start position with overlap
-            if start + self.config.chunk_size >= len(full_text):
+            if start + self.settings.chunk_size >= len(full_text):
                 break
 
-            start = end - self.config.overlap
+            start = end - self.settings.chunk_overlap
 
             # Ensure we make progress
             if chunks and start <= chunks[-1].start_position:
@@ -108,7 +108,7 @@ class FixedSizeChunker(BaseChunker):
         logger.debug("Retrieving fixed-size chunker configuration info")
         return {
             "chunker_type": "fixed_size",
-            "chunk_size": self.config.chunk_size,
-            "overlap": self.config.overlap,
-            "respect_boundaries": self.config.respect_boundaries,
+            "chunk_size": self.settings.chunk_size,
+            "overlap": self.settings.chunk_overlap,
+            "respect_boundaries": self.settings.chunk_respect_boundaries,
         }

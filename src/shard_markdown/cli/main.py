@@ -64,13 +64,13 @@ def cli(
         log_level = (
             40 if quiet else max(10, 30 - (verbose * 10))
         )  # DEBUG=10, INFO=20, WARNING=30, ERROR=40
-        log_file_path = Path(log_file) if log_file else app_config.logging.file_path
+        log_file_path = Path(log_file) if log_file else app_config.log_file
 
         setup_logging(
             level=log_level,
             file_path=log_file_path,
-            max_file_size=app_config.logging.max_file_size,
-            backup_count=app_config.logging.backup_count,
+            max_file_size=app_config.log_max_file_size,
+            backup_count=app_config.log_backup_count,
         )
 
         # Store CLI options for commands

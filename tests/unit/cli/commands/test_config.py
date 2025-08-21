@@ -95,18 +95,16 @@ class TestConfigCommand:
             fs_dir = Path(fs_dir_str)
             config_path = fs_dir / ".shard-md/config.yaml"
             with patch(
-                "shard_markdown.config.loader._find_config_file",
-                return_value=config_path,
+                "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
+                [fs_dir / "dummy.yaml", config_path],
             ):
-                with patch(
-                    "shard_markdown.cli.commands.config.DEFAULT_CONFIG_LOCATIONS",
-                    [fs_dir / "dummy.yaml", config_path],
-                ):
-                    runner.invoke(cli, ["config", "init"])
-                result = runner.invoke(cli, ["config", "show", "--format", "yaml"])
-                assert result.exit_code == 0
-                data = yaml.safe_load(result.output)
-                assert "chromadb" in data
+                runner.invoke(cli, ["config", "init"])
+            result = runner.invoke(cli, ["config", "show", "--format", "yaml"])
+            assert result.exit_code == 0
+            data = yaml.safe_load(result.output)
+            # Check for flat configuration keys
+            assert "chroma_host" in data
+            assert "chunk_size" in data
 
     def test_set_command(self, runner: CliRunner) -> None:
         """Test the 'config set' command."""
@@ -118,14 +116,12 @@ class TestConfigCommand:
                 [fs_dir / "dummy.yaml", config_path],
             ):
                 runner.invoke(cli, ["config", "init"])
-                result = runner.invoke(
-                    cli, ["config", "set", "chunking.default_size", "1234"]
-                )
+                result = runner.invoke(cli, ["config", "set", "chunk_size", "1234"])
                 assert result.exit_code == 0
-                assert "Set chunking.default_size = 1234" in result.output
+                assert "Set chunk_size = 1234" in result.output
                 with config_path.open() as f:
                     config_data = yaml.safe_load(f)
-                assert config_data["chunking"]["default_size"] == 1234
+                assert config_data["chunk_size"] == 1234
 
     def test_set_command_custom_metadata(self, runner: CliRunner) -> None:
         """Test 'config set' with a custom metadata key."""

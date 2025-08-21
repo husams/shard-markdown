@@ -11,7 +11,7 @@ from shard_markdown.cli.utils import (
     get_connected_chromadb_client,
     handle_chromadb_errors,
 )
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from shard_markdown.utils.errors import ShardMarkdownError
 
 
@@ -81,7 +81,7 @@ class TestGetConnectedChromaDBClient:
         """Test successful client connection."""
         # Mock config
         mock_config = Mock()
-        mock_config.chromadb = ChromaDBConfig(host="localhost", port=8000)
+        mock_config = Settings(chroma_host="localhost", chroma_port=8000)
 
         # Mock client
         mock_client = Mock()
@@ -93,14 +93,14 @@ class TestGetConnectedChromaDBClient:
             result = get_connected_chromadb_client(mock_config)
 
             assert result is mock_client
-            mock_create.assert_called_once_with(mock_config.chromadb)
+            mock_create.assert_called_once_with(mock_config)
             mock_client.connect.assert_called_once()
 
     def test_failed_connection(self):
         """Test failed client connection."""
         # Mock config
         mock_config = Mock()
-        mock_config.chromadb = ChromaDBConfig(host="localhost", port=8000)
+        mock_config = Settings(chroma_host="localhost", chroma_port=8000)
 
         # Mock client that fails to connect
         mock_client = Mock()
@@ -112,14 +112,14 @@ class TestGetConnectedChromaDBClient:
             with pytest.raises(ClickException, match="Failed to connect to ChromaDB"):
                 get_connected_chromadb_client(mock_config)
 
-            mock_create.assert_called_once_with(mock_config.chromadb)
+            mock_create.assert_called_once_with(mock_config)
             mock_client.connect.assert_called_once()
 
     def test_connection_exception(self):
         """Test handling exceptions during connection."""
         # Mock config
         mock_config = Mock()
-        mock_config.chromadb = ChromaDBConfig(host="localhost", port=8000)
+        mock_config = Settings(chroma_host="localhost", chroma_port=8000)
 
         # Mock client that raises exception
         mock_client = Mock()
@@ -131,5 +131,5 @@ class TestGetConnectedChromaDBClient:
             with pytest.raises(RuntimeError, match="Connection error"):
                 get_connected_chromadb_client(mock_config)
 
-            mock_create.assert_called_once_with(mock_config.chromadb)
+            mock_create.assert_called_once_with(mock_config)
             mock_client.connect.assert_called_once()

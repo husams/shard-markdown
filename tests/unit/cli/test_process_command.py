@@ -12,7 +12,7 @@ from shard_markdown.core.models import BatchResult, ProcessingResult
 def create_mock_config():
     """Create a mock configuration object."""
     mock_config = Mock()
-    mock_config.chromadb = Mock()
+    # mock_config.chromadb = Mock()  # No longer needed with flat config
     return mock_config
 
 
@@ -20,7 +20,7 @@ def create_mock_config():
 def mock_context():
     """Mock Click context with config."""
     mock_config = Mock()
-    mock_config.chromadb = Mock()
+    # mock_config.chromadb = Mock()  # No longer needed with flat config
     return {"config": mock_config, "verbose": 0, "quiet": False}
 
 
@@ -95,7 +95,7 @@ class TestProcessCommand:
 
         # Setup context with mock config
         mock_config = Mock()
-        mock_config.chromadb = Mock()
+        # mock_config.chromadb = Mock()  # No longer needed with flat config
 
         result = cli_runner.invoke(
             process,

@@ -100,7 +100,7 @@ jobs:
           echo "ChromaDB is accessible"
 
           # Test with Python to ensure client can connect
-          uv run python -c "import os; os.environ['CHROMA_HOST'] = 'localhost'; os.environ['CHROMA_PORT'] = '8000'; from shard_markdown.chromadb.client import ChromaDBClient; from shard_markdown.config.settings import ChromaDBConfig; config = ChromaDBConfig(host='localhost', port=8000); client = ChromaDBClient(config); print('✅ Python client can connect to ChromaDB') if client.connect() else (print('❌ Python client cannot connect to ChromaDB'), exit(1))"
+          uv run python -c "import os; os.environ['CHROMA_HOST'] = 'localhost'; os.environ['CHROMA_PORT'] = '8000'; from shard_markdown.chromadb.client import ChromaDBClient; from shard_markdown.config.settings import Settings; config = Settings(chroma_host='localhost', chroma_port=8000); client = ChromaDBClient(config); print('✅ Python client can connect to ChromaDB') if client.connect() else (print('❌ Python client cannot connect to ChromaDB'), exit(1))"
 
       - name: Test configuration commands
         env:

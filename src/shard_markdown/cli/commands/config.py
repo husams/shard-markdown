@@ -1,17 +1,34 @@
 """Config command for configuration management."""
 
 import json
+from pathlib import Path
 from typing import Any
 
 import click
 import yaml
 from rich.table import Table
 
-from ...config.defaults import DEFAULT_CONFIG_LOCATIONS
-from ...config.loader import create_default_config, save_config
-from ...config.utils import set_nested_value
+from ...config import create_default_config, save_config
 from ...utils.logging import get_logger
 from ..utils import console
+
+
+# Default configuration file locations
+DEFAULT_CONFIG_LOCATIONS = [
+    Path.home() / ".shard-md" / "config.yaml",
+    Path.cwd() / "shard-md.yaml",
+]
+
+
+def set_nested_value(data: dict, path: str, value: str) -> None:
+    """Set value in dictionary using dot notation."""
+    keys = path.split(".")
+    current = data
+    for key in keys[:-1]:
+        if key not in current:
+            current[key] = {}
+        current = current[key]
+    current[keys[-1]] = value
 
 
 _logger = get_logger(__name__)
@@ -105,13 +122,13 @@ def set(
 
     Examples:
       # Set ChromaDB host
-      shard-md config set chromadb.host localhost
+      shard-md config set chroma_host localhost
 
       # Set default chunk size
-      shard-md config set chunking.default_size 1500
+      shard-md config set chunk_size 1500
 
       # Set global configuration
-      shard-md config set chromadb.port 8001 --global
+      shard-md config set chroma_port 8001 --global
     """
     verbose = ctx.obj.get("verbose", 0)
 
@@ -139,10 +156,10 @@ def set(
         set_nested_value(config_dict, key, value)
 
         # Validate the new configuration
-        from ...config.settings import AppConfig
+        from ...config import Settings
 
         try:
-            updated_config = AppConfig(**config_dict)
+            updated_config = Settings(**config_dict)
         except (ValueError, TypeError) as e:
             console.print(f"[red]Invalid configuration value:[/red] {str(e)}")
             return

@@ -8,7 +8,6 @@ from pydantic import ValidationError
 
 from shard_markdown.core.models import (
     BatchResult,
-    ChunkingConfig,
     DocumentChunk,
     InsertResult,
     MarkdownAST,
@@ -349,48 +348,6 @@ class TestBatchResult:
         )
 
         assert batch_result.processing_speed == 5.0
-
-
-class TestChunkingConfig:
-    """Test ChunkingConfig model."""
-
-    @pytest.mark.unit
-    def test_create_default_config(self) -> None:
-        """Test creating config with defaults."""
-        config = ChunkingConfig()
-
-        assert config.chunk_size == 1000
-        assert config.overlap == 200
-        assert config.method == "structure"
-        assert config.respect_boundaries is True
-        assert config.max_tokens is None
-
-    @pytest.mark.unit
-    def test_create_custom_config(self) -> None:
-        """Test creating custom config."""
-        config = ChunkingConfig(
-            chunk_size=1500,
-            overlap=300,
-            method="fixed",
-            respect_boundaries=False,
-            max_tokens=500,
-        )
-
-        assert config.chunk_size == 1500
-        assert config.overlap == 300
-        assert config.method == "fixed"
-        assert config.respect_boundaries is False
-        assert config.max_tokens == 500
-
-    @pytest.mark.unit
-    def test_config_validation(self) -> None:
-        """Test config validation."""
-        # Valid config should work
-        config = ChunkingConfig(chunk_size=1000, overlap=200)
-        assert config.chunk_size == 1000
-
-        # Test that negative values might be caught by pydantic
-        # (specific validation would need to be implemented in the model)
 
 
 class TestInsertResult:

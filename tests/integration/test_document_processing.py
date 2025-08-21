@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from shard_markdown.core.models import ChunkingConfig
+from shard_markdown.config.settings import Settings
 from shard_markdown.core.processor import DocumentProcessor
 
 
@@ -15,7 +15,7 @@ class TestDocumentProcessingIntegration:
     """Integration tests for document processing workflows."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
+    def processor(self, chunking_config: Settings) -> DocumentProcessor:
         """Create processor for integration testing."""
         return DocumentProcessor(chunking_config)
 
@@ -116,13 +116,13 @@ Final thoughts and summary.
         complex_file.write_text(complex_content)
 
         # Create a custom processor with smaller chunk size for testing
-        from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
+        from shard_markdown.config.settings import Settings
 
-        small_config = ModelsChunkingConfig(
+        small_config = Settings(
             chunk_size=300,  # Smaller chunk size to ensure multiple chunks
-            overlap=50,
-            method="structure",
-            respect_boundaries=True,
+            chunk_overlap=50,
+            chunk_method="structure",
+            chunk_respect_boundaries=True,
         )
         test_processor = DocumentProcessor(small_config)
 
@@ -402,7 +402,7 @@ class TestDocumentProcessingErrors:
     """Test error handling in document processing."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
+    def processor(self, chunking_config: Settings) -> DocumentProcessor:
         """Create processor for error testing."""
         return DocumentProcessor(chunking_config)
 
@@ -533,7 +533,7 @@ class TestDocumentProcessingMetadata:
     """Test metadata handling in document processing."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
+    def processor(self, chunking_config: Settings) -> DocumentProcessor:
         """Create processor for metadata testing."""
         return DocumentProcessor(chunking_config)
 

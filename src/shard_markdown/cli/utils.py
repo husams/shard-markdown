@@ -50,7 +50,7 @@ def get_connected_chromadb_client(config: Any) -> Any:
     Raises:
         click.ClickException: If connection fails
     """
-    chroma_client = create_chromadb_client(config.chromadb)
+    chroma_client = create_chromadb_client(config)
     if not chroma_client.connect():
         raise click.ClickException("Failed to connect to ChromaDB")
     return chroma_client

@@ -11,13 +11,13 @@ import pytest
 from click.testing import CliRunner
 
 from shard_markdown.cli.main import cli
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from tests.fixtures.mock import MockChromaDBClient
 
 
 def _create_fresh_mock_client() -> MockChromaDBClient:
     """Create a fresh mock client for each test with isolated storage."""
-    client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
+    client = MockChromaDBClient(Settings(chroma_host="localhost", chroma_port=8000))
     client.connect()
 
     # Create completely unique storage path for this instance
@@ -218,7 +218,9 @@ class TestCollectionsCommand:
 
     def test_list_collections_connection_error(self, runner: CliRunner) -> None:
         """Test listing collections when connection fails."""
-        failed_client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
+        failed_client = MockChromaDBClient(
+            Settings(chroma_host="localhost", chroma_port=8000)
+        )
         # Don't call connect() to simulate connection failure
 
         with (
