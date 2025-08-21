@@ -116,9 +116,9 @@ Final thoughts and summary.
         complex_file.write_text(complex_content)
 
         # Create a custom processor with smaller chunk size for testing
-        from shard_markdown.config.settings import Settings as ModelsChunkingConfig
+        from shard_markdown.config.settings import Settings
 
-        small_config = ModelsChunkingConfig(
+        small_config = Settings(
             chunk_size=300,  # Smaller chunk size to ensure multiple chunks
             chunk_overlap=50,
             chunk_method="structure",
