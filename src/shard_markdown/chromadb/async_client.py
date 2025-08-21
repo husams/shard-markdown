@@ -7,7 +7,7 @@ import time
 # ChromaDB imports with error handling
 from typing import TYPE_CHECKING, Any, cast
 
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from shard_markdown.core.models import DocumentChunk, InsertResult
 
 
@@ -32,13 +32,11 @@ logger = logging.getLogger(__name__)
 class AsyncChromaDBClient:
     """Async ChromaDB client using native AsyncHttpClient API."""
 
-    def __init__(
-        self, config: ChromaDBConfig, max_concurrent_operations: int = 16
-    ) -> None:
+    def __init__(self, config: Settings, max_concurrent_operations: int = 16) -> None:
         """Initialize async ChromaDB client.
 
         Args:
-            config: ChromaDB configuration
+            config: Application settings
             max_concurrent_operations: Maximum concurrent operations (default: 16)
         """
         self.config = config
@@ -81,10 +79,12 @@ class AsyncChromaDBClient:
         try:
             # Use ChromaDB's native AsyncHttpClient - MUST be awaited!
             self.client = await chromadb.AsyncHttpClient(
-                host=self.config.host,
-                port=self.config.port,
-                ssl=getattr(self.config, "ssl", False),
-                headers=self._get_auth_headers() if self.config.auth_token else None,
+                host=self.config.chroma_host,
+                port=self.config.chroma_port,
+                ssl=self.config.chroma_ssl,
+                headers=self._get_auth_headers()
+                if self.config.chroma_auth_token
+                else None,
             )
 
             # Test connection by trying to get heartbeat
@@ -96,7 +96,8 @@ class AsyncChromaDBClient:
 
             self._connection_validated = True
             logger.info(
-                f"Connected to ChromaDB at {self.config.host}:{self.config.port}"
+                f"Connected to ChromaDB at "
+                f"{self.config.chroma_host}:{self.config.chroma_port}"
             )
 
         except Exception as e:
@@ -123,8 +124,8 @@ class AsyncChromaDBClient:
 
     def _get_auth_headers(self) -> dict[str, str]:
         """Get authentication headers."""
-        if self.config.auth_token:
-            return {"Authorization": f"Bearer {self.config.auth_token}"}
+        if self.config.chroma_auth_token:
+            return {"Authorization": f"Bearer {self.config.chroma_auth_token}"}
         return {}
 
     async def get_collection(self, name: str) -> Any:

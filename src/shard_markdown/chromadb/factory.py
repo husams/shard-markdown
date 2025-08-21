@@ -2,7 +2,7 @@
 
 import os
 
-from ..config.settings import ChromaDBConfig
+from ..config import Settings
 from ..utils.logging import get_logger
 from .async_protocol import AsyncChromaDBClientProtocol
 from .protocol import ChromaDBClientProtocol
@@ -12,11 +12,11 @@ from .utils import check_socket_connectivity
 logger = get_logger(__name__)
 
 
-def create_chromadb_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
+def create_chromadb_client(config: Settings) -> ChromaDBClientProtocol:
     """Create ChromaDB client based on environment.
 
     Args:
-        config: ChromaDB configuration
+        config: Application settings
 
     Returns:
         ChromaDB client (real or mock) based on environment
@@ -45,11 +45,11 @@ def create_chromadb_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
     return _create_mock_client(config)
 
 
-def _create_mock_client(config: ChromaDBConfig) -> ChromaDBClientProtocol:
+def _create_mock_client(config: Settings) -> ChromaDBClientProtocol:
     """Create mock client with proper error handling.
 
     Args:
-        config: ChromaDB configuration
+        config: Application settings
 
     Returns:
         Mock ChromaDB client
@@ -108,12 +108,12 @@ def _is_chromadb_available() -> bool:
 
 
 def create_async_chromadb_client(
-    config: ChromaDBConfig, max_concurrent_operations: int = 16
+    config: Settings, max_concurrent_operations: int = 16
 ) -> AsyncChromaDBClientProtocol:
     """Create async ChromaDB client based on environment.
 
     Args:
-        config: ChromaDB configuration
+        config: Application settings
         max_concurrent_operations: Maximum concurrent operations
 
     Returns:
@@ -146,12 +146,12 @@ def create_async_chromadb_client(
 
 
 def _create_async_mock_client(
-    config: ChromaDBConfig, max_concurrent_operations: int = 16
+    config: Settings, max_concurrent_operations: int = 16
 ) -> AsyncChromaDBClientProtocol:
     """Create async mock client with proper error handling.
 
     Args:
-        config: ChromaDB configuration
+        config: Application settings
         max_concurrent_operations: Maximum concurrent operations
 
     Returns:
@@ -199,26 +199,30 @@ def _create_async_mock_client(
         ) from e
 
 
-def _test_chromadb_connectivity(config: ChromaDBConfig) -> bool:
+def _test_chromadb_connectivity(config: Settings) -> bool:
     """Test if ChromaDB server is accessible.
 
     Args:
-        config: ChromaDB configuration
+        config: Application settings
 
     Returns:
         True if ChromaDB server is accessible, False otherwise
     """
     try:
         # Use consolidated socket connectivity testing utility
-        result = check_socket_connectivity(config.host, config.port, timeout=2.0)
+        result = check_socket_connectivity(
+            config.chroma_host, config.chroma_port, timeout=2.0
+        )
 
         if result:
             logger.debug(
-                f"ChromaDB server is accessible at {config.host}:{config.port}"
+                f"ChromaDB server is accessible at "
+                f"{config.chroma_host}:{config.chroma_port}"
             )
         else:
             logger.debug(
-                f"ChromaDB server not accessible at {config.host}:{config.port}"
+                f"ChromaDB server not accessible at "
+                f"{config.chroma_host}:{config.chroma_port}"
             )
 
         return result

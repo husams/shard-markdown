@@ -1,32 +1,98 @@
-"""Configuration schema definitions using Pydantic."""
+"""Flat configuration with all defaults inline."""
 
 import ipaddress
 import re
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
-class ChunkingMethod(str, Enum):
-    """Available chunking methods."""
+class Settings(BaseModel):
+    """Single flat configuration class - no nesting."""
 
-    STRUCTURE = "structure"
-    _FIXED = "fixed"
-    _SEMANTIC = "semantic"
+    # ChromaDB Configuration (prefixed with chroma_)
+    chroma_host: str = Field(default="localhost", description="ChromaDB server host")
+    chroma_port: int = Field(
+        default=8000, ge=1, le=65535, description="ChromaDB server port"
+    )
+    chroma_ssl: bool = Field(default=False, description="Use SSL connection")
+    chroma_timeout: int = Field(
+        default=30, ge=1, description="Connection timeout in seconds"
+    )
+    chroma_auth_token: str | None = Field(
+        default=None, description="Authentication token"
+    )
 
+    # Chunking Configuration (prefixed with chunk_)
+    chunk_size: int = Field(
+        default=1000, ge=100, le=10000, description="Default chunk size in characters"
+    )
+    chunk_overlap: int = Field(
+        default=200, ge=0, le=1000, description="Default overlap between chunks"
+    )
+    chunk_method: str = Field(
+        default="structure", description="Default chunking method"
+    )
+    chunk_respect_boundaries: bool = Field(
+        default=True, description="Respect markdown structure boundaries"
+    )
+    chunk_max_tokens: int | None = Field(
+        default=None, ge=1, description="Maximum tokens per chunk"
+    )
 
-class ChromaDBConfig(BaseModel):
-    """ChromaDB connection configuration."""
+    # Processing Configuration (prefixed with process_)
+    process_batch_size: int = Field(
+        default=10, ge=1, le=100, description="Number of documents to process in batch"
+    )
+    process_recursive: bool = Field(
+        default=False, description="Process directories recursively by default"
+    )
+    process_pattern: str = Field(
+        default="*.md", description="Default file pattern for filtering"
+    )
+    process_include_frontmatter: bool = Field(
+        default=True, description="Extract YAML frontmatter as metadata"
+    )
+    process_include_path_metadata: bool = Field(
+        default=True, description="Include file path information"
+    )
 
-    host: str = Field(default="localhost", description="ChromaDB server host")
-    port: int = Field(default=8000, ge=1, le=65535, description="ChromaDB server port")
-    ssl: bool = Field(default=False, description="Use SSL connection")
-    auth_token: str | None = Field(default=None, description="Authentication token")
-    timeout: int = Field(default=30, ge=1, description="Connection timeout in seconds")
+    # Logging Configuration (prefixed with log_)
+    log_level: str = Field(default="INFO", description="Default logging level")
+    log_format: str = Field(
+        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        description="Log message format",
+    )
+    log_file: Path | None = Field(default=None, description="Log file path")
+    log_max_file_size: int = Field(
+        default=10485760,
+        description="Maximum log file size in bytes",  # 10MB
+    )
+    log_backup_count: int = Field(
+        default=5, description="Number of backup log files to keep"
+    )
 
-    @field_validator("host")
+    # Output Configuration
+    output_format: str = Field(default="table", description="Default output format")
+
+    # Custom user settings
+    custom_metadata: dict[str, Any] = Field(
+        default_factory=dict, description="Custom metadata to add to all chunks"
+    )
+    plugins: list[str] = Field(
+        default_factory=list, description="List of plugin modules to load"
+    )
+
+    @field_validator("chunk_overlap")
+    @classmethod
+    def validate_overlap(cls, v: int, info: Any) -> int:
+        """Ensure overlap < chunk_size."""
+        if info.data and "chunk_size" in info.data and v >= info.data["chunk_size"]:
+            raise ValueError("Overlap must be less than chunk size")
+        return v
+
+    @field_validator("chroma_host")
     @classmethod
     def validate_host(cls, v: str) -> str:
         """Validate host is not empty and is a valid hostname or IP address."""
@@ -68,98 +134,3 @@ class ChromaDBConfig(BaseModel):
             )
 
         return host
-
-
-class ChunkingConfig(BaseModel):
-    """Document chunking configuration."""
-
-    default_size: int = Field(
-        default=1000,
-        ge=100,
-        le=10000,
-        description="Default chunk size in characters",
-    )
-    default_overlap: int = Field(
-        default=200,
-        ge=0,
-        le=1000,
-        description="Default overlap between chunks",
-    )
-    method: ChunkingMethod = Field(
-        default=ChunkingMethod.STRUCTURE, description="Default chunking method"
-    )
-    respect_boundaries: bool = Field(
-        default=True, description="Respect markdown structure boundaries"
-    )
-    max_tokens: int | None = Field(
-        default=None, ge=1, description="Maximum tokens per chunk"
-    )
-
-    @field_validator("default_overlap")
-    @classmethod
-    def validate_overlap(cls, v: int, info: Any) -> int:
-        """Validate overlap is less than chunk size."""
-        if info.data and "default_size" in info.data and v >= info.data["default_size"]:
-            raise ValueError("Overlap must be less than chunk size")
-        return v
-
-
-class ProcessingConfig(BaseModel):
-    """Document processing configuration."""
-
-    batch_size: int = Field(
-        default=10,
-        ge=1,
-        le=100,
-        description="Number of documents to process in batch",
-    )
-    recursive: bool = Field(
-        default=False, description="Process directories recursively by default"
-    )
-    pattern: str = Field(
-        default="*.md", description="Default file pattern for filtering"
-    )
-    include_frontmatter: bool = Field(
-        default=True, description="Extract YAML frontmatter as metadata"
-    )
-    include_path_metadata: bool = Field(
-        default=True, description="Include file path information"
-    )
-
-
-class LoggingConfig(BaseModel):
-    """Logging configuration."""
-
-    level: str = Field(default="INFO", description="Default logging level")
-    format: str = Field(
-        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        description="Log message format",
-    )
-    file_path: Path | None = Field(default=None, description="Log file path")
-    max_file_size: int = Field(
-        default=10485760,
-        description="Maximum log file size in bytes",  # 10MB
-    )
-    backup_count: int = Field(
-        default=5, description="Number of backup log files to keep"
-    )
-
-
-class AppConfig(BaseModel):
-    """Main application configuration."""
-
-    chromadb: ChromaDBConfig = Field(default_factory=ChromaDBConfig)
-    chunking: ChunkingConfig = Field(default_factory=ChunkingConfig)
-    processing: ProcessingConfig = Field(default_factory=ProcessingConfig)
-    logging: LoggingConfig = Field(default_factory=LoggingConfig)
-
-    # Custom user settings
-    custom_metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Custom metadata to add to all chunks",
-    )
-    plugins: list[str] = Field(
-        default_factory=list, description="List of plugin modules to load"
-    )
-
-    model_config = ConfigDict()

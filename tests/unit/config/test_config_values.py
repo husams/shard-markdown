@@ -3,14 +3,9 @@
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
 from unittest.mock import patch
 
-import yaml
-
-from shard_markdown.config.loader import load_config, save_config
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.config.utils import set_nested_value
+from shard_markdown.config import Settings, load_config, save_config
 
 
 class TestConfigValueHandling:
@@ -26,8 +21,8 @@ class TestConfigValueHandling:
         ]
 
         for ip in test_ips:
-            config = ChromaDBConfig(host=ip)
-            assert config.host == ip, f"IP address {ip} was not preserved"
+            config = Settings(chroma_host=ip)
+            assert config.chroma_host == ip, f"IP address {ip} was not preserved"
 
     def test_ipv6_address_preservation(self) -> None:
         """Test that IPv6 addresses are preserved correctly."""
@@ -38,8 +33,8 @@ class TestConfigValueHandling:
         ]
 
         for ip in test_ips:
-            config = ChromaDBConfig(host=ip)
-            assert config.host == ip, f"IPv6 address {ip} was not preserved"
+            config = Settings(chroma_host=ip)
+            assert config.chroma_host == ip, f"IPv6 address {ip} was not preserved"
 
     def test_hostname_preservation(self) -> None:
         """Test that hostnames are preserved correctly."""
@@ -51,23 +46,23 @@ class TestConfigValueHandling:
         ]
 
         for host in test_hosts:
-            config = ChromaDBConfig(host=host)
-            assert config.host == host, f"Hostname {host} was not preserved"
+            config = Settings(chroma_host=host)
+            assert config.chroma_host == host, f"Hostname {host} was not preserved"
 
     def test_environment_variable_ip_address(self) -> None:
         """Test IP addresses from environment variables."""
         test_ip = "192.168.100.50"
 
-        with patch.dict(os.environ, {"CHROMA_HOST": test_ip}, clear=False):
+        with patch.dict(os.environ, {"SHARD_MD_CHROMA_HOST": test_ip}, clear=False):
             config = load_config()
-            assert config.chromadb.host == test_ip
+            assert config.chroma_host == test_ip
 
     def test_environment_variable_types(self) -> None:
         """Test various types from environment variables."""
         env_vars = {
-            "CHROMA_HOST": "10.20.30.40",
-            "CHROMA_PORT": "9000",
-            "CHROMA_SSL": "true",
+            "SHARD_MD_CHROMA_HOST": "10.20.30.40",
+            "SHARD_MD_CHROMA_PORT": "9000",
+            "SHARD_MD_CHROMA_SSL": "true",
             "SHARD_MD_CHUNK_SIZE": "1500",
         }
 
@@ -75,20 +70,20 @@ class TestConfigValueHandling:
             config = load_config()
 
             # IP address should be preserved as string
-            assert config.chromadb.host == "10.20.30.40"
-            assert isinstance(config.chromadb.host, str)
+            assert config.chroma_host == "10.20.30.40"
+            assert isinstance(config.chroma_host, str)
 
-            # Port should be converted to int by Pydantic
-            assert config.chromadb.port == 9000
-            assert isinstance(config.chromadb.port, int)
+            # Port should be converted to int
+            assert config.chroma_port == 9000
+            assert isinstance(config.chroma_port, int)
 
-            # Boolean should be converted by Pydantic
-            assert config.chromadb.ssl is True
-            assert isinstance(config.chromadb.ssl, bool)
+            # Boolean should be converted
+            assert config.chroma_ssl is True
+            assert isinstance(config.chroma_ssl, bool)
 
             # Chunk size should be converted to int
-            assert config.chunking.default_size == 1500
-            assert isinstance(config.chunking.default_size, int)
+            assert config.chunk_size == 1500
+            assert isinstance(config.chunk_size, int)
 
     def test_yaml_config_ip_address(self) -> None:
         """Test IP addresses in YAML configuration files."""
@@ -96,46 +91,37 @@ class TestConfigValueHandling:
             config_path = Path(tmpdir) / "config.yaml"
 
             # Write config with IP address
-            config_data = {
-                "chromadb": {
-                    "host": "172.31.0.1",
-                    "port": 8080,
-                }
-            }
-
-            with open(config_path, "w") as f:
-                yaml.dump(config_data, f)
+            config_data = """
+chroma_host: 172.31.0.1
+chroma_port: 8080
+chunk_size: 2000
+"""
+            config_path.write_text(config_data.strip())
 
             # Load and verify - clear environment variables that might interfere
             clean_env = {
-                k: v
-                for k, v in os.environ.items()
-                if not k.startswith(("CHROMA_", "SHARD_MD_"))
+                k: v for k, v in os.environ.items() if not k.startswith("SHARD_MD_")
             }
             with patch.dict(os.environ, clean_env, clear=True):
                 config = load_config(config_path)
-                assert config.chromadb.host == "172.31.0.1"
-                assert config.chromadb.port == 8080
+                assert config.chroma_host == "172.31.0.1"
+                assert config.chroma_port == 8080
 
-    def test_set_nested_value_preserves_types(self) -> None:
-        """Test that set_nested_value preserves value types."""
-        data: dict[str, Any] = {}
+    def test_flat_config_values(self) -> None:
+        """Test that flat configuration values work correctly."""
+        config = Settings(
+            chroma_host="192.168.1.1",
+            chroma_port=8000,
+            chroma_ssl=False,
+            chunk_size=1500,
+            chunk_overlap=300,
+        )
 
-        # Set various types
-        set_nested_value(data, "chromadb.host", "192.168.1.1")
-        set_nested_value(data, "chromadb.port", "8000")
-        set_nested_value(data, "chromadb.ssl", "false")
-
-        # Values should be preserved as provided
-        assert data["chromadb"]["host"] == "192.168.1.1"
-        assert data["chromadb"]["port"] == "8000"  # Still string
-        assert data["chromadb"]["ssl"] == "false"  # Still string
-
-        # Pydantic will handle conversion
-        config = AppConfig(**data)
-        assert config.chromadb.host == "192.168.1.1"
-        assert config.chromadb.port == 8000  # Converted by Pydantic
-        assert config.chromadb.ssl is False  # Converted by Pydantic
+        assert config.chroma_host == "192.168.1.1"
+        assert config.chroma_port == 8000
+        assert config.chroma_ssl is False
+        assert config.chunk_size == 1500
+        assert config.chunk_overlap == 300
 
     def test_config_roundtrip_preserves_ip(self) -> None:
         """Test that saving and loading config preserves IP addresses."""
@@ -143,8 +129,9 @@ class TestConfigValueHandling:
             config_path = Path(tmpdir) / "config.yaml"
 
             # Create config with IP address
-            original_config = AppConfig(
-                chromadb=ChromaDBConfig(host="10.10.10.10", port=8001)
+            original_config = Settings(
+                chroma_host="10.10.10.10",
+                chroma_port=8001,
             )
 
             # Save config
@@ -152,25 +139,21 @@ class TestConfigValueHandling:
 
             # Load config - clear environment variables that might interfere
             clean_env = {
-                k: v
-                for k, v in os.environ.items()
-                if not k.startswith(("CHROMA_", "SHARD_MD_"))
+                k: v for k, v in os.environ.items() if not k.startswith("SHARD_MD_")
             }
             with patch.dict(os.environ, clean_env, clear=True):
                 loaded_config = load_config(config_path)
 
                 # Verify IP is preserved
-                assert loaded_config.chromadb.host == "10.10.10.10"
-                assert loaded_config.chromadb.port == 8001
+                assert loaded_config.chroma_host == "10.10.10.10"
+                assert loaded_config.chroma_port == 8001
 
     def test_edge_case_values(self) -> None:
         """Test edge case configuration values."""
-        # Test with "0" as string
-        config_dict: dict[str, Any] = {"chromadb": {"host": "0.0.0.0"}}  # noqa: S104
-        config = AppConfig(**config_dict)
-        assert config.chromadb.host == "0.0.0.0"  # noqa: S104
+        # Test with "0.0.0.0" as string
+        config = Settings(chroma_host="0.0.0.0")  # noqa: S104
+        assert config.chroma_host == "0.0.0.0"  # noqa: S104
 
         # Test with numeric-looking hostnames
-        config_dict = {"chromadb": {"host": "8.8.8.8"}}
-        config = AppConfig(**config_dict)
-        assert config.chromadb.host == "8.8.8.8"
+        config = Settings(chroma_host="8.8.8.8")
+        assert config.chroma_host == "8.8.8.8"

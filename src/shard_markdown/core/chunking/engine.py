@@ -1,8 +1,9 @@
 """Main chunking engine that selects appropriate strategy."""
 
+from ...config.settings import Settings
 from ...utils.errors import ProcessingError
 from ...utils.logging import get_logger
-from ..models import ChunkingConfig, DocumentChunk, MarkdownAST
+from ..models import DocumentChunk, MarkdownAST
 from .fixed import FixedSizeChunker
 from .structure import StructureAwareChunker
 
@@ -13,16 +14,16 @@ logger = get_logger(__name__)
 class ChunkingEngine:
     """Main chunking engine with strategy selection."""
 
-    def __init__(self, config: ChunkingConfig):
+    def __init__(self, settings: Settings):
         """Initialize chunking engine with configuration.
 
         Args:
-            config: Chunking configuration
+            settings: Configuration settings
         """
-        self.config = config
+        self.settings = settings
         self.strategies = {
-            "structure": StructureAwareChunker(config),
-            "fixed": FixedSizeChunker(config),
+            "structure": StructureAwareChunker(settings),
+            "fixed": FixedSizeChunker(settings),
         }
 
     def chunk_document(self, ast: MarkdownAST) -> list[DocumentChunk]:
@@ -41,7 +42,7 @@ class ChunkingEngine:
             logger.warning("No elements in AST to chunk")
             return []
 
-        strategy_name = self.config.method
+        strategy_name = self.settings.chunk_method
         if strategy_name not in self.strategies:
             raise ProcessingError(
                 f"Unknown chunking strategy: {strategy_name}",
@@ -103,7 +104,7 @@ class ChunkingEngine:
             )
 
         # Check for oversized chunks (allow some tolerance)
-        max_allowed_size = self.config.chunk_size * 1.5
+        max_allowed_size = self.settings.chunk_size * 1.5
         oversized_chunks = [
             i for i, chunk in enumerate(chunks) if len(chunk.content) > max_allowed_size
         ]
@@ -115,7 +116,7 @@ class ChunkingEngine:
                 context={
                     "oversized_chunk_indices": oversized_chunks,
                     "max_allowed_size": max_allowed_size,
-                    "configured_size": self.config.chunk_size,
+                    "configured_size": self.settings.chunk_size,
                 },
             )
 

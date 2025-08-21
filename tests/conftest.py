@@ -10,9 +10,7 @@ from unittest.mock import Mock
 import pytest
 from click.testing import CliRunner
 
-from shard_markdown.config.settings import AppConfig, ChromaDBConfig
-from shard_markdown.config.settings import ChunkingConfig as SettingsChunkingConfig
-from shard_markdown.core.models import ChunkingConfig as ModelsChunkingConfig
+from shard_markdown.config import Settings
 from shard_markdown.core.models import (
     DocumentChunk,
     MarkdownAST,
@@ -256,29 +254,25 @@ Thanks for reading!
 
 
 @pytest.fixture
-def chunking_config() -> ModelsChunkingConfig:
+def chunking_config() -> Settings:
     """Create default chunking configuration for core models."""
-    return ModelsChunkingConfig(
+    return Settings(
         chunk_size=1000,
-        overlap=200,
-        method="structure",
-        respect_boundaries=True,
+        chunk_overlap=200,
+        chunk_method="structure",
+        chunk_respect_boundaries=True,
     )
 
 
 @pytest.fixture
-def app_config() -> AppConfig:
+def app_config() -> Settings:
     """Create test application configuration."""
-    return AppConfig(
-        chromadb=ChromaDBConfig(
-            host="localhost",
-            port=8000,
-        ),
-        chunking=SettingsChunkingConfig(
-            default_size=1000,
-            default_overlap=200,
-            method="structure",
-        ),
+    return Settings(
+        chroma_host="localhost",
+        chroma_port=8000,
+        chunk_size=1000,
+        chunk_overlap=200,
+        chunk_method="structure",
     )
 
 
@@ -426,18 +420,13 @@ def benchmark_settings() -> dict:
 def config_file(temp_dir: Path) -> Path:
     """Create a temporary configuration file for testing."""
     config_content = """
-chromadb:
-  host: localhost
-  port: 8000
-
-chunking:
-  default_size: 1000
-  default_overlap: 200
-  method: structure
-
-logging:
-  level: INFO
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+chroma_host: localhost
+chroma_port: 8000
+chunk_size: 1000
+chunk_overlap: 200
+chunk_method: structure
+log_level: INFO
+log_format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 """
 
     config_path = temp_dir / "config.yaml"

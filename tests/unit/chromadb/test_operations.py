@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from shard_markdown.chromadb.operations import ChromaDBOperations
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from shard_markdown.core.models import DocumentChunk
 from shard_markdown.utils.errors import ChromaDBError
 from tests.fixtures.mock import MockChromaDBClient
@@ -15,7 +15,7 @@ from tests.fixtures.mock import MockChromaDBClient
 @pytest.fixture
 def mock_chromadb_client() -> MockChromaDBClient:
     """Fixture for a MockChromaDBClient."""
-    client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
+    client = MockChromaDBClient(Settings(chroma_host="localhost", chroma_port=8000))
     # Simulate connection
     client.connect()
     return client
@@ -31,7 +31,7 @@ def operations(mock_chromadb_client: MockChromaDBClient) -> ChromaDBOperations:
 def populated_collection() -> dict[str, Any]:
     """Create a collection with sample data for testing."""
     # Create a fresh client for each test to avoid conflicts
-    client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
+    client = MockChromaDBClient(Settings(chroma_host="localhost", chroma_port=8000))
     client.connect()
 
     collection_name = f"test_collection_{uuid.uuid4().hex[:8]}"
@@ -79,7 +79,7 @@ class TestChromaDBOperations:
     def test_query_collection_not_connected(self) -> None:
         """Test query_collection when client is not connected."""
         # Create client without connecting
-        client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
+        client = MockChromaDBClient(Settings(chroma_host="localhost", chroma_port=8000))
         operations = ChromaDBOperations(client)
 
         with pytest.raises(ChromaDBError, match="ChromaDB connection not established"):
@@ -118,7 +118,7 @@ class TestChromaDBOperations:
     @pytest.mark.unit
     def test_get_document_not_connected(self) -> None:
         """Test get_document when client is not connected."""
-        client = MockChromaDBClient(ChromaDBConfig(host="localhost", port=8000))
+        client = MockChromaDBClient(Settings(chroma_host="localhost", chroma_port=8000))
         operations = ChromaDBOperations(client)
 
         with pytest.raises(ChromaDBError, match="ChromaDB connection not established"):

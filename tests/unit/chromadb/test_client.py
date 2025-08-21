@@ -5,25 +5,25 @@ from unittest.mock import Mock, patch
 import pytest
 
 from shard_markdown.chromadb.client import ChromaDBClient
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from shard_markdown.core.models import DocumentChunk
 from shard_markdown.utils.errors import ChromaDBError, NetworkError
 
 
 @pytest.fixture
-def mock_config() -> ChromaDBConfig:
+def mock_config() -> Settings:
     """Create a mock ChromaDB configuration."""
-    return ChromaDBConfig(
-        host="localhost",
-        port=8000,
-        ssl=False,
-        timeout=5.0,
-        auth_token=None,
+    return Settings(
+        chroma_host="localhost",
+        chroma_port=8000,
+        chroma_ssl=False,
+        chroma_timeout=5.0,
+        chroma_auth_token=None,
     )
 
 
 @pytest.fixture
-def client(mock_config: ChromaDBConfig) -> ChromaDBClient:
+def client(mock_config: Settings) -> ChromaDBClient:
     """Create a ChromaDB client instance."""
     return ChromaDBClient(mock_config)
 
@@ -31,7 +31,7 @@ def client(mock_config: ChromaDBConfig) -> ChromaDBClient:
 class TestChromaDBClientInit:
     """Test ChromaDB client initialization."""
 
-    def test_init_with_config(self, mock_config: ChromaDBConfig) -> None:
+    def test_init_with_config(self, mock_config: Settings) -> None:
         """Test client initialization with configuration."""
         client = ChromaDBClient(mock_config)
 
@@ -90,7 +90,9 @@ class TestChromaDBClientConnection:
         assert client.client == mock_client_instance
         mock_client_instance.heartbeat.assert_called_once()
         mock_check_connectivity.assert_called_once_with(
-            client.config.host, client.config.port, client.config.timeout
+            client.config.chroma_host,
+            client.config.chroma_port,
+            client.config.chroma_timeout,
         )
 
     @patch("shard_markdown.chromadb.client.check_socket_connectivity")
@@ -106,7 +108,9 @@ class TestChromaDBClientConnection:
         assert "Cannot connect to ChromaDB server" in str(exc_info.value)
         assert exc_info.value.error_code == 1601
         mock_check_connectivity.assert_called_once_with(
-            client.config.host, client.config.port, client.config.timeout
+            client.config.chroma_host,
+            client.config.chroma_port,
+            client.config.chroma_timeout,
         )
 
     @patch("shard_markdown.chromadb.client.check_socket_connectivity")
@@ -121,7 +125,9 @@ class TestChromaDBClientConnection:
             client.connect()
 
         mock_check_connectivity.assert_called_once_with(
-            client.config.host, client.config.port, client.config.timeout
+            client.config.chroma_host,
+            client.config.chroma_port,
+            client.config.chroma_timeout,
         )
 
     def test_get_api_version_info_not_connected(self, client: ChromaDBClient) -> None:

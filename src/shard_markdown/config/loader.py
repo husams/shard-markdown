@@ -1,61 +1,63 @@
-"""Configuration loading and management."""
+"""Simple configuration loading with clear precedence."""
 
 import os
 from pathlib import Path
 from typing import Any
 
 import yaml
-from dotenv import load_dotenv
 
-from ..utils import ensure_directory_exists
-from .defaults import DEFAULT_CONFIG_LOCATIONS, DEFAULT_CONFIG_YAML, ENV_VAR_MAPPINGS
-from .settings import AppConfig
-from .utils import set_nested_value
+from .settings import Settings
 
 
-def load_config(config_path: Path | None = None) -> AppConfig:
-    """Load configuration from file, environment variables, and defaults.
+def load_config(config_file: Path | None = None) -> Settings:
+    """Load configuration with simple precedence: Env > Local > Global.
 
     Args:
-        config_path: Optional explicit path to configuration file
+        config_file: Optional path to configuration file
 
     Returns:
-        Loaded and validated AppConfig instance
+        Loaded and validated Settings instance
 
     Raises:
         ValueError: If configuration is invalid
         FileNotFoundError: If explicit config path doesn't exist
     """
-    # Load environment variables from .env file if it exists
-    load_dotenv()
+    config_data: dict[str, Any] = {}
 
-    # Determine configuration file path
-    config_file: Path | None
-    if config_path:
-        if not config_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        config_file = config_path
-    else:
-        config_file = _find_config_file()
+    # 1. Load global config if exists (~/.shard-md/config.yaml)
+    global_config = Path.home() / ".shard-md" / "config.yaml"
+    if global_config.exists():
+        with open(global_config) as f:
+            config_data.update(yaml.safe_load(f) or {})
 
-    # Load configuration data
-    config_data = {}
+    # 2. Load local or specified config (overwrites global)
+    if config_file:
+        if not config_file.exists():
+            raise FileNotFoundError(f"Configuration file not found: {config_file}")
+        with open(config_file) as f:
+            config_data.update(yaml.safe_load(f) or {})
+    elif (local_config := Path.cwd() / "shard-md.yaml").exists():
+        with open(local_config) as f:
+            config_data.update(yaml.safe_load(f) or {})
 
-    # Load from file if it exists
-    if config_file and config_file.exists():
-        config_data = _load_config_file(config_file)
+    # 3. Apply environment variables (highest precedence)
+    prefix = "SHARD_MD_"
+    for key, value in os.environ.items():
+        if key.startswith(prefix):
+            config_key = key[len(prefix) :].lower()
+            parsed_value: Any
+            if value.lower() in ("true", "false"):
+                parsed_value = value.lower() == "true"
+            elif value.isdigit():
+                parsed_value = int(value)
+            else:
+                parsed_value = value
+            config_data[config_key] = parsed_value
 
-    # Override with environment variables
-    config_data = _apply_env_overrides(config_data)
-
-    # Create and validate configuration
-    try:
-        return AppConfig(**config_data)
-    except (TypeError, ValueError, KeyError) as e:
-        raise ValueError(f"Invalid configuration: {e}") from e
+    return Settings(**config_data)
 
 
-def save_config(config: AppConfig, config_path: Path) -> None:
+def save_config(config: Settings, config_path: Path) -> None:
     """Save configuration to YAML file.
 
     Args:
@@ -63,7 +65,7 @@ def save_config(config: AppConfig, config_path: Path) -> None:
         config_path: Path where to save configuration
     """
     # Create directory if it doesn't exist
-    ensure_directory_exists(config_path.parent)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Convert to dictionary with mode='json' to properly serialize enums
     config_dict = config.model_dump(mode="json")
@@ -87,67 +89,8 @@ def create_default_config(config_path: Path, force: bool = False) -> None:
         raise FileExistsError(f"Configuration file already exists: {config_path}")
 
     # Create directory if it doesn't exist
-    ensure_directory_exists(config_path.parent)
+    config_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Write default configuration
-    with open(config_path, "w") as f:
-        f.write(DEFAULT_CONFIG_YAML)
-
-
-def _find_config_file() -> Path | None:
-    """Find configuration file in default locations.
-
-    Returns:
-        Path to first found configuration file, or None
-    """
-    for location in DEFAULT_CONFIG_LOCATIONS:
-        if location.exists():
-            return location
-    return None
-
-
-def _load_config_file(config_path: Path) -> dict[str, Any]:
-    """Load configuration from YAML file.
-
-    Args:
-        config_path: Path to configuration file
-
-    Returns:
-        Configuration dictionary
-
-    Raises:
-        ValueError: If file format is invalid
-    """
-    try:
-        with open(config_path) as f:
-            data = yaml.safe_load(f) or {}
-        return data
-    except yaml.YAMLError as e:
-        raise ValueError(
-            f"Invalid YAML in configuration file {config_path}: {e}"
-        ) from e
-    except (OSError, UnicodeDecodeError) as e:
-        raise ValueError(f"Error reading configuration file {config_path}: {e}") from e
-
-
-def _apply_env_overrides(config_data: dict[str, Any]) -> dict[str, Any]:
-    """Apply environment variable overrides to configuration.
-
-    Environment variable values are passed directly to Pydantic models,
-    which handle type conversion based on field definitions.
-
-    Args:
-        config_data: Base configuration data
-
-    Returns:
-        Configuration with environment overrides applied
-    """
-    result = config_data.copy()
-
-    for env_var, config_path in ENV_VAR_MAPPINGS.items():
-        env_value = os.getenv(env_var)
-        if env_value is not None:
-            # Pass string values directly to Pydantic for proper type conversion
-            set_nested_value(result, config_path, env_value)
-
-    return result
+    # Create default configuration
+    default_config = Settings()
+    save_config(default_config, config_path)

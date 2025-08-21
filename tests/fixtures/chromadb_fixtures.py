@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     import chromadb
 
 from shard_markdown.chromadb.client import ChromaDBClient
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from shard_markdown.utils.logging import get_logger
 
 
@@ -308,11 +308,11 @@ class ChromaDBTestFixture:
             try:
                 # Get auth token from environment if available
                 auth_token = os.environ.get("CHROMA_AUTH_TOKEN")
-                config = ChromaDBConfig(
-                    host=self.host,
-                    port=self.port,
-                    timeout=10,
-                    auth_token=auth_token,
+                config = Settings(
+                    chroma_host=self.host,
+                    chroma_port=self.port,
+                    chroma_timeout=10,
+                    chroma_auth_token=auth_token,
                 )
                 client = ChromaDBClient(config)
 

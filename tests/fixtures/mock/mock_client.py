@@ -6,7 +6,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from shard_markdown.config.settings import ChromaDBConfig
+from shard_markdown.config import Settings
 from shard_markdown.core.models import DocumentChunk, InsertResult
 from shard_markdown.utils.logging import get_logger
 
@@ -184,7 +184,7 @@ class MockAsyncChromaDBClientAdapter:
 class MockChromaDBClient:
     """Mock ChromaDB client for testing and development."""
 
-    def __init__(self, config: ChromaDBConfig | None = None) -> None:
+    def __init__(self, config: Settings | None = None) -> None:
         """Initialize mock client.
 
         Args:
@@ -192,7 +192,7 @@ class MockChromaDBClient:
         """
         # Use default config if not provided
         if config is None:
-            config = ChromaDBConfig(host="localhost", port=8000)
+            config = Settings(chroma_host="localhost", chroma_port=8000)
 
         # Override client attributes for mock
         self.config = config
@@ -417,7 +417,7 @@ class MockAsyncChromaDBClient:
 
     def __init__(
         self,
-        config: ChromaDBConfig | None = None,
+        config: Settings | None = None,
         max_concurrent_operations: int = 16,
     ) -> None:
         """Initialize mock async client.
@@ -428,7 +428,7 @@ class MockAsyncChromaDBClient:
         """
         # Use default config if not provided
         if config is None:
-            config = ChromaDBConfig(host="localhost", port=8000)
+            config = Settings(chroma_host="localhost", chroma_port=8000)
 
         # Override client attributes for mock
         self.config = config

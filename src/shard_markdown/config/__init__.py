@@ -1,13 +1,7 @@
-"""Configuration management for shard-markdown."""
+"""Configuration package - flat and simple."""
 
-from .loader import load_config
-from .settings import AppConfig, ChromaDBConfig, ChunkingConfig, ProcessingConfig
+from .loader import create_default_config, load_config, save_config
+from .settings import Settings
 
 
-__all__ = [
-    "load_config",
-    "AppConfig",
-    "ChromaDBConfig",
-    "ChunkingConfig",
-    "ProcessingConfig",
-]
+__all__ = ["Settings", "load_config", "save_config", "create_default_config"]

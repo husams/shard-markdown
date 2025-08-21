@@ -3,7 +3,7 @@
 import time
 from typing import Any, cast
 
-from ..config.settings import ChromaDBConfig
+from ..config import Settings
 from ..core.metadata import MetadataExtractor
 from ..core.models import DocumentChunk, InsertResult
 from ..utils.errors import ChromaDBError, NetworkError
@@ -62,11 +62,11 @@ logger = get_logger(__name__)
 class ChromaDBClient:
     """ChromaDB client wrapper with connection management and version detection."""
 
-    def __init__(self, config: ChromaDBConfig) -> None:
+    def __init__(self, config: Settings) -> None:
         """Initialize client with configuration.
 
         Args:
-            config: ChromaDB configuration
+            config: Application settings
         """
         self.config = config
         self.client: Any | None = None  # ClientAPI when connected
@@ -78,9 +78,9 @@ class ChromaDBClient:
 
         # Initialize version detector
         self.version_detector = ChromaDBVersionDetector(
-            host=config.host,
-            port=config.port,
-            timeout=config.timeout,
+            host=config.chroma_host,
+            port=config.chroma_port,
+            timeout=config.chroma_timeout,
             max_retries=3,  # Fewer retries for client operations
         )
 
@@ -118,7 +118,8 @@ class ChromaDBClient:
             self._connection_validated = True
 
             logger.info(
-                f"Connected to ChromaDB at {self.config.host}:{self.config.port} "
+                f"Connected to ChromaDB at "
+                f"{self.config.chroma_host}:{self.config.chroma_port} "
                 f"using {self._version_info.version} API"
             )
             return True
@@ -128,12 +129,12 @@ class ChromaDBClient:
         except (OSError, ConnectionError, TimeoutError, ValueError) as e:
             raise ChromaDBError(
                 f"Unexpected error connecting to ChromaDB: "
-                f"{self.config.host}:{self.config.port}",
+                f"{self.config.chroma_host}:{self.config.chroma_port}",
                 error_code=1402,
                 context={
-                    "host": self.config.host,
-                    "port": self.config.port,
-                    "ssl": self.config.ssl,
+                    "host": self.config.chroma_host,
+                    "port": self.config.chroma_port,
+                    "ssl": self.config.chroma_ssl,
                     "detected_version": self._version_info.version
                     if self._version_info
                     else None,
@@ -358,8 +359,8 @@ class ChromaDBClient:
 
                     # Add client state information for debugging
                     error_details["client_connected"] = str(self._connection_validated)
-                    error_details["host"] = self.config.host
-                    error_details["port"] = str(self.config.port)
+                    error_details["host"] = self.config.chroma_host
+                    error_details["port"] = str(self.config.chroma_port)
 
                     raise ChromaDBError(
                         f"Failed to create collection '{name}': {str(create_error)}",
@@ -607,9 +608,9 @@ class ChromaDBClient:
             Dict of client settings
         """
         settings = {
-            "host": self.config.host,
-            "port": self.config.port,
-            "ssl": self.config.ssl,
+            "host": self.config.chroma_host,
+            "port": self.config.chroma_port,
+            "ssl": self.config.chroma_ssl,
             "headers": self._get_auth_headers(),
         }
 
@@ -637,8 +638,8 @@ class ChromaDBClient:
                         "Heartbeat test failed",
                         error_code=1403,
                         context={
-                            "host": self.config.host,
-                            "port": self.config.port,
+                            "host": self.config.chroma_host,
+                            "port": self.config.chroma_port,
                             "api_version": self._version_info.version
                             if self._version_info
                             else None,
@@ -650,8 +651,8 @@ class ChromaDBClient:
                     f"Heartbeat failed: {e}",
                     error_code=1403,
                     context={
-                        "host": self.config.host,
-                        "port": self.config.port,
+                        "host": self.config.chroma_host,
+                        "port": self.config.chroma_port,
                         "api_version": self._version_info.version
                         if self._version_info
                         else None,
@@ -668,18 +669,18 @@ class ChromaDBClient:
         """
         # Use consolidated socket connectivity testing utility
         result = check_socket_connectivity(
-            self.config.host, self.config.port, self.config.timeout
+            self.config.chroma_host, self.config.chroma_port, self.config.chroma_timeout
         )
 
         if not result:
             raise NetworkError(
                 f"Cannot connect to ChromaDB server: "
-                f"{self.config.host}:{self.config.port}",
+                f"{self.config.chroma_host}:{self.config.chroma_port}",
                 error_code=1601,
                 context={
-                    "host": self.config.host,
-                    "port": self.config.port,
-                    "timeout": self.config.timeout,
+                    "host": self.config.chroma_host,
+                    "port": self.config.chroma_port,
+                    "timeout": self.config.chroma_timeout,
                 },
             )
 
@@ -690,8 +691,8 @@ class ChromaDBClient:
             Dictionary of headers
         """
         headers = {}
-        if self.config.auth_token:
-            headers["Authorization"] = f"Bearer {self.config.auth_token}"
+        if self.config.chroma_auth_token:
+            headers["Authorization"] = f"Bearer {self.config.chroma_auth_token}"
         return headers
 
     def _validate_insertion_data(

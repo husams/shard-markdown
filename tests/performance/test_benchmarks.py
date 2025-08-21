@@ -7,7 +7,7 @@ from typing import Any
 import psutil
 import pytest
 
-from shard_markdown.core.models import ChunkingConfig
+from shard_markdown.config.settings import Settings
 from shard_markdown.core.processor import DocumentProcessor
 
 
@@ -16,19 +16,19 @@ class TestProcessingBenchmarks:
     """Performance benchmarks for document processing."""
 
     @pytest.fixture
-    def processor(self, chunking_config: ChunkingConfig) -> DocumentProcessor:
+    def processor(self, chunking_config: Settings) -> DocumentProcessor:
         """Create processor for benchmarking."""
         return DocumentProcessor(chunking_config)
 
     @pytest.fixture
-    def benchmark_config(self) -> ChunkingConfig:
+    def benchmark_config(self) -> Settings:
         """Provide standard configuration for benchmarking."""
         # Use larger chunk size for performance tests to avoid validation errors
         # with generated content that has long sections
-        return ChunkingConfig(chunk_size=10000, overlap=500, method="structure")
+        return Settings(chunk_size=10000, chunk_overlap=500, chunk_method="structure")
 
     def test_single_document_processing_benchmark(
-        self, temp_dir: Any, benchmark_config: ChunkingConfig
+        self, temp_dir: Any, benchmark_config: Settings
     ) -> None:
         """Benchmark processing of a single document."""
         processor = DocumentProcessor(benchmark_config)
@@ -76,7 +76,7 @@ class TestProcessingBenchmarks:
         )
 
     def test_batch_processing_benchmark(
-        self, temp_dir: Any, benchmark_config: ChunkingConfig
+        self, temp_dir: Any, benchmark_config: Settings
     ) -> None:
         """Benchmark batch processing performance with sequential processing."""
         processor = DocumentProcessor(benchmark_config)
@@ -130,8 +130,8 @@ class TestProcessingBenchmarks:
         self, temp_dir: Any, chunk_size: int, overlap: int
     ) -> None:
         """Benchmark performance with different chunk sizes."""
-        config = ChunkingConfig(
-            chunk_size=chunk_size, overlap=overlap, method="structure"
+        config = Settings(
+            chunk_size=chunk_size, chunk_overlap=overlap, chunk_method="structure"
         )
         processor = DocumentProcessor(config)
 
@@ -183,7 +183,7 @@ class TestProcessingBenchmarks:
         print(f"Performance metrics: {metrics}")
 
     def test_memory_usage_benchmark(
-        self, temp_dir: Any, benchmark_config: ChunkingConfig
+        self, temp_dir: Any, benchmark_config: Settings
     ) -> None:
         """Monitor memory usage during processing."""
         import os
@@ -227,7 +227,7 @@ class TestProcessingBenchmarks:
         assert result.success, f"Processing failed: {result.error}"
 
     def test_large_document_scalability(
-        self, temp_dir: Any, benchmark_config: ChunkingConfig
+        self, temp_dir: Any, benchmark_config: Settings
     ) -> None:
         """Test scalability with increasingly large documents."""
         processor = DocumentProcessor(benchmark_config)
@@ -283,7 +283,7 @@ class TestProcessingBenchmarks:
         assert time_ratio < size_ratio * 1.5, scaling_msg
 
     def test_sequential_processing_performance(
-        self, temp_dir: Any, benchmark_config: ChunkingConfig
+        self, temp_dir: Any, benchmark_config: Settings
     ) -> None:
         """Test performance of sequential processing."""
         processor = DocumentProcessor(benchmark_config)
@@ -344,7 +344,7 @@ class TestProcessingBenchmarks:
         doc_path.write_text(doc_content)
 
         for method in methods:
-            config = ChunkingConfig(chunk_size=1000, overlap=200, method=method)
+            config = Settings(chunk_size=1000, chunk_overlap=200, chunk_method=method)
             processor = DocumentProcessor(config)
 
             # Run multiple times for statistical accuracy
@@ -428,14 +428,14 @@ class TestMemoryEfficiency:
     """Test memory efficiency and resource usage."""
 
     @pytest.fixture
-    def benchmark_config(self) -> ChunkingConfig:
+    def benchmark_config(self) -> Settings:
         """Provide standard configuration for benchmarking."""
         # Use larger chunk size for performance tests to avoid validation errors
         # with generated content that has long sections
-        return ChunkingConfig(chunk_size=20000, overlap=500, method="structure")
+        return Settings(chunk_size=20000, chunk_overlap=500, chunk_method="structure")
 
     def test_memory_leak_detection(
-        self, temp_dir: Any, benchmark_config: ChunkingConfig
+        self, temp_dir: Any, benchmark_config: Settings
     ) -> None:
         """Test for memory leaks during repeated processing."""
         import gc
@@ -483,7 +483,7 @@ class TestMemoryEfficiency:
         )
 
     def test_large_file_memory_efficiency(
-        self, temp_dir: Any, benchmark_config: ChunkingConfig
+        self, temp_dir: Any, benchmark_config: Settings
     ) -> None:
         """Test memory efficiency with large files."""
         import os
