@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 import click
+from rich.console import Console
 from rich.traceback import install
 
 from ..config import load_config
@@ -14,6 +15,9 @@ from .utils import console
 
 # Install rich tracebacks for better error display
 install(show_locals=True)
+
+# Create a stderr console for warnings
+stderr_console = Console(stderr=True)
 
 
 @click.group()
@@ -105,9 +109,8 @@ cli.add_command(data.data)
 @click.pass_context
 def collections(ctx: click.Context) -> None:
     """Deprecated: Use 'data' command instead."""
-    console.print(
-        "[yellow]Warning: 'collections' is deprecated. Use 'data' instead.[/yellow]",
-        err=True,
+    stderr_console.print(
+        "[yellow]Warning: 'collections' is deprecated. Use 'data' instead.[/yellow]"
     )
     ctx.invoke(data.data)
 
@@ -116,9 +119,8 @@ def collections(ctx: click.Context) -> None:
 @click.pass_context
 def query(ctx: click.Context) -> None:
     """Deprecated: Use 'data' command instead."""
-    console.print(
-        "[yellow]Warning: 'query' is deprecated. Use 'data' instead.[/yellow]",
-        err=True,
+    stderr_console.print(
+        "[yellow]Warning: 'query' is deprecated. Use 'data' instead.[/yellow]"
     )
     ctx.invoke(data.data)
 
