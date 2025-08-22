@@ -170,3 +170,6 @@ docs/build.log
 # Development artifacts
 *_FIX_SUMMARY.md
 *_SOLUTION.md
+
+# Planning and analysis files
+plans/
