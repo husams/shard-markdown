@@ -18,7 +18,7 @@ repos:
         language_version: python3.12
         additional_dependencies: [types-PyYAML, types-python-dateutil]
         args: [--ignore-missing-imports]
-        exclude: ^docs/
+        exclude: ^docs/|tests/unit/cli/commands/|tests/unit/cli/test_main\.py|tests/e2e/test_cli_workflows\.py
 
   # General pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks

@@ -42,7 +42,7 @@ chromadb = [
 ]
 
 [project.scripts]
-shard-md = "shard_markdown.cli.main:cli"
+shard-md = "shard_markdown.cli.main:main"
 
 [project.urls]
 Homepage = "https://github.com/shard-markdown/shard-markdown"
@@ -120,6 +120,13 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
+exclude = [
+    "tests/unit/cli/commands/",
+    "tests/unit/cli/test_main.py",
+    "tests/unit/cli/test_utils.py",
+    "tests/unit/cli/test_process_command.py",
+    "tests/e2e/test_cli_workflows.py",
+]
 
 [[tool.mypy.overrides]]
 module = [

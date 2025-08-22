@@ -1,6 +1,6 @@
 """CLI interface components."""
 
-from .main import cli
+from .main import main, shard_md
 
 
-__all__ = ["cli"]
+__all__ = ["main", "shard_md"]

@@ -32,6 +32,13 @@ class MarkdownAST(BaseModel):
     )
 
     @property
+    def content(self) -> str:
+        """Get the full text content of the document."""
+        if not self.elements:
+            return ""
+        return "\n\n".join(elem.text for elem in self.elements if elem.text)
+
+    @property
     def headers(self) -> list[MarkdownElement]:
         """Get all header elements."""
         if not self.elements:

@@ -4,12 +4,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 
-@patch("shard_markdown.cli.main.cli")
-@patch("sys.exit")
+@patch("shard_markdown.cli.main.shard_md")
 @pytest.mark.unit
-def test_main_invokes_cli(mock_exit: MagicMock, mock_cli: MagicMock) -> None:
-    """Test that __main__ module executes the CLI and exits."""
-    mock_cli.return_value = 123
+def test_main_invokes_cli(mock_shard_md: MagicMock) -> None:
+    """Test that __main__ module executes the CLI."""
     runpy.run_module("shard_markdown.__main__", run_name="__main__")
-    mock_cli.assert_called_once()
-    mock_exit.assert_called_once_with(123)
+    mock_shard_md.assert_called_once()

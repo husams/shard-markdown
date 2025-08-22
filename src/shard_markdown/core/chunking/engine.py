@@ -5,7 +5,12 @@ from ...utils.errors import ProcessingError
 from ...utils.logging import get_logger
 from ..models import DocumentChunk, MarkdownAST
 from .fixed import FixedSizeChunker
+from .paragraph import ParagraphChunker
+from .section import SectionChunker
+from .semantic import SemanticChunker
+from .sentence import SentenceChunker
 from .structure import StructureAwareChunker
+from .token import TokenChunker
 
 
 logger = get_logger(__name__)
@@ -24,6 +29,11 @@ class ChunkingEngine:
         self.strategies = {
             "structure": StructureAwareChunker(settings),
             "fixed": FixedSizeChunker(settings),
+            "token": TokenChunker(settings),
+            "sentence": SentenceChunker(settings),
+            "paragraph": ParagraphChunker(settings),
+            "section": SectionChunker(settings),
+            "semantic": SemanticChunker(settings),
         }
 
     def chunk_document(self, ast: MarkdownAST) -> list[DocumentChunk]:
