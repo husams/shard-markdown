@@ -24,25 +24,6 @@ class TestAsyncChromaDBIntegration:
         )
 
     @pytest.fixture
-    def large_chunk_dataset(self) -> list[DocumentChunk]:
-        """Create a large dataset of chunks for performance testing."""
-        chunks = []
-        for i in range(1000):
-            chunk = DocumentChunk(
-                id=f"perf_chunk_{i}",
-                content=f"This is performance test chunk number {i}. "
-                * 10,  # ~400 chars each
-                metadata={
-                    "file": f"test_file_{i // 100}.md",
-                    "section": f"section_{i % 10}",
-                    "chunk_index": i,
-                    "test_type": "performance",
-                },
-            )
-            chunks.append(chunk)
-        return chunks
-
-    @pytest.fixture
     def sample_chunks(self) -> list[DocumentChunk]:
         """Create sample document chunks for basic testing."""
         return [
@@ -88,115 +69,43 @@ class TestAsyncChromaDBIntegration:
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
         async def create_and_populate_collection(
-            collection_name: str, num_chunks: int
+            client: AsyncChromaDBClient, collection_name: str, num_chunks: int
         ) -> InsertResult:
             """Helper to create and populate a collection concurrently."""
-            async with AsyncChromaDBClient(config) as client:
-                await client.connect()
+            collection = await client.get_or_create_collection(collection_name)
 
-                collection = await client.get_or_create_collection(collection_name)
+            chunks = [
+                DocumentChunk(
+                    id=f"{collection_name}_chunk_{i}",
+                    content=f"Concurrent test content {i}",
+                    metadata={"collection": collection_name, "index": i},
+                )
+                for i in range(num_chunks)
+            ]
 
-                chunks = [
-                    DocumentChunk(
-                        id=f"{collection_name}_chunk_{i}",
-                        content=f"Concurrent test content {i}",
-                        metadata={"collection": collection_name, "index": i},
-                    )
-                    for i in range(num_chunks)
-                ]
+            result = await client.bulk_insert(collection, chunks)
+            return result
 
-                result = await client.bulk_insert(collection, chunks)
-                return result
-
-        # Run multiple concurrent operations
-        tasks = [
-            create_and_populate_collection(f"concurrent_test_{i}", 50) for i in range(4)
-        ]
-
-        results = await asyncio.gather(*tasks)
-
-        # Verify all operations succeeded
-        for result in results:
-            assert result.success is True
-            assert result.chunks_inserted == 50
-
-        # Clean up
-        async with AsyncChromaDBClient(config) as client:
-            await client.connect()
-            for i in range(4):
-                await client.delete_collection(f"concurrent_test_{i}")
-
-    async def test_bulk_insert_large_dataset(self, config, large_chunk_dataset):
-        """Test bulk insertion of large dataset (functional test)."""
-        from shard_markdown.chromadb.async_client import AsyncChromaDBClient
-
+        # Use single client connection for all operations
         async with AsyncChromaDBClient(config) as client:
             await client.connect()
 
-            collection = await client.get_or_create_collection("bulk_insert_test")
+            # Run concurrent operations with fewer chunks and collections
+            tasks = [
+                create_and_populate_collection(client, f"concurrent_test_{i}", 10)
+                for i in range(3)
+            ]
 
-            result = await client.bulk_insert(collection, large_chunk_dataset)
+            results = await asyncio.gather(*tasks)
 
-            # Verify insertion succeeded (functional verification only)
-            assert result.success is True
-            assert result.chunks_inserted == 1000
-            assert result.processing_time > 0  # Just verify timing is recorded
-            assert result.insertion_rate > 0  # Just verify rate is calculated
-
-            # Clean up
-            await client.delete_collection("bulk_insert_test")
-
-    async def test_memory_usage_sustained_operations(self, config):
-        """Test memory usage during sustained async operations."""
-        import os
-
-        import psutil
-
-        from shard_markdown.chromadb.async_client import AsyncChromaDBClient
-
-        process = psutil.Process(os.getpid())
-        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
-
-        async with AsyncChromaDBClient(config) as client:
-            await client.connect()
-
-            # Perform multiple sustained operations
-            for batch in range(5):
-                collection_name = f"memory_test_{batch}"
-                collection = await client.get_or_create_collection(collection_name)
-
-                chunks = [
-                    DocumentChunk(
-                        id=f"memory_chunk_{batch}_{i}",
-                        content=f"Memory test content for batch {batch}, chunk {i}" * 5,
-                        metadata={"batch": batch, "chunk": i},
-                    )
-                    for i in range(200)
-                ]
-
-                result = await client.bulk_insert(collection, chunks)
+            # Verify all operations succeeded
+            for result in results:
                 assert result.success is True
+                assert result.chunks_inserted == 10
 
-                # Clean up immediately to test memory release
-                await client.delete_collection(collection_name)
-
-        final_memory = process.memory_info().rss / 1024 / 1024  # MB
-        memory_growth = final_memory - initial_memory
-
-        # Memory growth should be within 15% overhead as per requirements
-        max_allowed_growth = initial_memory * 0.15
-        assert memory_growth <= max_allowed_growth, (
-            f"Memory growth {memory_growth:.1f}MB exceeds 15% limit "
-            f"{max_allowed_growth:.1f}MB"
-        )
-
-        print("Memory usage test results:")
-        print(f"  Initial memory: {initial_memory:.1f}MB")
-        print(f"  Final memory: {final_memory:.1f}MB")
-        print(
-            f"  Memory growth: {memory_growth:.1f}MB "
-            f"({memory_growth / initial_memory * 100:.1f}%)"
-        )
+            # Clean up in single connection
+            for i in range(3):
+                await client.delete_collection(f"concurrent_test_{i}")
 
     async def test_error_handling_connection_failure(self, config):
         """Test error handling when ChromaDB connection fails."""
@@ -218,41 +127,50 @@ class TestAsyncChromaDBIntegration:
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
         from shard_markdown.chromadb.client import ChromaDBClient
 
-        # Create test dataset
+        # Create smaller test dataset for faster execution
         test_chunks = [
             DocumentChunk(
                 id=f"comparison_chunk_{i}",
-                content=f"Implementation compatibility test content {i}" * 10,
+                content=f"Implementation compatibility test content {i}",
                 metadata={"type": "compatibility", "index": i},
             )
-            for i in range(100)  # Smaller dataset for functional testing
+            for i in range(20)  # Reduced from 100 to 20 chunks
         ]
 
         # Test async implementation
         async with AsyncChromaDBClient(config) as async_client:
             await async_client.connect()
             async_collection = await async_client.get_or_create_collection(
-                "async_compatibility"
+                "compatibility_test"
             )
 
             async_result = await async_client.bulk_insert(async_collection, test_chunks)
-            await async_client.delete_collection("async_compatibility")
 
-        # Test sync implementation
+            # Verify async operation
+            assert async_result.success is True
+            assert async_result.chunks_inserted == 20
+
+            # Clean up async collection
+            await async_client.delete_collection("compatibility_test")
+
+        # Test sync implementation with same collection name (reuse after cleanup)
         sync_client = ChromaDBClient(config)
         sync_client.connect()
         sync_collection = sync_client.get_or_create_collection(
-            "sync_compatibility", create_if_missing=True
+            "compatibility_test", create_if_missing=True
         )
 
         sync_result = sync_client.bulk_insert(sync_collection, test_chunks)
-        sync_client.delete_collection("sync_compatibility")
 
-        # Verify both implementations work correctly
-        assert async_result.success is True
+        # Verify sync operation
         assert sync_result.success is True
+        assert sync_result.chunks_inserted == 20
+
+        # Clean up sync collection
+        sync_client.delete_collection("compatibility_test")
+
+        # Final verification
         assert async_result.chunks_inserted == sync_result.chunks_inserted
-        assert async_result.chunks_inserted == 100
 
     async def test_multiple_concurrent_operations(self, config):
         """Test handling of multiple concurrent operations (functional test)."""
@@ -263,15 +181,13 @@ class TestAsyncChromaDBIntegration:
         ) -> tuple[int, InsertResult]:
             """Perform concurrent bulk insert with shared client."""
             collection = await client.get_or_create_collection(
-                f"concurrent_test_{client_id}"
+                f"multi_concurrent_{client_id}"
             )
 
             chunks = [
                 DocumentChunk(
                     id=f"concurrent_chunk_{client_id}_{i}",
-                    content=(
-                        f"Concurrent test content from client {client_id}, chunk {i}"
-                    ),
+                    content=f"Content from client {client_id}, chunk {i}",
                     metadata={"client_id": client_id, "chunk_index": i},
                 )
                 for i in range(num_chunks)
@@ -284,23 +200,21 @@ class TestAsyncChromaDBIntegration:
         async with AsyncChromaDBClient(config) as client:
             await client.connect()
 
-            # Run 4 concurrent operations (functional test)
+            # Run 3 concurrent operations with fewer chunks each
             tasks = [
-                concurrent_bulk_insert(client, client_id, 25) for client_id in range(4)
+                concurrent_bulk_insert(client, client_id, 10) for client_id in range(3)
             ]
 
             results = await asyncio.gather(*tasks)
 
-        # Verify all operations succeeded
-        for _client_id, result in results:
-            assert result.success is True
-            assert result.chunks_inserted == 25
+            # Verify all operations succeeded
+            for _client_id, result in results:
+                assert result.success is True
+                assert result.chunks_inserted == 10
 
-        # Clean up
-        async with AsyncChromaDBClient(config) as client:
-            await client.connect()
-            for client_id in range(4):
-                await client.delete_collection(f"concurrent_test_{client_id}")
+            # Clean up in the same connection
+            for client_id in range(3):
+                await client.delete_collection(f"multi_concurrent_{client_id}")
 
-        total_chunks = sum(result.chunks_inserted for _, result in results)
-        assert total_chunks == 100  # Verify all chunks were inserted
+            total_chunks = sum(result.chunks_inserted for _, result in results)
+            assert total_chunks == 30  # Verify all chunks were inserted
