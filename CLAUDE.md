@@ -5,16 +5,20 @@
 
 ## Project Overview
 
-Shard Markdown is a CLI tool for intelligent markdown document chunking and ChromaDB integration. This document provides essential instructions for AI agents working on this codebase.
+Shard Markdown is a focused CLI tool for intelligent markdown document chunking. Following the Unix philosophy of "do one thing well", it excels at breaking down markdown files into meaningful segments with optional ChromaDB storage. This document provides essential instructions for AI agents working on this codebase.
 
 ## Directory Structure
 
 ```
 shard-markdown/
 ├── src/shard_markdown/      # Main package source
-│   ├── cli/                 # CLI interface modules
+│   ├── cli/                 # Simplified CLI interface (main.py only)
 │   ├── core/                # Core processing logic
-│   ├── chromadb/           # ChromaDB integration
+│   │   ├── chunker.py      # Core chunking algorithms
+│   │   └── strategies/      # Chunking strategies
+│   ├── storage/            # Storage backends
+│   │   ├── base.py         # Storage interface
+│   │   └── vectordb.py     # ChromaDB implementation
 │   ├── config/             # Configuration management
 │   └── utils/              # Utility functions
 ├── tests/                   # Test suite
@@ -65,9 +69,9 @@ uv run pytest
 ### Important Principles
 1. **Never modify user data** without explicit permission
 2. **Respect markdown structure** when processing documents
-3. **Maintain backward compatibility** for CLI commands
+3. **Keep CLI simple** - No subcommands, just direct action
 4. **Test all ChromaDB operations** before committing
-5. **Document breaking changes** clearly
+5. **Document breaking changes** clearly (Note: CLI was completely redesigned in v2.0)
 6. **Maintain test coverage** at ≥90% for all modules
 7. **No temporary files in source tree** - Never create temp files or test scripts in the main source directories
 8. **Clean up after push** - Remove any temporary files, test data, or debug scripts after pushing changes
@@ -103,12 +107,14 @@ uv run pytest
 ### ChromaDB Connection
 - Default host: `localhost`
 - Default port: `8000`
-- Test with: `shard-md collections list`
+- Test with: `shard-md test.md --store --collection test --dry-run`
 
 ### Configuration Files
 1. `~/.shard-md/config.yaml` (global)
 2. `./.shard-md/config.yaml` (local)
 3. `./shard-md.yaml` (project)
+
+Edit these files directly with any text editor. No configuration commands exist.
 
 ### Environment Variables
 - `CHROMA_HOST`: ChromaDB host
@@ -118,12 +124,13 @@ uv run pytest
 
 ## Critical Files
 
-- `src/shard_markdown/cli/main.py`: Main CLI entry point
-- `src/shard_markdown/core/chunker.py`: Chunking algorithms
-- `src/shard_markdown/chromadb/client.py`: ChromaDB operations
+- `src/shard_markdown/cli/main.py`: Simplified CLI entry point (~100 lines)
+- `src/shard_markdown/core/chunker.py`: Core chunking algorithms
+- `src/shard_markdown/storage/vectordb.py`: ChromaDB storage backend
+- `src/shard_markdown/config/settings.py`: Configuration management
 - `pyproject.toml`: Project configuration and dependencies
 
-## **IMPOTENT** Temporary Files and Testing
+## **IMPORTANT** Temporary Files and Testing
 
 ### Where to Create Temporary Files
 - **Use `/tmp` or system temp directory** for temporary files
@@ -137,7 +144,13 @@ uv run pytest
 - **MUST** Delete test outputs after validation
 - Use `.gitignore` patterns for any persistent temp files
 
-## **IMPOTENT** Notes
+## **IMPORTANT** Notes
+
+### CLI Simplification (v2.0)
+- **NO SUBCOMMANDS**: The tool now works like a simple Unix utility
+- **Direct action**: `shard-md <input>` processes files immediately
+- **Removed commands**: No more `process`, `collections`, `query`, or `config` subcommands
+- **Storage via flag**: Use `--store` to save to ChromaDB instead of separate commands
 
 - The project uses `uv` for dependency management
 - Pre-commit hooks are configured - install with `pre-commit install`
