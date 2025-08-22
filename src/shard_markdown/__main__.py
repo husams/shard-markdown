@@ -1,9 +1,7 @@
 """Main entry point for shard-markdown CLI."""
 
-import sys
-
-from .cli.main import cli
+from .cli.main import main
 
 
 if __name__ == "__main__":
-    sys.exit(cli())
+    main()

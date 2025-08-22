@@ -573,24 +573,29 @@ jobs:
         run: |
           echo "🧪 Testing CLI commands with real ChromaDB"
 
-          # Create a test collection
-          uv run shard-md collections create ci-test-collection || {
-            echo "⚠️ Failed to create collection"
-            exit 1
-          }
-
           # Create test document
           echo "# CI Test Document" > ci-test.md
           echo "Testing ChromaDB integration in CI pipeline." >> ci-test.md
+          echo "" >> ci-test.md
+          echo "## Section 1" >> ci-test.md
+          echo "This is test content for chunking." >> ci-test.md
 
-          # Process document
-          uv run shard-md process --collection ci-test-collection ci-test.md
+          # Test basic processing (display mode)
+          echo "Testing basic processing..."
+          uv run shard-md ci-test.md --size 100 --overlap 20
 
-          # Query document
-          uv run shard-md query search "integration" --collection ci-test-collection
+          # Test processing with storage to ChromaDB
+          echo "Testing storage to ChromaDB..."
+          uv run shard-md ci-test.md --store --collection ci-test-collection
 
-          # Clean up
-          uv run shard-md collections delete ci-test-collection || echo "Collection cleanup failed"
+          # Test directory processing
+          mkdir -p test-docs
+          cp ci-test.md test-docs/
+          echo "# Another Test" > test-docs/test2.md
+          echo "Testing directory processing" >> test-docs/test2.md
+
+          echo "Testing directory processing with storage..."
+          uv run shard-md test-docs/ --store --collection ci-test-dir --recursive
 
           echo "✅ CLI tests passed"
 

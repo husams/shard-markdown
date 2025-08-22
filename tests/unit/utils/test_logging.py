@@ -95,9 +95,9 @@ def test_get_logger() -> None:
 @pytest.mark.unit
 def test_get_logger_with_qualified_name() -> None:
     """Test get_logger with fully qualified module name."""
-    logger = get_logger("cli.commands.process")
+    logger = get_logger("cli.main")
 
-    assert logger.name == "shard_markdown.cli.commands.process"
+    assert logger.name == "shard_markdown.cli.main"
 
 
 @pytest.mark.unit
