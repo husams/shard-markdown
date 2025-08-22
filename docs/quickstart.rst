@@ -9,177 +9,233 @@ Prerequisites
 
 Before you begin, ensure you have:
 
-- Python 3.11 or higher installed
+- Python 3.8 or higher installed
 - shard-markdown installed (see :doc:`installation`)
 - A markdown document to process
+- (Optional) ChromaDB running for storage
+
+Installation
+============
+
+Install shard-markdown using pip or uv:
+
+.. code-block:: bash
+
+   # Using pip
+   pip install shard-markdown
+   
+   # Using uv (recommended)
+   uv add shard-markdown
+   
+   # Or from source
+   git clone https://github.com/husams/shard-markdown.git
+   cd shard-markdown
+   uv pip install -e .
 
 Basic Usage
 ===========
 
-1. Initialize Configuration
----------------------------
-
-Create a default configuration:
-
-.. code-block:: bash
-
-   shard-md config init
-
-This creates a configuration file at ``~/.shard-markdown/config.yaml``.
-
-2. Process Your First Document
+1. Process Your First Document
 ------------------------------
 
-Process a markdown file using the default settings:
+The simplest way to use shard-markdown is to process a file directly:
 
 .. code-block:: bash
 
-   shard-md process README.md
+   shard-md README.md
 
 This will:
 - Parse the markdown document
-- Split it into chunks using the default strategy
-- Display the results
+- Split it into chunks using structure-aware chunking
+- Display the chunks to your terminal
 
-3. Process with ChromaDB Storage
---------------------------------
+2. Customize Chunk Settings
+---------------------------
 
-If you have ChromaDB running, store the chunks in a collection:
-
-.. code-block:: bash
-
-   shard-md process README.md --collection my-docs --store
-
-4. Query Your Documents
------------------------
-
-Search for content in your stored documents:
+Adjust chunk size and overlap for your needs:
 
 .. code-block:: bash
 
-   shard-md query "installation guide" --collection my-docs
+   shard-md document.md --size 500 --overlap 50
 
-Configuration Examples
-======================
+3. Store in ChromaDB
+--------------------
 
-Basic Configuration
--------------------
+If you have ChromaDB running, store chunks in a collection:
 
-Create ``config.yaml``:
+.. code-block:: bash
 
-.. code-block:: yaml
+   shard-md manual.md --store --collection documentation
 
-   chromadb:
-     host: localhost
-     port: 8000
+4. Process Multiple Files
+-------------------------
 
-   chunking:
+Process all markdown files in a directory:
+
+.. code-block:: bash
+
+   # Process directory (non-recursive)
+   shard-md docs/
+   
+   # Process directory recursively
+   shard-md docs/ --recursive
+   
+   # Process with glob pattern
+   shard-md "*.md" --store --collection my-docs
+
+Configuration
+=============
+
+Optional: Create a configuration file for persistent settings:
+
+.. code-block:: bash
+
+   # Create config directory
+   mkdir -p ~/.shard-md
+   
+   # Create config file
+   cat > ~/.shard-md/config.yaml << EOF
+   chunk:
+     size: 1000
+     overlap: 200
      strategy: structure
-     max_chunk_size: 1000
-     overlap: 100
+     
+   storage:
+     vectordb:
+       host: localhost
+       port: 8000
+   
+   logging:
+     level: INFO
+   EOF
 
-Processing Options
-==================
+Common Scenarios
+================
 
-Chunking Strategies
--------------------
+Documentation Processing
+------------------------
 
-**Structure-aware (Recommended)**:
-
-.. code-block:: bash
-
-   shard-md process doc.md --chunking-strategy structure
-
-**Fixed-size**:
-
-.. code-block:: bash
-
-   shard-md process doc.md --chunking-strategy fixed --max-chunk-size 500
-
-**Custom overlap**:
+Process technical documentation with semantic chunking:
 
 .. code-block:: bash
 
-   shard-md process doc.md --overlap 50
+   shard-md technical-docs/ \
+     --recursive \
+     --strategy semantic \
+     --size 1500 \
+     --store \
+     --collection tech-docs
 
-Batch Processing
-----------------
-
-Process multiple files:
-
-.. code-block:: bash
-
-   shard-md process docs/*.md --collection knowledge-base --store
-
-Collection Management
-=====================
-
-List Collections
-----------------
-
-.. code-block:: bash
-
-   shard-md collections list
-
-Create Collection
------------------
-
-.. code-block:: bash
-
-   shard-md collections create my-collection
-
-Collection Info
+Research Papers
 ---------------
 
+Process academic papers preserving structure:
+
 .. code-block:: bash
 
-   shard-md collections info my-collection
+   shard-md paper.md \
+     --strategy section \
+     --preserve-structure \
+     --metadata \
+     --store \
+     --collection research
+
+Code Documentation
+------------------
+
+Process code documentation without splitting code blocks:
+
+.. code-block:: bash
+
+   shard-md api-docs.md \
+     --strategy structure \
+     --size 2000 \
+     --store \
+     --collection api-docs
+
+Quick Tips
+==========
+
+1. **Dry Run**: Preview chunks without storing them:
+
+   .. code-block:: bash
+
+      shard-md document.md --dry-run --verbose
+
+2. **Quiet Mode**: Suppress output when storing:
+
+   .. code-block:: bash
+
+      shard-md *.md --store --collection docs --quiet
+
+3. **Custom Config**: Use project-specific configuration:
+
+   .. code-block:: bash
+
+      shard-md docs/ --config-path ./project-config.yaml
+
+4. **Check Version**: Verify your installation:
+
+   .. code-block:: bash
+
+      shard-md --version
 
 Next Steps
 ==========
 
-- Read the :doc:`cli-reference` for complete command documentation
-- Explore :doc:`configuration` for advanced settings
-- Check out :doc:`examples` for real-world use cases
-- Learn about the :doc:`api-reference` for programmatic usage
+- Learn about different :doc:`chunking strategies <chunking-strategies>`
+- Explore :doc:`configuration options <configuration>`
+- Read the :doc:`CLI reference <cli-reference>` for all options
+- Check out :doc:`examples <examples>` for more use cases
 
-Common Workflows
-================
+Troubleshooting
+===============
 
-Documentation Processing
--------------------------
+ChromaDB Connection Issues
+--------------------------
+
+If you get connection errors:
+
+1. Ensure ChromaDB is running:
+
+   .. code-block:: bash
+
+      docker run -p 8000:8000 chromadb/chroma
+
+2. Check your configuration:
+
+   .. code-block:: bash
+
+      # Verify ChromaDB is accessible
+      curl http://localhost:8000/api/v1/heartbeat
+
+3. Use environment variables if needed:
+
+   .. code-block:: bash
+
+      export CHROMA_HOST=localhost
+      export CHROMA_PORT=8000
+      shard-md document.md --store --collection test
+
+File Not Found
+--------------
+
+If files aren't found:
+
+- Use absolute paths or ensure you're in the correct directory
+- Check file permissions
+- Use quotes for glob patterns: ``shard-md "*.md"``
+
+Getting Help
+============
 
 .. code-block:: bash
 
-   # Process all docs in a directory
-   shard-md process docs/ --collection documentation --store --recursive
-
-   # Query the documentation
-   shard-md query "API reference" --collection documentation --limit 5
-
-Knowledge Base Creation
------------------------
-
-.. code-block:: bash
-
-   # Create a knowledge base collection
-   shard-md collections create kb --description "Company knowledge base"
-
-   # Process various document sources
-   shard-md process wiki/*.md --collection kb --store
-   shard-md process manuals/*.md --collection kb --store
-
-   # Search the knowledge base
-   shard-md query "deployment process" --collection kb
-
-Tips and Best Practices
-========================
-
-1. **Choose the Right Strategy**: Use ``structure`` for well-formatted
-   documents, ``fixed`` for consistent chunk sizes
-2. **Tune Chunk Size**: Start with 1000 characters and adjust based on your use
-   case
-3. **Use Metadata**: Include custom metadata in document frontmatter for better
-   searchability
-4. **Monitor Performance**: Use ``--verbose`` flag to see processing details
-5. **Backup Collections**: Regularly backup your ChromaDB data
+   # Show help message
+   shard-md --help
+   
+   # Visit documentation
+   # https://shard-markdown.readthedocs.io
+   
+   # Report issues
+   # https://github.com/husams/shard-markdown/issues

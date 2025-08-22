@@ -8,17 +8,18 @@ Intelligent markdown document chunking for ChromaDB collections.
 
 ## Overview
 
-Shard Markdown is a powerful CLI tool that intelligently processes markdown documents into structured chunks and stores them in ChromaDB collections. It's designed for RAG (Retrieval-Augmented Generation) workflows, document processing pipelines, and vector database management.
+Shard Markdown is a focused CLI tool that intelligently chunks markdown documents for optimal retrieval and analysis. Following the Unix philosophy of "do one thing well", it excels at breaking down markdown files into meaningful segments.
 
 ### Key Features
 
+- **Simple Usage**: Just `shard-md document.md` - no complex subcommands
 - **Structure-Aware Chunking**: Respects markdown headers, lists, and code blocks
-- **Multiple Chunking Strategies**: Structure-aware, fixed-size, and semantic chunking
-- **ChromaDB Integration**: Native support for ChromaDB collections and operations
+- **Multiple Chunking Strategies**: Token, sentence, paragraph, section, semantic, structure, and fixed-size chunking
+- **ChromaDB Storage**: Optional storage in vector databases with `--store`
 - **Metadata Preservation**: Extracts and enhances document metadata
-- **Batch Processing**: Efficiently process multiple files with sequential processing
-- **Rich CLI Interface**: Beautiful terminal output with progress tracking
-- **Flexible Configuration**: YAML-based configuration with environment variable support
+- **Batch Processing**: Efficiently process multiple files and directories
+- **Clean Output**: Focused display of chunks with optional quiet mode
+- **Flexible Configuration**: Simple YAML configuration with environment variable support
 
 ## Quick Start
 
@@ -37,20 +38,20 @@ uv pip install -e .
 ### Basic Usage
 
 ```bash
-# Process a single markdown file
-shard-md process --collection my-docs document.md
+# Simple usage - display chunks
+shard-md document.md
 
-# Process multiple files with custom settings
-shard-md process --collection tech-docs --chunk-size 1500 --recursive docs/
+# Display with custom settings
+shard-md docs/ --size 500 --overlap 50
 
-# List collections
-shard-md collections list
+# Store in ChromaDB
+shard-md manual.md --store --collection documentation
 
-# Search documents
-shard-md query search "machine learning" --collection tech-docs
+# Process multiple files
+shard-md *.md --store --collection my-docs --quiet
 
-# Show configuration
-shard-md config show
+# Dry run with verbose output
+shard-md large-doc.md --dry-run --verbose
 ```
 
 ## Installation
@@ -95,42 +96,31 @@ Shard Markdown uses YAML configuration files with the following precedence:
 2. `./.shard-md/config.yaml` (project-local)
 3. `./shard-md.yaml` (project root)
 
-### Initialize Configuration
-
-```bash
-# Create default configuration
-shard-md config init
-
-# Create global configuration
-shard-md config init --global
-
-# Show current configuration
-shard-md config show
-```
+Configuration is managed by directly editing these YAML files with any text editor. No configuration commands are needed.
 
 ### Sample Configuration
 
 ```yaml
-chromadb:
-  host: localhost
-  port: 8000
-  ssl: false
-  timeout: 30
+# ~/.shard-md/config.yaml - edit with any text editor
+chunk:
+  size: 1000
+  overlap: 200
+  strategy: structure
 
-chunking:
-  default_size: 1000
-  default_overlap: 200
-  method: structure
-  respect_boundaries: true
+storage:
+  vectordb:
+    host: localhost
+    port: 8000
+    collection: default
 
 processing:
-  batch_size: 10
   recursive: false
-  include_frontmatter: true
+  metadata: true
+  preserve_structure: true
 
 logging:
   level: INFO
-  file_path: null
+  quiet: false
 ```
 
 ### Environment Variables
@@ -144,99 +134,75 @@ export SHARD_MD_CHUNK_SIZE=1500
 export SHARD_MD_LOG_LEVEL=DEBUG
 ```
 
-## Commands
-
-### Process Documents
-
-Process markdown files into ChromaDB collections:
+## Command-Line Options
 
 ```bash
-# Basic processing
-shard-md process --collection my-docs document.md
-
-# Advanced processing
-shard-md process \
-  --collection technical-docs \
-  --chunk-size 1500 \
-  --chunk-overlap 300 \
-  --chunk-method structure \
-  --recursive \
-  --create-collection \
-  docs/
-
-# Dry run (preview what would be processed)
-shard-md process --collection test --dry-run *.md
+shard-md [OPTIONS] INPUT
 ```
 
-### Manage Collections
+### Chunking Options
+- `-s, --size INTEGER`: Chunk size (default: 1000)
+- `-o, --overlap INTEGER`: Overlap between chunks (default: 200)
+- `--strategy`: Chunking strategy (token/sentence/paragraph/section/semantic/structure/fixed)
+
+### Storage Options
+- `--store`: Store chunks in vector database
+- `--collection TEXT`: Collection name for vectordb storage
+
+### Processing Options
+- `-r, --recursive`: Process directories recursively
+- `-m, --metadata`: Include metadata in chunks
+- `--preserve-structure`: Maintain markdown structure
+
+### Utility Options
+- `--dry-run`: Preview without storing
+- `--config-path PATH`: Use alternate config file
+- `-q, --quiet`: Suppress output (when storing)
+- `-v, --verbose`: Verbose output
+- `--version`: Show version
+- `--help`: Show help
+
+### Examples
 
 ```bash
-# List collections
-shard-md collections list
+# Simple usage - display chunks
+shard-md README.md
 
-# Create collection
-shard-md collections create my-docs --description "My documentation"
+# Display with custom settings
+shard-md docs/ --size 500 --overlap 50
 
-# Get collection info
-shard-md collections info my-docs
+# Store in ChromaDB
+shard-md manual.md --store --collection documentation
 
-# Delete collection
-shard-md collections delete old-docs
-```
+# Process directory recursively
+shard-md ./docs --recursive --store --collection tech-docs
 
-### Query Documents
+# Dry run with verbose output
+shard-md large-doc.md --dry-run --verbose
 
-```bash
-# Search documents
-shard-md query search "machine learning" --collection tech-docs
+# Process with custom config
+shard-md book.md --config-path ./project-config.yaml
 
-# Get specific document
-shard-md query get doc_123 --collection my-docs
-
-# List documents
-shard-md query list-docs --collection my-docs --limit 50
-```
-
-### Configuration Management
-
-```bash
-# Show configuration
-shard-md config show
-
-# Set configuration values
-shard-md config set chromadb.host localhost
-shard-md config set chunking.default_size 1500
-
-# Show configuration file locations
-shard-md config path
+# Process and store quietly
+shard-md *.md --store --collection my-docs --quiet
 ```
 
 ## Chunking Strategies
 
-### Structure-Aware Chunking (Default)
+### Available Strategies
 
-Respects markdown document structure:
+- **structure** (default): Respects markdown structure, never splits code blocks
+- **token**: Token-based chunking for LLM compatibility
+- **sentence**: Splits on sentence boundaries
+- **paragraph**: Preserves paragraph integrity
+- **section**: Splits on markdown headers
+- **semantic**: Context-aware splitting based on meaning
+- **fixed**: Simple character-based splitting with overlap
 
-- Never splits code blocks
-- Prefers splits at header boundaries
-- Respects list item boundaries
-- Maintains hierarchical context
-
-### Fixed-Size Chunking
-
-Creates chunks based on character limits:
-
-- Simple character-based splitting
-- Optional word boundary respect
-- Configurable overlap
-
-### Semantic Chunking
-
-Splits based on content meaning:
-
-- Sentence boundary detection
-- Paragraph preservation
-- Context-aware splitting
+Choose a strategy with the `--strategy` option:
+```bash
+shard-md document.md --strategy semantic --size 1500
+```
 
 ## Metadata
 

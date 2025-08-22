@@ -2,420 +2,260 @@
 
 ## 1. Command Structure Overview
 
-The Shard Markdown CLI follows a hierarchical command structure with the main command `shard-md` and several subcommands for different operations.
+Shard Markdown follows the Unix philosophy of "do one thing well". The CLI operates as a simple, direct-action tool without subcommands:
 
 ```
-shard-md [GLOBAL-OPTIONS] COMMAND [COMMAND-OPTIONS] [ARGUMENTS]
+shard-md [OPTIONS] INPUT
 ```
 
-## 2. Global Options
+Where INPUT is a markdown file, directory, or glob pattern.
 
-### 2.1 Common Global Options
+## 2. Core Philosophy
+
+- **No subcommands**: Direct action on input files
+- **Smart defaults**: Works out of the box with `shard-md document.md`
+- **Progressive disclosure**: Advanced features available via options
+- **Unix-style**: Composable with pipes and other tools
+
+## 3. Command-Line Options
+
+### 3.1 Chunking Options
+
+Control how documents are split into chunks:
 
 ```bash
---config, -c PATH          Configuration file path [default: ~/.shard-md/config.yaml]
---verbose, -v              Increase verbosity (can be repeated: -v, -vv, -vvv)
---quiet, -q               Suppress non-error output
---log-file PATH           Write logs to specified file
---help, -h                Show help message and exit
---version                 Show version information and exit
+-s, --size INTEGER         Chunk size in tokens/characters [default: 1000]
+-o, --overlap INTEGER      Overlap between chunks [default: 200]
+--strategy [STRATEGY]      Chunking strategy [default: structure]
+                          Options: token, sentence, paragraph, 
+                                  section, semantic, structure, fixed
 ```
 
-### 2.2 ChromaDB Connection Options
+### 3.2 Storage Options
+
+Control where and how chunks are stored:
 
 ```bash
---chroma-host HOST        ChromaDB host [default: localhost]
---chroma-port PORT        ChromaDB port [default: 8000]
---chroma-ssl              Use SSL for ChromaDB connection
---chroma-auth-token TOKEN Authentication token for ChromaDB
---chroma-timeout SECONDS  Connection timeout [default: 30]
+--store                   Store chunks in vector database
+--collection TEXT         Collection name for vectordb storage
 ```
 
-## 3. Primary Commands
+### 3.3 Processing Options
 
-### 3.1 Process Command
-
-Primary command for processing markdown files into ChromaDB collections.
+Control how files are processed:
 
 ```bash
-shard-md process [OPTIONS] INPUT [INPUT...]
+-r, --recursive           Process directories recursively
+-m, --metadata           Include metadata in chunks
+--preserve-structure      Maintain markdown structure
 ```
 
-#### Arguments
+### 3.4 Utility Options
 
-- `INPUT`: Path to markdown file(s) or directory(ies) to process
-
-#### Options
+Control output and behavior:
 
 ```bash
-# Collection Management
---collection, -c NAME     Target ChromaDB collection name [required]
---create-collection       Create collection if it doesn't exist
---clear-collection        Clear existing collection before processing
---collection-metadata JSON  Additional metadata for new collections
-
-# Chunking Options
---chunk-size, -s SIZE     Maximum chunk size in characters [default: 1000]
---chunk-overlap, -o SIZE  Overlap between chunks in characters [default: 200]
---chunk-method METHOD     Chunking method: structure|fixed|semantic [default: structure]
---max-tokens TOKEN_COUNT  Maximum tokens per chunk (alternative to char count)
---respect-boundaries      Respect markdown structure boundaries [default: true]
-
-# Processing Options
---recursive, -r           Process directories recursively
---pattern GLOB            File pattern for filtering [default: "*.md"]
---exclude-pattern GLOB    Exclude files matching pattern
---batch-size SIZE         Number of documents to process in batch [default: 10]
-
-# Metadata Options
---include-frontmatter     Extract YAML frontmatter as metadata [default: true]
---include-path-metadata   Include file path information in metadata [default: true]
---custom-metadata JSON    Additional custom metadata for all chunks
---metadata-prefix PREFIX  Prefix for custom metadata keys
-
-# Output Options
---dry-run                 Show what would be processed without executing
---progress                Show progress bar [default: true]
---summary                 Show processing summary
+--dry-run                Preview chunks without storing
+--config-path PATH       Use alternate configuration file
+-q, --quiet              Suppress output (useful when storing)
+-v, --verbose            Verbose output for debugging
+--version               Show version and exit
+--help                  Show help message and exit
 ```
 
-#### Examples
+## 4. Usage Examples
+
+### 4.1 Basic Usage
 
 ```bash
-# Basic processing
-shard-md process --collection my-docs document.md
+# Display chunks from a single file
+shard-md README.md
 
-# Batch process with custom settings
-shard-md process \
-  --collection technical-docs \
-  --chunk-size 1500 \
-  --chunk-overlap 300 \
-  --recursive \
-  --pattern "*.md" \
-  docs/
-
-# Create new collection with metadata
-shard-md process \
-  --collection new-collection \
-  --create-collection \
-  --collection-metadata '{"description": "Technical documentation", "version": "1.0"}' \
-  --custom-metadata '{"source": "internal", "team": "engineering"}' \
-  *.md
+# Display chunks with custom size
+shard-md document.md --size 500 --overlap 50
 ```
 
-### 3.2 Collection Management Commands
-
-#### 3.2.1 List Collections
+### 4.2 Storage Operations
 
 ```bash
-shard-md collections list [OPTIONS]
+# Store chunks in ChromaDB
+shard-md manual.md --store --collection documentation
+
+# Process and store multiple files quietly
+shard-md *.md --store --collection my-docs --quiet
 ```
 
-Options:
+### 4.3 Directory Processing
 
 ```bash
---format FORMAT          Output format: table|json|yaml [default: table]
---show-metadata          Include collection metadata in output
---filter PATTERN         Filter collections by name pattern
+# Process directory non-recursively
+shard-md docs/
+
+# Process directory recursively
+shard-md docs/ --recursive --store --collection tech-docs
 ```
 
-#### 3.2.2 Create Collection
+### 4.4 Advanced Usage
 
 ```bash
-shard-md collections create [OPTIONS] NAME
+# Dry run with verbose output
+shard-md large-doc.md --dry-run --verbose
+
+# Use custom configuration
+shard-md book.md --config-path ./project-config.yaml
+
+# Semantic chunking with metadata
+shard-md research.md --strategy semantic --metadata --store
 ```
 
-Options:
+## 5. Configuration
 
-```bash
---metadata JSON          Collection metadata as JSON
---embedding-function     Embedding function to use [default: default]
---description TEXT       Collection description
-```
+### 5.1 Configuration Files
 
-#### 3.2.3 Delete Collection
+Configuration uses simple YAML files, loaded in order of precedence:
 
-```bash
-shard-md collections delete [OPTIONS] NAME
-```
+1. `~/.shard-md/config.yaml` (global configuration)
+2. `./.shard-md/config.yaml` (project-local configuration)
+3. `./shard-md.yaml` (project root configuration)
+4. File specified with `--config-path`
 
-Options:
-
-```bash
---force, -f              Force deletion without confirmation
---backup                 Create backup before deletion
-```
-
-#### 3.2.4 Collection Info
-
-```bash
-shard-md collections info [OPTIONS] NAME
-```
-
-Options:
-
-```bash
---format FORMAT          Output format: table|json|yaml [default: table]
---show-documents         Include document count and sample documents
---show-metadata          Include detailed metadata
-```
-
-### 3.3 Query Commands
-
-#### 3.3.1 Search Documents
-
-```bash
-shard-md query search [OPTIONS] QUERY
-```
-
-Options:
-
-```bash
---collection, -c NAME     Collection to search [required]
---limit, -n COUNT         Maximum results to return [default: 10]
---similarity-threshold    Minimum similarity score [default: 0.0]
---include-metadata        Include metadata in results [default: true]
---format FORMAT           Output format: table|json|yaml [default: table]
-```
-
-#### 3.3.2 Get Document
-
-```bash
-shard-md query get [OPTIONS] DOCUMENT_ID
-```
-
-Options:
-
-```bash
---collection, -c NAME     Collection name [required]
---format FORMAT           Output format: table|json|yaml [default: table]
---include-metadata        Include metadata in results [default: true]
-```
-
-### 3.4 Configuration Commands
-
-#### 3.4.1 Show Configuration
-
-```bash
-shard-md config show [OPTIONS]
-```
-
-Options:
-
-```bash
---format FORMAT          Output format: yaml|json [default: yaml]
---section SECTION        Show specific configuration section
-```
-
-#### 3.4.2 Set Configuration
-
-```bash
-shard-md config set [OPTIONS] KEY VALUE
-```
-
-Options:
-
-```bash
---global                 Set global configuration (user-level)
---local                  Set local configuration (project-level)
-```
-
-#### 3.4.3 Initialize Configuration
-
-```bash
-shard-md config init [OPTIONS]
-```
-
-Options:
-
-```bash
---global                 Initialize global configuration
---force                  Overwrite existing configuration
---template TEMPLATE      Use configuration template
-```
-
-### 3.5 Utility Commands
-
-#### 3.5.1 Validate Documents
-
-```bash
-shard-md validate [OPTIONS] INPUT [INPUT...]
-```
-
-Options:
-
-```bash
---recursive, -r          Validate directories recursively
---pattern GLOB           File pattern for filtering [default: "*.md"]
---check-frontmatter      Validate YAML frontmatter
---check-links            Validate internal links
---format FORMAT          Output format: table|json [default: table]
-```
-
-#### 3.5.2 Preview Chunking
-
-```bash
-shard-md preview [OPTIONS] INPUT
-```
-
-Options:
-
-```bash
---chunk-size, -s SIZE    Maximum chunk size [default: 1000]
---chunk-overlap, -o SIZE Overlap between chunks [default: 200]
---chunk-method METHOD    Chunking method [default: structure]
---show-metadata          Include metadata in preview
---output-file PATH       Save preview to file
-```
-
-## 4. Exit Codes
-
-The CLI uses standard exit codes to indicate operation status:
-
-- `0`: Success
-- `1`: General error
-- `2`: Invalid arguments or configuration
-- `3`: File I/O error
-- `4`: ChromaDB connection error
-- `5`: Processing error (partial failure)
-- `130`: Interrupted by user (Ctrl+C)
-
-## 5. Environment Variables
-
-### 5.1 Configuration Override
-
-```bash
-SHARD_MD_CONFIG_FILE        Override default config file location
-SHARD_MD_LOG_LEVEL          Set logging level (DEBUG|INFO|WARNING|ERROR)
-SHARD_MD_LOG_FILE           Set log file location
-```
-
-### 5.2 ChromaDB Connection
-
-```bash
-CHROMA_HOST                 ChromaDB host
-CHROMA_PORT                 ChromaDB port
-CHROMA_AUTH_TOKEN           Authentication token
-CHROMA_SSL                  Use SSL (true|false)
-```
-
-### 5.3 Processing Defaults
-
-```bash
-SHARD_MD_CHUNK_SIZE         Default chunk size
-SHARD_MD_CHUNK_OVERLAP      Default chunk overlap
-SHARD_MD_BATCH_SIZE         Default batch size
-```
-
-## 6. Configuration File Format
-
-### 6.1 YAML Configuration Example
+### 5.2 Configuration Format
 
 ```yaml
 # ~/.shard-md/config.yaml
-chromadb:
-  host: localhost
-  port: 8000
-  ssl: false
-  timeout: 30
-  auth_token: null
-
-chunking:
-  default_size: 1000
-  default_overlap: 200
-  method: structure
-  respect_boundaries: true
-  max_tokens: null
+chunk:
+  size: 1000
+  overlap: 200
+  strategy: structure
+  
+storage:
+  vectordb:
+    host: localhost
+    port: 8000
+    collection: default
 
 processing:
-  batch_size: 10
   recursive: false
-  pattern: "*.md"
-  include_frontmatter: true
-  include_path_metadata: true
+  metadata: true
+  preserve_structure: true
 
-output:
-  progress: true
-  verbose: false
-  log_file: null
-  format: table
-
-collections:
-  default_embedding_function: default
-  auto_create: false
-  default_metadata: {}
+logging:
+  level: INFO
+  quiet: false
 ```
 
-## 7. Help System
+### 5.3 Environment Variables
 
-### 7.1 Built-in Help
+Override configuration with environment variables:
 
 ```bash
-# General help
-shard-md --help
-shard-md -h
-
-# Command-specific help
-shard-md process --help
-shard-md collections --help
-
-# Subcommand help
-shard-md collections list --help
+export SHARD_MD_CHUNK_SIZE=1500
+export SHARD_MD_CHUNK_OVERLAP=300
+export SHARD_MD_CHUNK_STRATEGY=semantic
+export CHROMA_HOST=localhost
+export CHROMA_PORT=8000
+export SHARD_MD_LOG_LEVEL=DEBUG
 ```
 
-### 7.2 Man Page Support
+## 6. Output Formats
+
+### 6.1 Default Output (Display Mode)
+
+When no `--store` flag is provided, chunks are displayed to stdout:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ Chunk 1/5 (Size: 987 tokens)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Introduction
+
+This is the beginning of the document...
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+### 6.2 Quiet Mode
+
+With `--quiet`, only essential information is shown:
 
 ```bash
-man shard-md                # Main manual page
-man shard-md-process        # Process command manual
-man shard-md-collections    # Collections manual
+shard-md docs/ --store --collection my-docs --quiet
+✓ Processed 15 files, created 127 chunks
 ```
 
-## 8. Shell Completion
+### 6.3 Verbose Mode
 
-### 8.1 Bash Completion
+With `--verbose`, detailed processing information is shown:
 
 ```bash
-# Add to ~/.bashrc
-eval "$(_SHARD_MD_COMPLETE=bash_source shard-md)"
+shard-md document.md --verbose
+[INFO] Loading configuration from ~/.shard-md/config.yaml
+[INFO] Processing: document.md (15.2 KB)
+[INFO] Using strategy: structure
+[INFO] Chunk size: 1000, Overlap: 200
+[DEBUG] Parsing markdown structure...
+[DEBUG] Found 5 headers, 3 code blocks, 2 lists
+[INFO] Created 7 chunks
 ```
 
-### 8.2 Zsh Completion
+## 7. Exit Codes
+
+- `0`: Success
+- `1`: General error
+- `2`: Configuration error
+- `3`: Connection error (ChromaDB)
+- `4`: File not found
+- `5`: Permission denied
+
+## 8. Chunking Strategies
+
+### 8.1 Strategy Descriptions
+
+- **structure**: (Default) Respects markdown structure, never splits code blocks
+- **token**: Token-based chunking optimized for LLMs
+- **sentence**: Splits on sentence boundaries
+- **paragraph**: Preserves paragraph integrity
+- **section**: Splits on markdown headers
+- **semantic**: Context-aware splitting based on meaning
+- **fixed**: Simple character-based splitting with overlap
+
+### 8.2 Strategy Selection
 
 ```bash
-# Add to ~/.zshrc
-eval "$(_SHARD_MD_COMPLETE=zsh_source shard-md)"
+# Use semantic chunking
+shard-md document.md --strategy semantic
+
+# Use token-based chunking for LLM compatibility
+shard-md document.md --strategy token --size 4096
 ```
 
-### 8.3 Fish Completion
+## 9. Future Extensions
 
+The CLI is designed for future extensibility while maintaining simplicity:
+
+- Additional storage backends (json, yaml, directory)
+- Pipeline integration via stdout
+- Custom chunking strategies via plugins
+- Batch processing optimizations
+
+## 10. Migration from v1.x
+
+Users migrating from v1.x should note these changes:
+
+- **Removed**: All subcommands (`process`, `collections`, `query`, `config`)
+- **Removed**: Collection management features
+- **Removed**: Query and search features
+- **Simplified**: Direct file processing is now the default action
+- **Configuration**: Edit YAML files directly (no `config` commands)
+
+Example migration:
 ```bash
-# Add to ~/.config/fish/completions/shard-md.fish
-eval (env _SHARD_MD_COMPLETE=fish_source shard-md)
-```
+# Old (v1.x)
+shard-md process --collection my-docs document.md
+shard-md collections list
+shard-md query search "topic" --collection my-docs
 
-## 9. Error Handling and User Feedback
-
-### 9.1 Error Message Format
-
-```
-Error: [ERROR_CODE] Brief description
-Details: Detailed explanation of the error
-Suggestion: Recommended action to resolve the issue
-```
-
-### 9.2 Progress Indicators
-
-- Spinner for quick operations
-- Progress bar for long-running operations
-- Batch processing progress with ETA
-- Real-time operation status updates
-
-### 9.3 Confirmation Prompts
-
-```bash
-# Destructive operations require confirmation
-shard-md collections delete my-collection
-> This will permanently delete collection 'my-collection' and all its documents.
-> Are you sure? [y/N]:
+# New (v2.0+)
+shard-md document.md --store --collection my-docs
+# Collection management: Use ChromaDB tools directly
+# Search: Use ChromaDB tools or other search utilities
 ```
