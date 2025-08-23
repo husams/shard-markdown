@@ -38,14 +38,12 @@ class TokenChunker(BaseChunker):
         overlap_content = ""
 
         while current_pos < len(content):
-            # Calculate chunk size in characters based on token limit
-            chunk_size_chars = self.settings.chunk_size * self.chars_per_token
+            # Use chunk_size directly as character count
+            # (settings.chunk_size is already in characters, not tokens)
+            chunk_size_chars = self.settings.chunk_size
 
-            # Include overlap from previous chunk
-            chunk_start = max(0, current_pos - len(overlap_content))
-            chunk_content = (
-                overlap_content + content[current_pos : current_pos + chunk_size_chars]
-            )
+            # Get chunk content without overlap considerations first
+            chunk_content = content[current_pos : current_pos + chunk_size_chars]
 
             if not chunk_content.strip():
                 break
@@ -54,10 +52,17 @@ class TokenChunker(BaseChunker):
             if current_pos + chunk_size_chars < len(content):
                 # Look for last space before limit
                 last_space = chunk_content.rfind(" ")
-                if last_space > len(overlap_content):
+                if last_space > 0:
                     chunk_content = chunk_content[:last_space]
 
-            chunk_end = chunk_start + len(chunk_content) - len(overlap_content)
+            # Calculate actual positions
+            chunk_start = current_pos
+            chunk_end = current_pos + len(chunk_content)
+
+            # Add overlap from previous chunk if available
+            if overlap_content:
+                chunk_content = overlap_content + chunk_content
+                chunk_start = current_pos - len(overlap_content)
 
             chunks.append(
                 self._create_chunk(
@@ -75,7 +80,7 @@ class TokenChunker(BaseChunker):
         return chunks
 
     def _estimate_tokens(self, text: str) -> int:
-        """Estimate token count for text.
+        """Estimate token count for text using improved heuristics.
 
         Args:
             text: Text to estimate tokens for
@@ -83,7 +88,36 @@ class TokenChunker(BaseChunker):
         Returns:
             Estimated token count
         """
-        # Simple estimation: split on whitespace and punctuation
-        # This is a rough approximation
-        words = re.findall(r"\b\w+\b|\S", text)
-        return len(words)
+        if not text:
+            return 0
+
+        # Improved estimation based on GPT tokenization patterns:
+        # 1. Split on whitespace and punctuation
+        # 2. Count contractions as 2 tokens (e.g., "don't" = "do" + "n't")
+        # 3. Count numbers and special characters more accurately
+
+        # Count basic words
+        words = re.findall(r"\b\w+\b", text)
+        token_count = len(words)
+
+        # Add tokens for punctuation (each punctuation is typically a token)
+        punctuation = re.findall(r"[^\w\s]", text)
+        token_count += len(punctuation)
+
+        # Adjust for contractions (add extra token for each)
+        contractions = re.findall(r"\b\w+'\w+\b", text)
+        token_count += len(contractions)
+
+        # Adjust for numbers (multi-digit numbers often split)
+        numbers = re.findall(r"\b\d{4,}\b", text)
+        for num in numbers:
+            # Long numbers typically split every 3-4 digits
+            token_count += len(num) // 3
+
+        # Adjust for code patterns (if present)
+        code_patterns = re.findall(r"[A-Z][a-z]+|[a-z]+_[a-z]+|::|->|=>", text)
+        token_count += (
+            len(code_patterns) // 2
+        )  # These often tokenize as multiple tokens
+
+        return token_count
