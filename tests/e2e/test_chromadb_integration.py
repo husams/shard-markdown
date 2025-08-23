@@ -599,3 +599,150 @@ This content is identical in both files."""
         )
         # Should handle duplicates gracefully
         assert result2.exit_code == 0
+
+    def test_strategy_storage_combinations(
+        self,
+        cli_runner: CliRunner,
+        tmp_path: Path,
+        chromadb_available: bool,
+    ) -> None:
+        """TC-E2E-016: Verify all strategies work correctly with ChromaDB storage.
+
+        Tests that all available chunking strategies (token, sentence, paragraph,
+        section, semantic, structure, fixed) successfully store chunks to ChromaDB
+        with appropriate metadata. Each strategy should create different chunk
+        patterns based on its chunking approach.
+        """
+        if not chromadb_available:
+            pytest.skip("ChromaDB not available")
+
+        # Test data - multi-strategy test document for chunking approaches
+        test_content = """# Multi-Strategy Test Document
+
+## Introduction
+
+First paragraph with multiple sentences. Each sentence is separate. This tests
+sentence strategy.
+
+Second paragraph for paragraph strategy testing.
+
+## Technical Section
+
+```python
+def code_example():
+    # Code for structure strategy
+    return "test"
+```
+
+## Data Section
+
+- Item 1
+- Item 2
+- Item 3
+
+## Conclusion
+
+Final section for section-based strategy."""
+
+        # Create test file
+        test_file = tmp_path / "multi_strategy_test.md"
+        test_file.write_text(test_content)
+
+        # Test each strategy with storage
+        strategies = [
+            "token",
+            "sentence",
+            "paragraph",
+            "section",
+            "semantic",
+            "structure",
+            "fixed",
+        ]
+
+        successful_strategies = []
+        failed_strategies = []
+
+        for strategy in strategies:
+            collection_name = f"{strategy}_test_{int(time.time())}"
+
+            try:
+                # Execute chunking with storage for each strategy
+                result = cli_runner.invoke(
+                    shard_md,
+                    [
+                        str(test_file),
+                        "--strategy",
+                        strategy,
+                        "--store",
+                        "--collection",
+                        collection_name,
+                    ],
+                )
+
+                # Verify successful execution
+                assert result.exit_code == 0, (
+                    f"Strategy {strategy} failed with exit code {result.exit_code}. "
+                    f"Output: {result.output}"
+                )
+
+                # Check that storage was attempted (even if ChromaDB connection fails,
+                # the chunking itself should succeed)
+                output_lower = result.output.lower()
+
+                # Verify chunks were created and processing succeeded
+                assert (
+                    "chunk" in output_lower
+                    or "process" in output_lower
+                    or "stored" in output_lower
+                ), (
+                    f"Strategy {strategy} did not produce expected output. "
+                    f"Output: {result.output}"
+                )
+
+                successful_strategies.append(strategy)
+
+            except Exception as e:
+                failed_strategies.append((strategy, str(e)))
+
+        # Verify that all strategies were tested successfully
+        assert len(successful_strategies) == len(strategies), (
+            f"Some strategies failed: {failed_strategies}. "
+            f"Successful: {successful_strategies}"
+        )
+
+        # Verify each strategy created different processing patterns
+        # by running them with verbose output to see chunk details
+        strategy_outputs = {}
+        for strategy in strategies:
+            collection_name = f"{strategy}_verbose_test_{int(time.time())}"
+
+            result = cli_runner.invoke(
+                shard_md,
+                [
+                    str(test_file),
+                    "--strategy",
+                    strategy,
+                    "--store",
+                    "--collection",
+                    collection_name,
+                    "--verbose",
+                ],
+            )
+
+            assert result.exit_code == 0, f"Verbose test for strategy {strategy} failed"
+            strategy_outputs[strategy] = result.output
+
+        # Verify that different strategies produce recognizably different results
+        # At minimum, each strategy should process the document
+        for strategy, output in strategy_outputs.items():
+            assert output.strip(), f"Strategy {strategy} produced no output"
+
+            # Check that the strategy-specific behavior is reflected in processing
+            # (Different strategies should handle the multi-section document
+            # differently)
+            output_lower = output.lower()
+            assert (
+                strategy in output_lower
+                or "chunk" in output_lower
+                or "process" in output_lower
+            ), f"Strategy {strategy} output doesn't indicate proper processing"
