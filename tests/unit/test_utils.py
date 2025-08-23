@@ -232,6 +232,16 @@ class TestLogging:
             log_content = log_file.read_text()
             assert "Test message" in log_content
 
+            # Clean up file handlers before tempdir cleanup
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
+            root_logger.handlers.clear()
+
     def test_setup_logging_creates_directories(self) -> None:
         """Test that setup_logging creates parent directories."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -242,6 +252,16 @@ class TestLogging:
             # Parent directories should be created
             assert log_file.parent.exists()
             assert log_file.exists()
+
+            # Clean up file handlers before tempdir cleanup
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
+            root_logger.handlers.clear()
 
     def test_log_context_manager(self) -> None:
         """Test LogContext context manager for adding context to logs."""
@@ -277,6 +297,16 @@ class TestLogging:
             assert "Warning message" in log_content
             assert "Error message" in log_content
 
+            # Clean up file handlers before tempdir cleanup
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
+            root_logger.handlers.clear()
+
     def test_logging_with_exception(self) -> None:
         """Test logging exception information."""
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -294,6 +324,16 @@ class TestLogging:
             assert "An error occurred" in log_content
             assert "ValueError" in log_content
             assert "Test exception" in log_content
+
+            # Clean up file handlers before tempdir cleanup
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
+            root_logger.handlers.clear()
 
     def test_rotating_file_handler(self) -> None:
         """Test that log rotation configuration works."""
@@ -327,6 +367,7 @@ class TestLogging:
                 if isinstance(
                     handler, logging.FileHandler | logging.handlers.RotatingFileHandler
                 ):
+                    handler.flush()
                     handler.close()
             root_logger.handlers.clear()
 
@@ -340,9 +381,10 @@ class TestPathUtilities:
         path = Path("test.md")
         assert path.suffix == ".md"
 
-        # Test absolute path
-        abs_path = Path("/tmp/test.md")  # noqa: S108
-        assert abs_path.is_absolute()
+        # Test absolute path using tempfile for cross-platform compatibility
+        with tempfile.NamedTemporaryFile(suffix=".md") as temp_file:
+            abs_path = Path(temp_file.name)
+            assert abs_path.is_absolute()
 
         # Test relative path
         rel_path = Path("../test.md")
@@ -372,9 +414,10 @@ class TestPathUtilities:
 
     def test_file_size_calculation(self) -> None:
         """Test calculating file sizes."""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
-            content = "Test content\n" * 100
-            f.write(content)
+        content = "Test content\n" * 100
+        # Use binary mode to avoid CRLF conversion issues on Windows
+        with tempfile.NamedTemporaryFile(mode="wb", suffix=".md", delete=False) as f:
+            f.write(content.encode())
             temp_path = Path(f.name)
 
         try:
