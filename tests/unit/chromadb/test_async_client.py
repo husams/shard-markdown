@@ -36,6 +36,36 @@ class TestAsyncChromaDBClient:
             ),
         ]
 
+    @pytest.fixture
+    def mock_chromadb_async_client(self):
+        """Consolidated fixture for ChromaDB async client mocking."""
+        with patch("chromadb.AsyncHttpClient") as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client.heartbeat = AsyncMock(return_value=None)
+
+            # Setup common mock methods
+            mock_collection = AsyncMock()
+            mock_collection.name = "test_collection"
+            mock_collection.add = AsyncMock()
+
+            mock_client.get_collection = AsyncMock(return_value=mock_collection)
+            mock_client.get_or_create_collection = AsyncMock(
+                return_value=mock_collection
+            )
+            mock_client.list_collections = AsyncMock(
+                return_value=[MagicMock(), MagicMock()]
+            )
+            mock_client.delete_collection = AsyncMock()
+
+            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
+            async def async_mock_client(*args, **kwargs):
+                return mock_client
+
+            mock_client_class.side_effect = async_mock_client
+
+            # Return both the mock class and the mock client for flexibility
+            yield mock_client_class, mock_client, mock_collection
+
     @pytest.mark.unit
     @pytest.mark.asyncio
     async def test_async_client_initialization(self, config):
@@ -49,161 +79,104 @@ class TestAsyncChromaDBClient:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_async_context_manager(self, config):
+    async def test_async_context_manager(self, config, mock_chromadb_async_client):
         """Test AsyncChromaDBClient works as async context manager."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
+        mock_client_class, mock_client, _ = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
-
-            mock_client_class.side_effect = async_mock_client
-
-            async with AsyncChromaDBClient(config) as client:
-                assert client.client == mock_client
-                mock_client_class.assert_called_once()
-
-    @pytest.mark.unit
-    @pytest.mark.asyncio
-    async def test_connect_method(self, config):
-        """Test async connect method."""
-        from shard_markdown.chromadb.async_client import AsyncChromaDBClient
-
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
-
-            mock_client_class.side_effect = async_mock_client
-
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
+        async with AsyncChromaDBClient(config) as client:
             assert client.client == mock_client
-            assert client._connection_validated
             mock_client_class.assert_called_once()
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_get_collection(self, config):
+    async def test_connect_method(self, config, mock_chromadb_async_client):
+        """Test async connect method."""
+        from shard_markdown.chromadb.async_client import AsyncChromaDBClient
+
+        mock_client_class, mock_client, _ = mock_chromadb_async_client
+
+        client = AsyncChromaDBClient(config)
+        await client.connect()
+
+        assert client.client == mock_client
+        assert client._connection_validated
+        mock_client_class.assert_called_once()
+
+    @pytest.mark.unit
+    @pytest.mark.asyncio
+    async def test_get_collection(self, config, mock_chromadb_async_client):
         """Test async get_collection method."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_collection = MagicMock()
-            mock_client.get_collection = AsyncMock(return_value=mock_collection)
+        _, mock_client, mock_collection = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        collection = await client.get_collection("test_collection")
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            collection = await client.get_collection("test_collection")
-
-            assert collection == mock_collection
-            mock_client.get_collection.assert_called_once_with("test_collection")
+        assert collection == mock_collection
+        mock_client.get_collection.assert_called_once_with("test_collection")
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_get_or_create_collection(self, config):
+    async def test_get_or_create_collection(self, config, mock_chromadb_async_client):
         """Test async get_or_create_collection method."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_collection = MagicMock()
-            mock_client.get_or_create_collection = AsyncMock(
-                return_value=mock_collection
-            )
+        _, mock_client, mock_collection = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        collection = await client.get_or_create_collection("test_collection")
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            collection = await client.get_or_create_collection("test_collection")
-
-            assert collection == mock_collection
-            mock_client.get_or_create_collection.assert_called_once()
+        assert collection == mock_collection
+        mock_client.get_or_create_collection.assert_called_once()
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_bulk_insert(self, config, sample_chunks):
+    async def test_bulk_insert(self, config, sample_chunks, mock_chromadb_async_client):
         """Test async bulk_insert method."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_collection = AsyncMock()
-            mock_collection.name = "test_collection"
-            mock_collection.add = AsyncMock()
+        _, mock_client, mock_collection = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        result = await client.bulk_insert(mock_collection, sample_chunks)
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            result = await client.bulk_insert(mock_collection, sample_chunks)
-
-            assert isinstance(result, InsertResult)
-            assert result.success is True
-            assert result.chunks_inserted == 2
-            assert result.collection_name == "test_collection"
-            mock_collection.add.assert_called_once()
+        assert isinstance(result, InsertResult)
+        assert result.success is True
+        assert result.chunks_inserted == 2
+        assert result.collection_name == "test_collection"
+        mock_collection.add.assert_called_once()
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_bulk_insert_empty_chunks(self, config):
+    async def test_bulk_insert_empty_chunks(self, config, mock_chromadb_async_client):
         """Test bulk_insert with empty chunks list."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_collection = AsyncMock()
-            mock_collection.name = "test_collection"
+        _, mock_client, mock_collection = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        result = await client.bulk_insert(mock_collection, [])
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            result = await client.bulk_insert(mock_collection, [])
-
-            assert isinstance(result, InsertResult)
-            assert result.success is True
-            assert result.chunks_inserted == 0
+        assert isinstance(result, InsertResult)
+        assert result.success is True
+        assert result.chunks_inserted == 0
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_concurrent_batch_processing(self, config):
+    async def test_concurrent_batch_processing(
+        self, config, mock_chromadb_async_client
+    ):
         """Test concurrent processing of large chunk batches."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
@@ -217,153 +190,103 @@ class TestAsyncChromaDBClient:
             for i in range(500)  # 500 chunks to test batching
         ]
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_collection = AsyncMock()
-            mock_collection.name = "test_collection"
-            mock_collection.add = AsyncMock()
+        _, mock_client, mock_collection = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        result = await client.bulk_insert(mock_collection, large_chunks)
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            result = await client.bulk_insert(mock_collection, large_chunks)
-
-            assert result.success is True
-            assert result.chunks_inserted == 500
-            # Should be called multiple times due to batching
-            assert mock_collection.add.call_count > 1
+        assert result.success is True
+        assert result.chunks_inserted == 500
+        # Should be called multiple times due to batching
+        assert mock_collection.add.call_count > 1
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_list_collections(self, config):
+    async def test_list_collections(self, config, mock_chromadb_async_client):
         """Test async list_collections method."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_collections = [MagicMock(), MagicMock()]
-            mock_client.list_collections = AsyncMock(return_value=mock_collections)
+        _, mock_client, _ = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        collections = await client.list_collections()
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            collections = await client.list_collections()
-
-            assert collections == mock_collections
-            mock_client.list_collections.assert_called_once()
+        assert len(collections) == 2  # We set up 2 mock collections in fixture
+        mock_client.list_collections.assert_called_once()
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_delete_collection(self, config):
+    async def test_delete_collection(self, config, mock_chromadb_async_client):
         """Test async delete_collection method."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_client.delete_collection = AsyncMock()
+        _, mock_client, _ = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        await client.delete_collection("test_collection")
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            await client.delete_collection("test_collection")
-
-            mock_client.delete_collection.assert_called_once_with("test_collection")
+        mock_client.delete_collection.assert_called_once_with("test_collection")
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_error_handling_chromadb_exceptions(self, config):
+    async def test_error_handling_chromadb_exceptions(
+        self, config, mock_chromadb_async_client
+    ):
         """Test proper handling of ChromaDB-specific exceptions."""
+        from chromadb.errors import NotFoundError
+
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            # Simulate ChromaDB exception
-            from chromadb.errors import NotFoundError
+        _, mock_client, _ = mock_chromadb_async_client
 
-            mock_client.get_collection = AsyncMock(
-                side_effect=NotFoundError("Collection not found")
-            )
+        # Override the get_collection to raise an error
+        mock_client.get_collection = AsyncMock(
+            side_effect=NotFoundError("Collection not found")
+        )
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
-
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            with pytest.raises(NotFoundError):
-                await client.get_collection("nonexistent_collection")
+        with pytest.raises(NotFoundError):
+            await client.get_collection("nonexistent_collection")
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_semaphore_concurrency_control(self, config):
+    async def test_semaphore_concurrency_control(
+        self, config, mock_chromadb_async_client
+    ):
         """Test that semaphore properly controls concurrency."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
+        _, mock_client, _ = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config, max_concurrent_operations=2)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
-
-            client = AsyncChromaDBClient(config, max_concurrent_operations=2)
-            await client.connect()
-
-            # Test that semaphore is properly initialized
-            assert client._semaphore._value == 2
+        # Test that semaphore is properly initialized
+        assert client._semaphore._value == 2
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_performance_tracking(self, config, sample_chunks):
+    async def test_performance_tracking(
+        self, config, sample_chunks, mock_chromadb_async_client
+    ):
         """Test that performance metrics are properly tracked."""
         from shard_markdown.chromadb.async_client import AsyncChromaDBClient
 
-        with patch("chromadb.AsyncHttpClient") as mock_client_class:
-            mock_client = AsyncMock()
-            mock_client.heartbeat = AsyncMock(return_value=None)
-            mock_collection = AsyncMock()
-            mock_collection.name = "test_collection"
-            mock_collection.add = AsyncMock()
+        _, mock_client, mock_collection = mock_chromadb_async_client
 
-            # Since chromadb.AsyncHttpClient is async, we need to mock it properly
-            async def async_mock_client(*args, **kwargs):
-                return mock_client
+        client = AsyncChromaDBClient(config)
+        await client.connect()
 
-            mock_client_class.side_effect = async_mock_client
+        result = await client.bulk_insert(mock_collection, sample_chunks)
 
-            client = AsyncChromaDBClient(config)
-            await client.connect()
-
-            result = await client.bulk_insert(mock_collection, sample_chunks)
-
-            # Check that processing time is tracked
-            assert result.processing_time > 0
-            assert result.insertion_rate > 0
+        # Check that processing time is tracked
+        assert result.processing_time > 0
+        assert result.insertion_rate > 0
