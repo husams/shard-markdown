@@ -221,6 +221,11 @@ class TestIntegrationLogging:
                 logger.debug("Debug information")
                 logger.warning("Warning message")
 
+            # Flush handlers to ensure content is written
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers:
+                handler.flush()
+
             # Verify file output
             log_content = log_file.read_text()
             assert "Processing request" in log_content
@@ -243,9 +248,13 @@ class TestIntegrationLogging:
             test_message = "Multiple handler test"
             logger.info(test_message)
 
+            # Flush handlers to ensure content is written
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers:
+                handler.flush()
+
             # Message should be in file
             assert test_message in log_file.read_text()
 
             # Both handlers should be active
-            root_logger = logging.getLogger("shard_markdown")
             assert len(root_logger.handlers) == 2
