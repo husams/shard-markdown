@@ -1,294 +1,251 @@
-"""Tests for logging utilities."""
+"""Refactored logging tests using real logging instead of mocks."""
 
 import logging
+import logging.handlers
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 
 from shard_markdown.utils.logging import LogContext, get_logger, setup_logging
 
 
-@pytest.mark.unit
-def test_setup_logging_console_only() -> None:
-    """Test basic logging setup with console handler only."""
-    with patch("shard_markdown.utils.logging.logging.getLogger") as mock_get_logger:
-        mock_logger = MagicMock()
-        mock_third_party_logger = MagicMock()
+class TestLoggingSetup:
+    """Test logging setup with real logging objects."""
 
-        def get_logger_side_effect(name):
-            if name == "shard_markdown":
-                return mock_logger
-            else:
-                return mock_third_party_logger
+    @pytest.fixture(autouse=True)
+    def reset_logging(self):
+        """Reset logging configuration after each test."""
+        yield
+        # Clear all handlers from shard_markdown logger
+        logger = logging.getLogger("shard_markdown")
+        # Close file handlers before clearing to prevent Windows file locking issues
+        for handler in logger.handlers[
+            :
+        ]:  # Use slice to avoid modification during iteration
+            if isinstance(
+                handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+            ):
+                handler.close()
+        logger.handlers.clear()
+        logger.setLevel(logging.WARNING)
 
-        mock_get_logger.side_effect = get_logger_side_effect
-
+    @pytest.mark.unit
+    def test_setup_logging_console_only(self):
+        """Test basic logging setup with console handler only."""
         setup_logging(level=logging.DEBUG)
 
-        mock_logger.setLevel.assert_called_with(logging.DEBUG)
-        mock_logger.handlers.clear.assert_called_once()
-        mock_logger.addHandler.assert_called_once()
+        logger = logging.getLogger("shard_markdown")
+        assert logger.level == logging.DEBUG
+        assert len(logger.handlers) == 1
+        # The project uses RichHandler (which extends StreamHandler)
+        handler_name = type(logger.handlers[0]).__name__
+        assert handler_name in ["StreamHandler", "RichHandler"]
 
+    @pytest.mark.unit
+    def test_setup_logging_with_file(self):
+        """Test logging setup with file handler."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_file = Path(temp_dir) / "test.log"
 
-@pytest.mark.unit
-def test_setup_logging_with_file() -> None:
-    """Test logging setup with file handler."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        log_file = Path(temp_dir) / "test.log"
+            setup_logging(level=logging.INFO, file_path=log_file)
 
-        with patch("shard_markdown.utils.logging.logging.getLogger") as mock_get_logger:
-            mock_logger = MagicMock()
-            mock_third_party_logger = MagicMock()
+            logger = logging.getLogger("shard_markdown")
+            assert logger.level == logging.INFO
+            assert len(logger.handlers) == 2  # Console + file
 
-            def get_logger_side_effect(name):
-                if name == "shard_markdown":
-                    return mock_logger
-                else:
-                    return mock_third_party_logger
+            # Verify handlers (RichHandler is used instead of StreamHandler)
+            handler_types = [type(h).__name__ for h in logger.handlers]
+            assert any(h in handler_types for h in ["StreamHandler", "RichHandler"])
+            assert "RotatingFileHandler" in handler_types
 
-            mock_get_logger.side_effect = get_logger_side_effect
+            # Test that logging actually writes to file
+            logger.info("Test message")
+            assert log_file.exists()
+            assert "Test message" in log_file.read_text()
 
-            # Mock the file handler to prevent actual file creation
-            with patch(
-                "shard_markdown.utils.logging.logging.handlers.RotatingFileHandler"
-            ) as mock_handler_class:
-                mock_handler = MagicMock()
-                mock_handler_class.return_value = mock_handler
-
-                setup_logging(level=logging.INFO, file_path=log_file)
-
-                mock_logger.setLevel.assert_called_with(logging.INFO)
-                mock_logger.handlers.clear.assert_called_once()
-                # Should have been called twice: console + file handler
-                assert mock_logger.addHandler.call_count == 2
-
-
-@pytest.mark.unit
-def test_setup_logging_creates_parent_directories() -> None:
-    """Test that setup_logging creates parent directories for log file."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        log_file = Path(temp_dir) / "nested" / "subdir" / "test.log"
-
-        # Mock the file handler to prevent actual file creation on Windows
-        with patch(
-            "shard_markdown.utils.logging.logging.handlers.RotatingFileHandler"
-        ) as mock_handler_class:
-            mock_handler = MagicMock()
-            mock_handler_class.return_value = mock_handler
+    @pytest.mark.unit
+    def test_setup_logging_creates_parent_directories(self):
+        """Test that setup_logging creates parent directories for log file."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_file = Path(temp_dir) / "nested" / "subdir" / "test.log"
 
             setup_logging(file_path=log_file)
 
             assert log_file.parent.exists()
 
+            # Test that logging works
+            logger = logging.getLogger("shard_markdown")
+            logger.info("Directory test")
+            assert log_file.exists()
 
-@pytest.mark.unit
-def test_get_logger() -> None:
-    """Test get_logger returns properly named logger."""
-    logger = get_logger("test_module")
+    @pytest.mark.unit
+    def test_third_party_loggers_silenced(self):
+        """Test that third-party loggers are set to WARNING level."""
+        setup_logging(level=logging.DEBUG)
 
-    assert logger.name == "shard_markdown.test_module"
-    assert isinstance(logger, logging.Logger)
+        # Check third-party loggers
+        assert logging.getLogger("chromadb").level == logging.WARNING
+        assert logging.getLogger("httpx").level == logging.WARNING
+        assert logging.getLogger("urllib3").level == logging.WARNING
 
-
-@pytest.mark.unit
-def test_get_logger_with_qualified_name() -> None:
-    """Test get_logger with fully qualified module name."""
-    logger = get_logger("cli.main")
-
-    assert logger.name == "shard_markdown.cli.main"
-
-
-@pytest.mark.unit
-def test_log_context_initialization() -> None:
-    """Test LogContext initialization."""
-    logger = logging.getLogger("test")
-    context = {"user_id": "123", "operation": "test"}
-
-    log_context = LogContext(logger, **context)
-
-    assert log_context.logger is logger
-    assert log_context.context == context
-    assert log_context.old_factory is None
+        # Main logger should still be DEBUG
+        assert logging.getLogger("shard_markdown").level == logging.DEBUG
 
 
-@pytest.mark.unit
-def test_log_context_manager_enter() -> None:
-    """Test LogContext context manager enter method."""
-    logger = logging.getLogger("test")
-    context = {"request_id": "abc123"}
+class TestGetLogger:
+    """Test get_logger function."""
 
-    get_factory_patch = patch(
-        "shard_markdown.utils.logging.logging.getLogRecordFactory"
-    )
-    with get_factory_patch as mock_get_factory:
-        mock_factory = MagicMock()
-        mock_get_factory.return_value = mock_factory
+    @pytest.mark.unit
+    def test_get_logger(self):
+        """Test get_logger returns properly named logger."""
+        logger = get_logger("test_module")
 
-        set_factory_patch = patch(
-            "shard_markdown.utils.logging.logging.setLogRecordFactory"
-        )
-        with set_factory_patch as mock_set_factory:
-            log_context = LogContext(logger, **context)
+        assert logger.name == "shard_markdown.test_module"
+        assert isinstance(logger, logging.Logger)
 
-            result = log_context.__enter__()
+    @pytest.mark.unit
+    def test_get_logger_with_qualified_name(self):
+        """Test get_logger with fully qualified module name."""
+        logger = get_logger("cli.main")
 
-            assert result is log_context
-            assert log_context.old_factory is mock_factory
-            mock_set_factory.assert_called_once()
+        assert logger.name == "shard_markdown.cli.main"
 
+    @pytest.mark.unit
+    def test_get_logger_caching(self):
+        """Test that get_logger returns the same instance for same name."""
+        logger1 = get_logger("test")
+        logger2 = get_logger("test")
 
-@pytest.mark.unit
-def test_log_context_manager_exit() -> None:
-    """Test LogContext context manager exit method."""
-    logger = logging.getLogger("test")
-    mock_factory = MagicMock()
-
-    set_factory_patch = patch(
-        "shard_markdown.utils.logging.logging.setLogRecordFactory"
-    )
-    with set_factory_patch as mock_set_factory:
-        log_context = LogContext(logger, test_key="test_value")
-        log_context.old_factory = mock_factory
-
-        log_context.__exit__(None, None, None)
-
-        mock_set_factory.assert_called_with(mock_factory)
+        assert logger1 is logger2
 
 
-@pytest.mark.unit
-def test_log_context_manager_exit_no_old_factory() -> None:
-    """Test LogContext exit when old_factory is None."""
-    logger = logging.getLogger("test")
+class TestLogContext:
+    """Test LogContext context manager with real logging."""
 
-    set_factory_patch = patch(
-        "shard_markdown.utils.logging.logging.setLogRecordFactory"
-    )
-    with set_factory_patch as mock_set_factory:
-        log_context = LogContext(logger, test_key="test_value")
-        log_context.old_factory = None
+    @pytest.mark.unit
+    def test_log_context_initialization(self):
+        """Test LogContext initialization."""
+        logger = logging.getLogger("test")
+        context = {"user_id": "123", "operation": "test"}
 
-        log_context.__exit__(None, None, None)
+        log_context = LogContext(logger, **context)
 
-        # Should not call setLogRecordFactory when old_factory is None
-        mock_set_factory.assert_not_called()
+        assert log_context.logger is logger
+        assert log_context.context == context
+        assert log_context.old_factory is None
 
+    @pytest.mark.unit
+    def test_log_context_adds_attributes(self, caplog):
+        """Test that LogContext adds context to log records."""
+        logger = logging.getLogger("test")
+        logger.setLevel(logging.INFO)
 
-@pytest.mark.unit
-def test_log_context_record_factory() -> None:
-    """Test that LogContext adds context to log records."""
-    logger = logging.getLogger("test")
-    context = {"user_id": "123", "operation": "test_op"}
+        context = {"user_id": "123", "operation": "test_op"}
 
-    with LogContext(logger, **context):
-        # Use the factory to create a log record
-        factory = logging.getLogRecordFactory()
-        record = factory(
-            name="test",
-            level=logging.INFO,
-            pathname="test.py",
-            lineno=1,
-            msg="Test message",
-            args=(),
-            exc_info=None,
-        )
+        with LogContext(logger, **context):
+            logger.info("Test message")
 
-        # The factory should have added our context
+        # Check that the log record has our context attributes
+        assert len(caplog.records) == 1
+        record = caplog.records[0]
         assert hasattr(record, "user_id")
         assert hasattr(record, "operation")
         assert record.user_id == "123"
         assert record.operation == "test_op"
 
+    @pytest.mark.unit
+    def test_log_context_nested(self, caplog):
+        """Test nested LogContext managers."""
+        logger = logging.getLogger("test")
+        logger.setLevel(logging.INFO)
 
-@pytest.mark.unit
-def test_log_context_with_statement() -> None:
-    """Test LogContext as context manager with statement."""
-    logger = logging.getLogger("test")
-    context = {"session_id": "session123"}
+        with LogContext(logger, request_id="req123"):
+            with LogContext(logger, user_id="user456"):
+                logger.info("Nested context")
 
-    # Test that context manager works properly
-    with LogContext(logger, **context) as log_ctx:
-        assert log_ctx.context == context
-        assert log_ctx.logger is logger
+        # Both contexts should be present
+        record = caplog.records[0]
+        assert hasattr(record, "request_id")
+        assert hasattr(record, "user_id")
+        assert record.request_id == "req123"
+        assert record.user_id == "user456"
 
+    @pytest.mark.unit
+    def test_log_context_restoration(self):
+        """Test that LogContext restores original factory on exit."""
+        original_factory = logging.getLogRecordFactory()
+        logger = logging.getLogger("test")
 
-@pytest.mark.unit
-def test_setup_logging_third_party_loggers() -> None:
-    """Test that third-party loggers are set to WARNING level."""
-    with patch("shard_markdown.utils.logging.logging.getLogger") as mock_get_logger:
-        mock_main_logger = MagicMock()
-        mock_chromadb_logger = MagicMock()
-        mock_httpx_logger = MagicMock()
-        mock_urllib3_logger = MagicMock()
+        with LogContext(logger, test_key="test_value"):
+            # Factory should be different inside context
+            assert logging.getLogRecordFactory() != original_factory
 
-        def logger_side_effect(name: str) -> MagicMock:
-            if name == "shard_markdown":
-                return mock_main_logger
-            elif name == "chromadb":
-                return mock_chromadb_logger
-            elif name == "httpx":
-                return mock_httpx_logger
-            elif name == "urllib3":
-                return mock_urllib3_logger
-            return MagicMock()
+        # Factory should be restored after context
+        assert logging.getLogRecordFactory() == original_factory
 
-        mock_get_logger.side_effect = logger_side_effect
+    @pytest.mark.unit
+    def test_log_context_with_statement(self):
+        """Test LogContext as context manager with statement."""
+        logger = logging.getLogger("test")
+        context = {"session_id": "session123"}
 
-        setup_logging()
-
-        mock_chromadb_logger.setLevel.assert_called_with(logging.WARNING)
-        mock_httpx_logger.setLevel.assert_called_with(logging.WARNING)
-        mock_urllib3_logger.setLevel.assert_called_with(logging.WARNING)
+        with LogContext(logger, **context) as log_ctx:
+            assert log_ctx.context == context
+            assert log_ctx.logger is logger
 
 
-@pytest.mark.unit
-def test_setup_logging_file_rotation_config() -> None:
-    """Test that file handler is configured with rotation settings."""
-    with tempfile.TemporaryDirectory() as temp_dir:
-        log_file = Path(temp_dir) / "test.log"
-        max_size = 5242880  # 5MB
-        backup_count = 3
+class TestIntegrationLogging:
+    """Integration tests for logging functionality."""
 
-        handler_patch = patch(
-            "shard_markdown.utils.logging.logging.handlers.RotatingFileHandler"
-        )
-        with handler_patch as mock_handler_class:
-            mock_handler = MagicMock()
-            # Ensure mock handler has proper level attribute
-            mock_handler.level = logging.INFO
-            mock_handler_class.return_value = mock_handler
+    @pytest.mark.unit
+    def test_complete_logging_workflow(self):
+        """Test complete logging workflow with real components."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_file = Path(temp_dir) / "app.log"
 
+            # Setup logging
             setup_logging(
+                level=logging.DEBUG,
                 file_path=log_file,
-                max_file_size=max_size,
-                backup_count=backup_count,
+                max_file_size=1024 * 1024,  # 1MB
+                backup_count=2,
             )
 
-            mock_handler_class.assert_called_with(
-                filename=log_file,
-                maxBytes=max_size,
-                backupCount=backup_count,
-            )
+            # Get logger
+            logger = get_logger("test.module")
 
+            # Log with context
+            with LogContext(logger, request_id="req789", user="testuser"):
+                logger.info("Processing request")
+                logger.debug("Debug information")
+                logger.warning("Warning message")
 
-@pytest.mark.unit
-def test_log_context_record_factory_fallback() -> None:
-    """Test LogContext record factory fallback when old_factory is None."""
-    logger = logging.getLogger("test")
+            # Verify file output
+            log_content = log_file.read_text()
+            assert "Processing request" in log_content
+            assert "Debug information" in log_content
+            assert "Warning message" in log_content
 
-    get_factory_patch = patch(
-        "shard_markdown.utils.logging.logging.getLogRecordFactory",
-        return_value=None,
-    )
-    with get_factory_patch:
-        log_record_patch = patch("shard_markdown.utils.logging.logging.LogRecord")
-        with log_record_patch as mock_log_record:
-            mock_record = MagicMock()
-            mock_log_record.return_value = mock_record
+            # Verify logger is in correct hierarchy
+            assert logger.name.startswith("shard_markdown")
 
-            log_context = LogContext(logger, test_attr="test_value")
-            log_context.__enter__()
+    @pytest.mark.unit
+    def test_multiple_handlers_formatting(self):
+        """Test that multiple handlers work correctly."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            log_file = Path(temp_dir) / "multi.log"
 
-            # The factory should handle None old_factory case
-            assert log_context.old_factory is None
+            setup_logging(level=logging.INFO, file_path=log_file)
+            logger = get_logger("multi.test")
+
+            # Log a message
+            test_message = "Multiple handler test"
+            logger.info(test_message)
+
+            # Message should be in file
+            assert test_message in log_file.read_text()
+
+            # Both handlers should be active
+            root_logger = logging.getLogger("shard_markdown")
+            assert len(root_logger.handlers) == 2
