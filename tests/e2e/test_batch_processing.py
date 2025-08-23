@@ -1,5 +1,6 @@
 """End-to-end tests for batch processing - multi-file operations."""
 
+import sys
 from pathlib import Path
 
 import pytest
@@ -748,3 +749,270 @@ Real content that demonstrates normal processing alongside circular symlinks."""
         # Should complete without hanging or infinite loops
         # Command should complete (exit_code will be set for completed commands)
         assert result.exit_code is not None
+
+    # TC-E2E-025 Implementation - Batch Processing Edge Cases
+
+    @pytest.mark.e2e
+    @pytest.mark.skipif(
+        sys.platform == "win32",
+        reason="Unix permissions test",
+    )
+    def test_tc_e2e_025_scenario_a_permission_denied_handling(
+        self, cli_runner, tmp_path
+    ):
+        """TC-E2E-025 Scenario A: Permission Denied File Handling."""
+        batch_dir = tmp_path / "permission_batch"
+        batch_dir.mkdir()
+
+        # Create readable files
+        (batch_dir / "readable1.md").write_text(
+            "# Readable Document 1\n\nThis should process successfully."
+        )
+        (batch_dir / "readable2.md").write_text(
+            "# Readable Document 2\n\nAnother readable document."
+        )
+
+        # Create file with restrictive permissions
+        no_read_file = batch_dir / "no_read_permission.md"
+        no_read_file.write_text("# No Read Permission\n\nThis will be restricted.")
+
+        original_perm = no_read_file.stat().st_mode
+        try:
+            no_read_file.chmod(0o000)  # No permissions
+
+            result = cli_runner.invoke(shard_md, [str(batch_dir), "--recursive"])
+
+            # Should handle gracefully (partial success is OK)
+            assert result.exit_code == 0 or "permission" in result.output.lower()
+
+            # Readable files should be processed
+            assert "readable1.md" in result.output
+            assert "readable2.md" in result.output
+
+            # Should show permission-related messages
+            output_lower = result.output.lower()
+            permission_indicators = ["permission", "denied", "cannot read", "access"]
+            assert any(indicator in output_lower for indicator in permission_indicators)
+
+            # Should not crash
+            assert "Traceback" not in result.output
+
+        finally:
+            # Restore permissions
+            try:
+                no_read_file.chmod(original_perm)
+            except (OSError, PermissionError):
+                pass
+
+    @pytest.mark.e2e
+    @pytest.mark.slow
+    def test_tc_e2e_025_scenario_b_large_file_processing(self, cli_runner, tmp_path):
+        """TC-E2E-025 Scenario B: Large File Processing."""
+        large_dir = tmp_path / "large_files"
+        large_dir.mkdir()
+
+        # Create files of various sizes
+        (large_dir / "small.md").write_text("# Small\n\nSmall file content.")
+
+        # Medium file (100KB)
+        medium_content = "# Medium File\n\n" + ("Content block. " * 2000)
+        (large_dir / "medium.md").write_text(medium_content)
+
+        # Large file (1MB)
+        large_content = "# Large File\n\n" + ("Large content block. " * 20000)
+        (large_dir / "large.md").write_text(large_content)
+
+        # Process all files
+        import time
+
+        start_time = time.time()
+        result = cli_runner.invoke(shard_md, [str(large_dir)])
+        processing_time = time.time() - start_time
+
+        # All files should process successfully
+        assert result.exit_code == 0
+        assert "small.md" in result.output
+        assert "medium.md" in result.output
+        assert "large.md" in result.output
+
+        # Should complete in reasonable time
+        assert processing_time < 30
+
+        # Should not have critical errors
+        output_lower = result.output.lower()
+        critical_errors = [
+            indicator
+            for indicator in ["error", "failed", "exception"]
+            if indicator in output_lower and "0 error" not in output_lower
+        ]
+        assert len(critical_errors) == 0
+
+    @pytest.mark.e2e
+    def test_tc_e2e_025_scenario_c_mixed_files(self, cli_runner, tmp_path):
+        """TC-E2E-025 Scenario C: Mixed Valid/Invalid Files."""
+        mixed_dir = tmp_path / "mixed_batch"
+        mixed_dir.mkdir()
+
+        # Valid files
+        (mixed_dir / "valid1.md").write_text(
+            "# Valid Document 1\n\n## Overview\nThis should process successfully."
+        )
+        (mixed_dir / "valid2.md").write_text(
+            "# Valid Document 2\n\n### Details\nMore valid content."
+        )
+
+        # Empty file
+        (mixed_dir / "empty.md").write_text("")
+
+        # Binary file with .md extension
+        binary_content = bytes(range(256)) * 10  # 2.56KB of binary data
+        (mixed_dir / "binary_file.md").write_bytes(binary_content)
+
+        # Create subdirectory
+        subdir = mixed_dir / "subdir"
+        subdir.mkdir()
+        (subdir / "nested_valid.md").write_text("# Nested Valid\n\nNested content.")
+
+        # Process with verbose output
+        result = cli_runner.invoke(
+            shard_md, [str(mixed_dir), "--recursive", "--verbose"]
+        )
+
+        # Should complete successfully
+        assert result.exit_code == 0
+
+        # Valid files should be processed
+        assert "valid1.md" in result.output
+        assert "valid2.md" in result.output
+        assert "nested_valid.md" in result.output
+
+        # Should show processing activity
+        output_lower = result.output.lower()
+        assert any(
+            indicator in output_lower
+            for indicator in ["processed", "chunks", "files", "completed"]
+        )
+
+        # Should not crash
+        assert "Traceback" not in result.output
+
+    @pytest.mark.e2e
+    def test_tc_e2e_025_scenario_d_duplicate_filenames(self, cli_runner, tmp_path):
+        """TC-E2E-025 Scenario D: Duplicate Filename Handling."""
+        duplicates_dir = tmp_path / "duplicates"
+        duplicates_dir.mkdir()
+
+        # Root level
+        (duplicates_dir / "document.md").write_text(
+            "# Root Document\n\nRoot level content."
+        )
+
+        # Level 1
+        level1 = duplicates_dir / "level1"
+        level1.mkdir()
+        (level1 / "document.md").write_text("# Level 1 Document\n\nLevel 1 content.")
+
+        # Level 2
+        level2 = duplicates_dir / "level2"
+        level2.mkdir()
+        (level2 / "document.md").write_text("# Level 2 Document\n\nLevel 2 content.")
+
+        # Nested level
+        nested = level2 / "subdir"
+        nested.mkdir()
+        (nested / "document.md").write_text("# Nested Document\n\nNested content.")
+
+        # Process recursively
+        result = cli_runner.invoke(
+            shard_md, [str(duplicates_dir), "--recursive", "--verbose"]
+        )
+
+        # Should process successfully
+        assert result.exit_code == 0
+
+        # All document.md files should be processed (count mentions)
+        document_mentions = result.output.count("document.md")
+        assert document_mentions >= 4  # All 4 document.md files
+
+        # Should show processing activity
+        output_lower = result.output.lower()
+        assert any(
+            indicator in output_lower
+            for indicator in ["processing", "chunks", "total", "completed"]
+        )
+
+        # Should not skip files due to name conflicts
+        skip_indicators = ["skipped", "duplicate", "collision"]
+        for indicator in skip_indicators:
+            if indicator in output_lower:
+                # If skipping mentioned, should not be due to duplicate names
+                assert "name" not in output_lower or "extension" in output_lower
+
+    @pytest.mark.e2e
+    @pytest.mark.slow
+    def test_tc_e2e_025_complete_integration(self, cli_runner, tmp_path):
+        """TC-E2E-025 Complete Integration: All scenarios combined."""
+        import time
+
+        master_dir = tmp_path / "tc_e2e_025_complete"
+        master_dir.mkdir()
+
+        # Scenario A: Permission files
+        perm_dir = master_dir / "permissions"
+        perm_dir.mkdir()
+        (perm_dir / "readable.md").write_text("# Readable\n\nNormal content.")
+
+        # Scenario B: Large files
+        large_dir = master_dir / "large_files"
+        large_dir.mkdir()
+        large_content = "# Large\n\n" + ("Content. " * 5000)
+        (large_dir / "large.md").write_text(large_content)
+
+        # Scenario C: Mixed files
+        mixed_dir = master_dir / "mixed"
+        mixed_dir.mkdir()
+        (mixed_dir / "valid.md").write_text("# Valid\n\nGood content.")
+        (mixed_dir / "empty.md").write_text("")
+
+        # Scenario D: Duplicates
+        dup_dir = master_dir / "duplicates"
+        dup_dir.mkdir()
+        for i, subdir in enumerate(["dir1", "dir2", "dir3"]):
+            sub_path = dup_dir / subdir
+            sub_path.mkdir()
+            (sub_path / "same_name.md").write_text(
+                f"# Document {i + 1}\n\nContent from {subdir}."
+            )
+
+        # Process everything
+        start_time = time.time()
+        result = cli_runner.invoke(
+            shard_md, [str(master_dir), "--recursive", "--verbose"]
+        )
+        total_time = time.time() - start_time
+
+        # Should complete successfully
+        assert result.exit_code == 0
+
+        # Should process files from all scenarios
+        assert "readable.md" in result.output
+        assert "large.md" in result.output
+        assert "valid.md" in result.output
+        assert "same_name.md" in result.output
+
+        # Should complete in reasonable time
+        assert total_time < 60
+
+        # Should show comprehensive processing
+        output_lower = result.output.lower()
+        assert any(
+            indicator in output_lower
+            for indicator in ["processed", "total", "files", "chunks"]
+        )
+
+        # Should not crash
+        assert "Traceback" not in result.output
+
+        print("\nTC-E2E-025 Complete Integration Test:")
+        print(f"Total processing time: {total_time:.2f} seconds")
+        print("Successfully handled complex mix of file conditions")
