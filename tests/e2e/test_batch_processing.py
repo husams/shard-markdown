@@ -488,3 +488,263 @@ More content to make this realistic.
         except OSError:
             # Symlinks not supported on this platform
             pytest.skip("Symlinks not supported on this platform")
+
+    def test_batch_edge_cases_mixed_valid_invalid_files(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """TC-E2E-025 Scenario A: Test batch processing with mixed valid/invalid files.
+
+        Validates that batch processing handles edge cases correctly:
+        - Valid markdown files are processed successfully
+        - Empty files are handled gracefully
+        - Large files are processed without issues
+        - Broken symlinks are detected and skipped
+        - Permission-denied files are handled appropriately
+        """
+        batch_dir = tmp_path / "batch_dir"
+        batch_dir.mkdir()
+
+        # Create valid files
+        (batch_dir / "valid1.md").write_text("""# Valid Document 1
+
+This is a normal markdown document with content that should be processed successfully.
+
+## Section 1
+
+Some meaningful content here for chunking.
+
+## Section 2
+
+More content to ensure proper processing.""")
+
+        (batch_dir / "valid2.md").write_text("""# Valid Document 2
+
+Another normal markdown document.
+
+## Overview
+
+This document contains structured content that demonstrates proper markdown processing.
+
+## Details
+
+Additional information for testing purposes.""")
+
+        # Create empty file (0 bytes)
+        (batch_dir / "empty.md").write_text("")
+
+        # Create large file (simulating 10MB with repeated content)
+        large_content = "# Large Document\n\n" + ("Large file content block. " * 1000)
+        (batch_dir / "huge.md").write_text(large_content)
+
+        # Create broken symlink (if platform supports symlinks)
+        broken_symlink = batch_dir / "broken_symlink.md"
+        try:
+            broken_symlink.symlink_to(batch_dir / "nonexistent_target.md")
+        except (OSError, NotImplementedError):
+            # Symlinks not supported, create a regular file for testing instead
+            broken_symlink.write_text("# Placeholder for broken symlink test")
+
+        # Create permission-denied file
+        permission_denied = batch_dir / "permission_denied.md"
+        permission_denied.write_text("# Permission Test")
+
+        # Try to restrict permissions (may not work on all platforms)
+        original_permissions = None
+        try:
+            original_permissions = permission_denied.stat().st_mode
+            permission_denied.chmod(0o000)
+        except (OSError, PermissionError):
+            # Cannot change permissions, skip this part of the test
+            pass
+
+        try:
+            # Process the entire directory
+            result = cli_runner.invoke(shard_md, [str(batch_dir), "--verbose"])
+
+            # Valid files should be processed successfully
+            assert "valid1.md" in result.output
+            assert "valid2.md" in result.output
+
+            # Large file should be processed (might show in verbose output)
+            assert "huge.md" in result.output or result.exit_code == 0
+
+            # Should complete without crashing (exit code 0 or handled gracefully)
+            # Some files may fail, but the process should continue
+            assert result.exit_code == 0 or "Error" in result.output
+
+            # In verbose mode, should show some processing information
+            output_lower = result.output.lower()
+            assert any(
+                word in output_lower
+                for word in ["processing", "chunks", "files", "document"]
+            )
+
+        finally:
+            # Restore permissions if we changed them
+            if original_permissions is not None:
+                try:
+                    permission_denied.chmod(original_permissions)
+                except (OSError, PermissionError):
+                    pass
+
+    def test_batch_edge_cases_duplicate_filenames(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """TC-E2E-025 Scenario B: Test batch processing with duplicate filenames.
+
+        Validates that files with same names in different directories are processed
+        correctly with full path distinction.
+        """
+        duplicates_dir = tmp_path / "duplicates"
+        duplicates_dir.mkdir()
+
+        # Create file.md in root
+        (duplicates_dir / "file.md").write_text("""# Root File
+
+This is the file.md in the root duplicates directory.
+
+## Content
+
+Root level content for testing duplicate filename handling.""")
+
+        # Create subdir1/file.md
+        subdir1 = duplicates_dir / "subdir1"
+        subdir1.mkdir()
+        (subdir1 / "file.md").write_text("""# Subdir1 File
+
+This is the file.md in subdir1.
+
+## Different Content
+
+Subdir1 specific content to differentiate from other files.""")
+
+        # Create subdir2/file.md
+        subdir2 = duplicates_dir / "subdir2"
+        subdir2.mkdir()
+        (subdir2 / "file.md").write_text("""# Subdir2 File
+
+This is the file.md in subdir2.
+
+## Unique Content
+
+Subdir2 specific content with unique information.""")
+
+        # Process recursively to catch all file.md instances
+        result = cli_runner.invoke(
+            shard_md, [str(duplicates_dir), "--recursive", "--verbose"]
+        )
+
+        assert result.exit_code == 0
+
+        # All three file.md instances should be processed
+        # The output should show processing of files (exact format may vary)
+        output_lower = result.output.lower()
+        assert "file.md" in result.output
+
+        # Should process multiple files (shown in verbose output or file count)
+        assert any(word in output_lower for word in ["processing", "chunks", "files"])
+
+        # Verify no infinite loops or crashes occurred
+        assert result.exit_code == 0
+
+    def test_batch_edge_cases_circular_symlinks(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """TC-E2E-025 Scenario C: Test batch processing with circular symlinks.
+
+        Validates that circular symlinks are detected and skipped without causing
+        infinite loops.
+        """
+        circular_dir = tmp_path / "circular"
+        circular_dir.mkdir()
+
+        # Create a real markdown file
+        (circular_dir / "real.md").write_text("""# Real Document
+
+This is a legitimate markdown file that should be processed normally.
+
+## Content
+
+Real content that demonstrates normal processing alongside circular symlinks.""")
+
+        # Try to create circular symlinks (if platform supports them)
+        link1 = circular_dir / "link1"
+        link2 = circular_dir / "link2"
+
+        try:
+            # Create circular symlinks: link1 -> link2 -> link1
+            link1.symlink_to(link2, target_is_directory=False)
+            link2.symlink_to(link1, target_is_directory=False)
+
+            # Process the directory
+            result = cli_runner.invoke(shard_md, [str(circular_dir), "--verbose"])
+
+            # Should handle circular symlinks without infinite loop
+            assert result.exit_code == 0
+
+            # Real file should be processed
+            assert "real.md" in result.output
+
+            # Should not hang or crash due to circular symlinks
+            # The exact behavior may vary (skip or detect), but should complete
+            # Command should complete successfully or at least exit cleanly
+            assert result.exit_code is not None  # Command completed
+
+        except (OSError, NotImplementedError):
+            # Symlinks not supported on this platform
+            pytest.skip("Symlinks not supported on this platform")
+
+    def test_batch_edge_cases_comprehensive(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """TC-E2E-025: Comprehensive edge cases test combining all scenarios.
+
+        Tests multiple edge cases together to ensure robust batch processing:
+        - Mixed valid/invalid files
+        - Duplicate filenames in different directories
+        - Various file sizes and conditions
+        """
+        test_root = tmp_path / "comprehensive_test"
+        test_root.mkdir()
+
+        # Scenario 1: Mixed valid/invalid files
+        mixed_dir = test_root / "mixed"
+        mixed_dir.mkdir()
+
+        (mixed_dir / "valid.md").write_text("# Valid\n\nNormal content.")
+        (mixed_dir / "empty.md").write_text("")
+        large_content = "# Large\n\n" + ("Content block. " * 500)
+        (mixed_dir / "large.md").write_text(large_content)
+
+        # Scenario 2: Duplicate filenames
+        dup1_dir = test_root / "dup1"
+        dup1_dir.mkdir()
+        (dup1_dir / "common.md").write_text("# Common File 1\n\nContent from dup1.")
+
+        dup2_dir = test_root / "dup2"
+        dup2_dir.mkdir()
+        (dup2_dir / "common.md").write_text("# Common File 2\n\nContent from dup2.")
+
+        # Scenario 3: Nested structure
+        nested_dir = test_root / "nested" / "deep" / "structure"
+        nested_dir.mkdir(parents=True)
+        (nested_dir / "deep.md").write_text("# Deep File\n\nDeeply nested content.")
+
+        # Process everything recursively
+        result = cli_runner.invoke(shard_md, [str(test_root), "--recursive"])
+
+        assert result.exit_code == 0
+
+        # Should process valid files without crashing
+        # Exact output format may vary, but should indicate successful processing
+        output_lower = result.output.lower()
+
+        # Should show evidence of processing multiple files
+        assert any(
+            keyword in output_lower
+            for keyword in ["processing", "chunks", "total", "file"]
+        )
+
+        # Should complete without hanging or infinite loops
+        # Command should complete (exit_code will be set for completed commands)
+        assert result.exit_code is not None

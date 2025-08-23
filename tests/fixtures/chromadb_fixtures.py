@@ -9,6 +9,10 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import pytest
 
+from shard_markdown.chromadb.client import ChromaDBClient
+from shard_markdown.config import Settings
+from shard_markdown.utils.logging import get_logger
+
 
 # Handle optional ChromaDB import
 try:
@@ -16,15 +20,11 @@ try:
 
     CHROMADB_AVAILABLE = True
 except ImportError:  # pragma: no cover
-    chromadb = None  # noqa: F841
+    chromadb = None
     CHROMADB_AVAILABLE = False
 
 if TYPE_CHECKING:
     import chromadb
-
-from shard_markdown.chromadb.client import ChromaDBClient
-from shard_markdown.config import Settings
-from shard_markdown.utils.logging import get_logger
 
 
 logger = get_logger(__name__)

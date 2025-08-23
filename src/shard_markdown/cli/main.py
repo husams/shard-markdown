@@ -13,14 +13,45 @@ from ..utils.logging import setup_logging
 from .processor import display_results, process_file
 
 
+def validate_size(ctx: click.Context, param: click.Parameter, value: int) -> int:
+    """Validate chunk size parameter."""
+    if value <= 0:
+        raise click.BadParameter("Chunk size must be positive (greater than 0)")
+    return value
+
+
+def validate_overlap(ctx: click.Context, param: click.Parameter, value: int) -> int:
+    """Validate overlap parameter."""
+    if value < 0:
+        raise click.BadParameter("Overlap cannot be negative")
+    return value
+
+
+def validate_size_overlap_relationship(
+    ctx: click.Context, param: click.Parameter, value: int
+) -> int:
+    """Validate that overlap doesn't exceed size after both are processed."""
+    # This will be called after both size and overlap are processed
+    # We need to check the relationship in the main function
+    return value
+
+
 @click.command()
 @click.argument("input", type=click.Path(exists=True), required=True)
-@click.option("--size", "-s", default=1000, type=int, help="Chunk size (default: 1000)")
+@click.option(
+    "--size",
+    "-s",
+    default=1000,
+    type=int,
+    callback=validate_size,
+    help="Chunk size (default: 1000)",
+)
 @click.option(
     "--overlap",
     "-o",
     default=200,
     type=int,
+    callback=validate_overlap,
     help="Overlap between chunks (default: 200)",
 )
 @click.option(
@@ -97,6 +128,20 @@ def shard_md(
       shard-md *.md --store --collection my-docs --quiet
     """
     try:
+        # Validate parameter relationships
+        if store and not collection:
+            raise click.ClickException(
+                "Error: --collection is required when using --store"
+            )
+
+        if overlap >= size:
+            click.echo(
+                f"Warning: Overlap ({overlap}) cannot exceed chunk size ({size}), "
+                f"adjusting overlap to {size - 1}",
+                err=True,
+            )
+            overlap = max(0, size - 1)
+
         # Setup logging
         log_level = 40 if quiet else max(10, 30 - (verbose * 10))
         setup_logging(level=log_level)
