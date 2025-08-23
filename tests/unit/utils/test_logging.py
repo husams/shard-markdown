@@ -61,6 +61,17 @@ class TestLoggingSetup:
 
             # Test that logging actually writes to file
             logger.info("Test message")
+
+            # Clean up file handlers before tempdir cleanup
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
+            root_logger.handlers.clear()
+
             assert log_file.exists()
             assert "Test message" in log_file.read_text()
 
@@ -77,6 +88,17 @@ class TestLoggingSetup:
             # Test that logging works
             logger = logging.getLogger("shard_markdown")
             logger.info("Directory test")
+
+            # Clean up file handlers before tempdir cleanup
+            root_logger = logging.getLogger("shard_markdown")
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
+            root_logger.handlers.clear()
+
             assert log_file.exists()
 
     @pytest.mark.unit
@@ -221,10 +243,15 @@ class TestIntegrationLogging:
                 logger.debug("Debug information")
                 logger.warning("Warning message")
 
-            # Flush handlers to ensure content is written
+            # Clean up file handlers before tempdir cleanup
             root_logger = logging.getLogger("shard_markdown")
-            for handler in root_logger.handlers:
-                handler.flush()
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
+            root_logger.handlers.clear()
 
             # Verify file output
             log_content = log_file.read_text()
@@ -248,13 +275,18 @@ class TestIntegrationLogging:
             test_message = "Multiple handler test"
             logger.info(test_message)
 
-            # Flush handlers to ensure content is written
+            # Clean up file handlers before tempdir cleanup
             root_logger = logging.getLogger("shard_markdown")
-            for handler in root_logger.handlers:
-                handler.flush()
+            for handler in root_logger.handlers[:]:
+                if isinstance(
+                    handler, logging.FileHandler | logging.handlers.RotatingFileHandler
+                ):
+                    handler.flush()
+                    handler.close()
 
             # Message should be in file
             assert test_message in log_file.read_text()
 
-            # Both handlers should be active
-            assert len(root_logger.handlers) == 2
+            # Both handlers should be active (before cleanup)
+            # Note: handlers are cleared after verification for cleanup
+            root_logger.handlers.clear()

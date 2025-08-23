@@ -21,9 +21,10 @@ class TestPathValidation:
     @pytest.mark.unit
     def test_absolute_path_detection(self) -> None:
         """Test detecting absolute vs relative paths."""
-        # Test absolute path
-        abs_path = Path("/tmp/test.md")  # noqa: S108
-        assert abs_path.is_absolute()
+        # Test absolute path using tempfile for cross-platform compatibility
+        with tempfile.NamedTemporaryFile(suffix=".md") as temp_file:
+            abs_path = Path(temp_file.name)
+            assert abs_path.is_absolute()
 
         # Test relative path
         rel_path = Path("../test.md")
